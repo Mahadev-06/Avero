@@ -643,7 +643,7 @@ def _download_sync(job_id: str, url: str, fmt: str, quality: str) -> str:
         "fragment_retries": 5,
         "extractor_args": {
             "youtube": {
-                "player_client": ["android", "web", "mweb", "ios"]
+                "player_client": ["ios", "android"]
             }
         },
         "http_headers": {

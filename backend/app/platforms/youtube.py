@@ -41,7 +41,7 @@ class YouTubeAdapter(PlatformAdapter):
             'format': 'best',
             'extractor_args': {
                 'youtube': {
-                    'player_client': ['android', 'web', 'mweb', 'ios']
+                    'player_client': ['ios', 'android']
                 }
             },
         }
