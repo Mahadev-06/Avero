@@ -450,28 +450,19 @@ export default function Home() {
               backgroundColor: 'var(--bg-color)',
               border: '1px solid rgba(255, 255, 255, 0.65)',
               borderRadius: '24px',
-              padding: '2.5rem 1.5rem',
+              padding: '2.25rem 1.5rem',
               boxShadow: '8px 8px 20px var(--neumorph-dark), -8px -8px 20px var(--neumorph-light)',
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
-              gap: '1rem',
+              gap: '1.25rem',
             }}
           >
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem', padding: '0.35rem 0.85rem', borderRadius: 'var(--radius-full)', backgroundColor: 'var(--bg-color)', border: '1px solid rgba(255, 255, 255, 0.6)', boxShadow: '2px 2px 5px var(--neumorph-dark), -2px -2px 5px var(--neumorph-light)', fontSize: '0.75rem', fontWeight: 800, color: 'var(--color-accent-500)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Spread The Word</span>
-            </div>
-
             <h3 style={{ fontSize: '1.45rem', fontWeight: 800, color: 'var(--text-color)', margin: 0, letterSpacing: '-0.02em' }}>
               Love using AVERO? Share with friends!
             </h3>
 
-            <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', margin: 0, maxWidth: '420px', lineHeight: 1.55 }}>
-              Hover below to share directly to WhatsApp, X, Facebook, Instagram or copy the website link!
-            </p>
-
-            <div style={{ marginTop: '0.6rem' }}>
+            <div>
               <SocialShareButton label="Share AVERO" />
             </div>
           </div>

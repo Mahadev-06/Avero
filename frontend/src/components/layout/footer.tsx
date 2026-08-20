@@ -1,6 +1,5 @@
 import Link from 'next/link';
 import { AveroLogo } from '@/components/ui/avero-logo';
-import { SocialShareButton } from '@/components/ui/social-share';
 
 export function Footer() {
   return (
@@ -33,9 +32,6 @@ export function Footer() {
             >
               Minimal, policy-compliant media utility platform. High-performance processing with zero bloat.
             </p>
-            <div style={{ marginTop: '1.25rem' }}>
-              <SocialShareButton label="Share Avero" />
-            </div>
           </div>
 
           {/* Right Side: 3 Columns Always Placed Side-by-Side on the Right Edge */}
