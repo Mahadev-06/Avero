@@ -1236,7 +1236,7 @@ export function UrlInput() {
               className="pill-btn"
               style={{
                 height: '36px',
-                padding: '0 1rem',
+                padding: '0 1.15rem',
                 fontSize: '0.8rem',
                 fontWeight: 800,
                 color: '#ef4444',
@@ -1244,12 +1244,15 @@ export function UrlInput() {
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '0.4rem',
-                border: '1px solid rgba(239, 68, 68, 0.25)',
+                border: '1px solid rgba(239, 68, 68, 0.35)',
+                borderRadius: 'var(--radius-full)',
+                backgroundColor: 'var(--bg-color)',
+                boxShadow: '3px 3px 6px var(--neumorph-dark), -3px -3px 6px var(--neumorph-light)',
               }}
               onClick={handleClearResults}
             >
               <Trash2 className="w-3.5 h-3.5 text-red-500" />
-              <span>Clear Results</span>
+              <span>Clear All</span>
             </button>
           </div>
 
@@ -1320,8 +1323,8 @@ export function UrlInput() {
                       {decodeHtmlEntities(item.info.title) || item.info.url}
                     </h3>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
-                      {item.info.duration ? (
+                    {item.info.duration ? (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
                         <div
                           className="tabular-nums"
                           style={{
@@ -1342,29 +1345,8 @@ export function UrlInput() {
                           <Clock className="w-3.5 h-3.5 text-emerald-600" />
                           <span>{formatDurationSeconds(item.info.duration || 59)}</span>
                         </div>
-                      ) : null}
-
-                      <button
-                        type="button"
-                        className="pill-btn"
-                        style={{
-                          height: '34px',
-                          padding: '0 0.85rem',
-                          fontSize: '0.8rem',
-                          fontWeight: 800,
-                          color: '#ef4444',
-                          cursor: 'pointer',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '0.35rem',
-                          border: '1px solid rgba(239, 68, 68, 0.25)',
-                        }}
-                        onClick={() => handleRemove(item.id)}
-                      >
-                        <Trash2 className="w-3.5 h-3.5 text-red-500" />
-                        <span>Remove</span>
-                      </button>
-                    </div>
+                      </div>
+                    ) : null}
 
                     {/* Active Download Progress inside Card */}
                     {item.downloadState === 'downloading' && item.progress && (
