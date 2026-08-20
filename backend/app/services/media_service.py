@@ -632,6 +632,12 @@ def _download_sync(job_id: str, url: str, fmt: str, quality: str) -> str:
         "socket_timeout": 30,
         "retries": 5,
         "fragment_retries": 5,
+        "js_runtimes": {"node": {}},
+        "extractor_args": {
+            "youtube": {
+                "player_client": ["android", "ios", "web"]
+            }
+        },
         "http_headers": {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
             "Accept-Language": "en-US,en;q=0.9",
@@ -719,7 +725,7 @@ def _download_sync(job_id: str, url: str, fmt: str, quality: str) -> str:
                                     eta="",
                                     file_size=file_size,
                                     filename=clean_filename,
-                                )
+                                    )
                                 _file_store[job_id] = actual_file
                                 logger.info("download_completed_via_rapidsave", job_id=job_id, size=file_size)
                                 return actual_file
@@ -733,19 +739,20 @@ def _download_sync(job_id: str, url: str, fmt: str, quality: str) -> str:
                 loop = asyncio.new_event_loop()
                 th_data = loop.run_until_complete(_scrape_threads(url))
                 loop.close()
-                if th_data.get("video_url"):
+                if th_data.get("video_url") and not is_image:
                     return _download_video_direct_sync(job_id, th_data["video_url"], is_audio, audio_quality)
-                elif th_data.get("image_url"):
+                elif th_data.get("image_url") and is_image:
                     return _download_image_sync(job_id, th_data["image_url"], fmt)
             except Exception:
                 pass
 
-        direct_img = _resolve_image_url(url)
-        if direct_img:
-            try:
-                return _download_image_sync(job_id, direct_img, fmt)
-            except Exception:
-                pass
+        if is_image:
+            direct_img = _resolve_image_url(url)
+            if direct_img:
+                try:
+                    return _download_image_sync(job_id, direct_img, fmt)
+                except Exception:
+                    pass
 
         # Clean up partial files on failure
         for candidate in glob.glob(f"{output_path}*"):
