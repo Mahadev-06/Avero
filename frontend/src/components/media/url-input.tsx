@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { MediaPreview } from './media-preview';
 import { triggerFileDownload } from '@/lib/utils';
-import { Video, Music, Download, Clock, Search, Loader2, Copy, Check, Plus, Play, AlertCircle, Layers, Image as ImageIcon, Trash2, ArrowUpLeft } from 'lucide-react';
+import { Video, Music, Download, Clock, Search, Loader2, Copy, Check, Plus, Play, AlertCircle, Layers, Image as ImageIcon, Trash2, ArrowUpLeft, X } from 'lucide-react';
 import { useQueueStore } from '@/stores/queue-store';
 import { TextShimmerWave } from '@/components/core/text-shimmer-wave';
 
@@ -493,7 +493,12 @@ export function UrlInput() {
             r.id === item.id ? { ...r, downloadState: 'completed' as const } : r
           )
         );
-        setStatusMsg(`Downloaded and saved ${filename}!`);
+        const displayTitle = (item.info.title || 'media').trim();
+        const shortTitle = displayTitle.length > 35 ? `${displayTitle.slice(0, 35)}...` : displayTitle;
+        setStatusMsg(`Downloaded and saved: "${shortTitle}" (${quality})`);
+        setTimeout(() => {
+          setStatusMsg((current) => (current?.includes(shortTitle) ? null : current));
+        }, 5000);
       } else {
         setResults((prev) =>
           prev.map((r) =>
@@ -520,7 +525,12 @@ export function UrlInput() {
               r.id === item.id ? { ...r, downloadState: 'completed' as const } : r
             )
           );
-          setStatusMsg(`Downloaded and saved ${filename}!`);
+          const displayTitle = (item.info.title || 'media').trim();
+          const shortTitle = displayTitle.length > 35 ? `${displayTitle.slice(0, 35)}...` : displayTitle;
+          setStatusMsg(`Downloaded and saved: "${shortTitle}" (${quality})`);
+          setTimeout(() => {
+            setStatusMsg((current) => (current?.includes(shortTitle) ? null : current));
+          }, 5000);
         } catch {
           setResults((prev) =>
             prev.map((r) =>
@@ -1619,7 +1629,7 @@ export function UrlInput() {
                         </div>
                       ) : (
                         <>
-                          <div style={{ display: 'flex', flexDirection: 'column' }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', fontSize: '0.98rem', fontWeight: 800, color: 'var(--text-color)', marginBottom: '0.75rem' }}>
                               <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '26px', height: '26px', borderRadius: '7px', backgroundColor: 'var(--bg-color)', border: '1px solid rgba(255, 255, 255, 0.6)', boxShadow: '2px 2px 4px var(--neumorph-dark), -2px -2px 4px var(--neumorph-light)' }}>
                                 <Video className="w-3.5 h-3.5 text-emerald-600" />
@@ -1647,9 +1657,10 @@ export function UrlInput() {
                                     borderBottom: idx === defaultVideo.length - 1 ? 'none' : '1px solid rgba(0, 0, 0, 0.05)',
                                     backgroundColor: idx % 2 === 0 ? 'transparent' : 'rgba(0, 0, 0, 0.02)',
                                     fontSize: '0.85rem',
+                                    gap: '0.4rem',
                                   }}
                                 >
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', minWidth: 0, flexShrink: 1 }}>
                                     <span
                                       style={{
                                         padding: '0.15rem 0.35rem',
@@ -1661,15 +1672,16 @@ export function UrlInput() {
                                         fontSize: '0.68rem',
                                         fontWeight: 900,
                                         letterSpacing: '0.02em',
+                                        flexShrink: 0,
                                       }}
                                     >
                                       {opt.ext}
                                     </span>
-                                    <span style={{ fontWeight: 800, color: 'var(--text-color)', fontSize: '0.82rem' }}>{opt.quality}</span>
+                                    <span style={{ fontWeight: 800, color: 'var(--text-color)', fontSize: '0.82rem', whiteSpace: 'nowrap' }}>{opt.quality}</span>
                                   </div>
 
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-                                    <span className="tabular-nums" style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-muted)' }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', flexShrink: 0 }}>
+                                    <span className="tabular-nums" style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
                                       {opt.file_size_formatted}
                                     </span>
                                     <button
@@ -1679,12 +1691,14 @@ export function UrlInput() {
                                         color: '#16a34a',
                                         fontWeight: 800,
                                         fontSize: '0.75rem',
-                                        padding: '0.3rem 0.7rem',
+                                        padding: '0.3rem 0.65rem',
                                         display: 'inline-flex',
                                         alignItems: 'center',
                                         gap: '0.25rem',
                                         minHeight: '30px',
                                         cursor: 'pointer',
+                                        whiteSpace: 'nowrap',
+                                        flexShrink: 0,
                                       }}
                                       onClick={() => handleSpecificDownload(item, opt.ext, opt.quality)}
                                       disabled={item.downloadState === 'downloading'}
@@ -1709,7 +1723,7 @@ export function UrlInput() {
                           </div>
 
                           {/* SUB-COLUMN 2: MUSIC / AUDIO OPTIONS */}
-                          <div style={{ display: 'flex', flexDirection: 'column' }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', fontSize: '0.98rem', fontWeight: 800, color: 'var(--text-color)', marginBottom: '0.75rem' }}>
                               <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '26px', height: '26px', borderRadius: '7px', backgroundColor: 'var(--bg-color)', border: '1px solid rgba(255, 255, 255, 0.6)', boxShadow: '2px 2px 4px var(--neumorph-dark), -2px -2px 4px var(--neumorph-light)' }}>
                                 <Music className="w-3.5 h-3.5 text-amber-600" />
@@ -1737,9 +1751,10 @@ export function UrlInput() {
                                     borderBottom: idx === defaultAudio.length - 1 ? 'none' : '1px solid rgba(0, 0, 0, 0.05)',
                                     backgroundColor: idx % 2 === 0 ? 'transparent' : 'rgba(0, 0, 0, 0.02)',
                                     fontSize: '0.85rem',
+                                    gap: '0.4rem',
                                   }}
                                 >
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', minWidth: 0, flexShrink: 1 }}>
                                     <span
                                       style={{
                                         padding: '0.15rem 0.35rem',
@@ -1751,15 +1766,16 @@ export function UrlInput() {
                                         fontSize: '0.68rem',
                                         fontWeight: 900,
                                         letterSpacing: '0.02em',
+                                        flexShrink: 0,
                                       }}
                                     >
                                       {opt.ext}
                                     </span>
-                                    <span style={{ fontWeight: 800, color: 'var(--text-color)', fontSize: '0.82rem' }}>{opt.quality}</span>
+                                    <span style={{ fontWeight: 800, color: 'var(--text-color)', fontSize: '0.82rem', whiteSpace: 'nowrap' }}>{opt.quality}</span>
                                   </div>
 
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-                                    <span className="tabular-nums" style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-muted)' }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', flexShrink: 0 }}>
+                                    <span className="tabular-nums" style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
                                       {opt.file_size_formatted}
                                     </span>
                                     <button
@@ -1769,12 +1785,14 @@ export function UrlInput() {
                                         color: '#16a34a',
                                         fontWeight: 800,
                                         fontSize: '0.75rem',
-                                        padding: '0.3rem 0.7rem',
+                                        padding: '0.3rem 0.65rem',
                                         display: 'inline-flex',
                                         alignItems: 'center',
                                         gap: '0.25rem',
                                         minHeight: '30px',
                                         cursor: 'pointer',
+                                        whiteSpace: 'nowrap',
+                                        flexShrink: 0,
                                       }}
                                       onClick={() => handleSpecificDownload(item, opt.ext, opt.quality)}
                                       disabled={item.downloadState === 'downloading'}
@@ -1802,33 +1820,56 @@ export function UrlInput() {
 
                     </div>
 
-                    {/* Download Status Notification directly below download options */}
+                    {/* Clean Inline Notification Bar */}
                     {statusMsg && (
-                      <div style={{ display: 'flex', justifyContent: 'flex-start', marginTop: '1.25rem' }}>
+                      <div style={{ marginTop: '1.25rem', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
                         <div
                           style={{
-                            display: 'inline-flex',
+                            display: 'flex',
                             alignItems: 'center',
-                            gap: '0.55rem',
-                            padding: '0.45rem 1.15rem',
-                            borderRadius: 'var(--radius-full)',
+                            justifyContent: 'space-between',
+                            gap: '0.65rem',
+                            padding: '0.55rem 1rem',
+                            borderRadius: '14px',
                             backgroundColor: 'var(--bg-color)',
                             border: '1px solid rgba(255, 255, 255, 0.75)',
-                            boxShadow: '4px 4px 10px var(--neumorph-dark), -4px -4px 10px var(--neumorph-light)',
-                            fontSize: '0.85rem',
+                            boxShadow: 'inset 2px 2px 5px var(--neumorph-dark), inset -2px -2px 5px var(--neumorph-light)',
+                            fontSize: '0.82rem',
                             fontWeight: 700,
                             color: 'var(--text-color)',
-                            letterSpacing: '-0.01em',
+                            width: '100%',
+                            boxSizing: 'border-box',
                           }}
                         >
-                          {statusMsg.toLowerCase().includes('failed') || statusMsg.toLowerCase().includes('error') ? (
-                            <AlertCircle className="w-4 h-4 text-rose-500" />
-                          ) : (
-                            <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '18px', height: '18px', borderRadius: '50%', backgroundColor: '#22c55e25', color: '#16a34a' }}>
-                              <Check className="w-3 h-3 text-emerald-600" />
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', minWidth: 0, flex: 1, overflow: 'hidden' }}>
+                            {statusMsg.toLowerCase().includes('failed') || statusMsg.toLowerCase().includes('error') ? (
+                              <AlertCircle className="w-4 h-4 text-rose-500 shrink-0" />
+                            ) : (
+                              <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '20px', height: '20px', borderRadius: '50%', backgroundColor: '#22c55e25', color: '#16a34a', flexShrink: 0 }}>
+                                <Check className="w-3.5 h-3.5 text-emerald-600" />
+                              </span>
+                            )}
+                            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>
+                              {statusMsg}
                             </span>
-                          )}
-                          <span>{statusMsg}</span>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => setStatusMsg(null)}
+                            style={{
+                              background: 'none',
+                              border: 'none',
+                              color: 'var(--text-muted)',
+                              cursor: 'pointer',
+                              padding: '2px',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              flexShrink: 0,
+                            }}
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
                         </div>
                       </div>
                     )}
