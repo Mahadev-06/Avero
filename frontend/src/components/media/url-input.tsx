@@ -1564,20 +1564,7 @@ export function UrlInput() {
                                 }}
                               >
                                 <div className="nm-format-info">
-                                  <span
-                                    style={{
-                                      padding: '0.2rem 0.45rem',
-                                      borderRadius: '6px',
-                                      backgroundColor: 'var(--bg-color)',
-                                      border: '1px solid rgba(255, 255, 255, 0.6)',
-                                      boxShadow: '1px 1px 3px var(--neumorph-dark), -1px -1px 3px var(--neumorph-light)',
-                                      color: 'var(--color-accent-500)',
-                                      fontSize: '0.72rem',
-                                      fontWeight: 900,
-                                      letterSpacing: '0.02em',
-                                      whiteSpace: 'nowrap',
-                                    }}
-                                  >
+                                  <span className="nm-format-badge">
                                     {opt.ext}
                                   </span>
 
@@ -1585,26 +1572,16 @@ export function UrlInput() {
                                     {opt.quality}
                                   </span>
 
-                                  <span className="nm-format-size tabular-nums" style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-muted)', whiteSpace: 'nowrap', textAlign: 'right', paddingRight: '0.35rem' }}>
-                                    {opt.file_size_formatted}
-                                  </span>
+                                  {opt.file_size_formatted && (
+                                    <span className="nm-format-size tabular-nums">
+                                      {opt.file_size_formatted}
+                                    </span>
+                                  )}
                                 </div>
 
                                 <button
                                   type="button"
                                   className="pill-btn nm-format-btn"
-                                  style={{
-                                    color: '#16a34a',
-                                    fontWeight: 800,
-                                    fontSize: '0.78rem',
-                                    padding: '0.35rem 0.85rem',
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    gap: '0.3rem',
-                                    minHeight: '32px',
-                                    cursor: 'pointer',
-                                    whiteSpace: 'nowrap',
-                                  }}
                                   onClick={() => handleSpecificDownload(item, opt.ext, opt.quality)}
                                   disabled={item.downloadState === 'downloading'}
                                 >
@@ -1654,20 +1631,7 @@ export function UrlInput() {
                                   }}
                                 >
                                   <div className="nm-format-info">
-                                    <span
-                                      style={{
-                                        padding: '0.2rem 0.45rem',
-                                        borderRadius: '6px',
-                                        backgroundColor: 'var(--bg-color)',
-                                        border: '1px solid rgba(255, 255, 255, 0.6)',
-                                        boxShadow: '1px 1px 3px var(--neumorph-dark), -1px -1px 3px var(--neumorph-light)',
-                                        color: 'var(--color-accent-500)',
-                                        fontSize: '0.72rem',
-                                        fontWeight: 900,
-                                        letterSpacing: '0.02em',
-                                        whiteSpace: 'nowrap',
-                                      }}
-                                    >
+                                    <span className="nm-format-badge">
                                       {opt.ext}
                                     </span>
 
@@ -1675,26 +1639,16 @@ export function UrlInput() {
                                       {opt.quality}
                                     </span>
 
-                                    <span className="nm-format-size tabular-nums" style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-muted)', whiteSpace: 'nowrap', textAlign: 'right', paddingRight: '0.35rem' }}>
-                                      {opt.file_size_formatted}
-                                    </span>
+                                    {opt.file_size_formatted && (
+                                      <span className="nm-format-size tabular-nums">
+                                        {opt.file_size_formatted}
+                                      </span>
+                                    )}
                                   </div>
 
                                   <button
                                     type="button"
                                     className="pill-btn nm-format-btn"
-                                    style={{
-                                      color: '#16a34a',
-                                      fontWeight: 800,
-                                      fontSize: '0.78rem',
-                                      padding: '0.35rem 0.85rem',
-                                      display: 'inline-flex',
-                                      alignItems: 'center',
-                                      gap: '0.3rem',
-                                      minHeight: '32px',
-                                      cursor: 'pointer',
-                                      whiteSpace: 'nowrap',
-                                    }}
                                     onClick={() => handleSpecificDownload(item, opt.ext, opt.quality)}
                                     disabled={item.downloadState === 'downloading'}
                                   >
@@ -1744,20 +1698,7 @@ export function UrlInput() {
                                   }}
                                 >
                                   <div className="nm-format-info">
-                                    <span
-                                      style={{
-                                        padding: '0.2rem 0.45rem',
-                                        borderRadius: '6px',
-                                        backgroundColor: 'var(--bg-color)',
-                                        border: '1px solid rgba(255, 255, 255, 0.6)',
-                                        boxShadow: '1px 1px 3px var(--neumorph-dark), -1px -1px 3px var(--neumorph-light)',
-                                        color: 'var(--color-accent-500)',
-                                        fontSize: '0.72rem',
-                                        fontWeight: 900,
-                                        letterSpacing: '0.02em',
-                                        whiteSpace: 'nowrap',
-                                      }}
-                                    >
+                                    <span className="nm-format-badge">
                                       {opt.ext}
                                     </span>
 
@@ -1765,9 +1706,11 @@ export function UrlInput() {
                                       {opt.quality}
                                     </span>
 
-                                    <span className="nm-format-size tabular-nums" style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-muted)', whiteSpace: 'nowrap', textAlign: 'right', paddingRight: '0.35rem' }}>
-                                      {opt.file_size_formatted}
-                                    </span>
+                                    {opt.file_size_formatted && (
+                                      <span className="nm-format-size tabular-nums">
+                                        {opt.file_size_formatted}
+                                      </span>
+                                    )}
                                   </div>
 
                                   <button
