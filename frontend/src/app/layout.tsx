@@ -88,6 +88,8 @@ const jsonLd = {
   description: 'Free online media utility to analyze and download video, audio, and images from public links.',
 };
 
+import { SmoothScroll } from '@/components/layout/smooth-scroll';
+
 export default function RootLayout({
   children,
 }: {
@@ -102,11 +104,13 @@ export default function RootLayout({
         />
       </head>
       <body>
-        <div className="flex flex-col" style={{ minHeight: '100vh' }}>
-          <Header />
-          <main style={{ flex: 1 }}>{children}</main>
-          <Footer />
-        </div>
+        <SmoothScroll>
+          <div className="flex flex-col" style={{ minHeight: '100vh' }}>
+            <Header />
+            <main style={{ flex: 1 }}>{children}</main>
+            <Footer />
+          </div>
+        </SmoothScroll>
       </body>
     </html>
   );
