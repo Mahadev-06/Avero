@@ -641,10 +641,9 @@ def _download_sync(job_id: str, url: str, fmt: str, quality: str) -> str:
         "socket_timeout": 30,
         "retries": 5,
         "fragment_retries": 5,
-        "js_runtimes": {"node": {}},
         "extractor_args": {
             "youtube": {
-                "player_client": ["android", "ios"]
+                "player_client": ["android", "web", "mweb", "ios"]
             }
         },
         "http_headers": {
