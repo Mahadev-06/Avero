@@ -7,6 +7,7 @@ from app.platforms.direct_url import DirectURLAdapter
 
 router = APIRouter()
 
+@router.post("", response_model=AnalyzeResponse)
 @router.post("/", response_model=AnalyzeResponse)
 @limiter.limit("30/minute")
 async def analyze_urls(request: Request, body: AnalyzeRequest):

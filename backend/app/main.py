@@ -64,7 +64,7 @@ async def lifespan(app: FastAPI):
     except Exception:
         pass
 
-app = FastAPI(title=settings.PROJECT_NAME, version=settings.VERSION, lifespan=lifespan)
+app = FastAPI(title=settings.PROJECT_NAME, version=settings.VERSION, lifespan=lifespan, redirect_slashes=False)
 
 # Attach SlowAPI rate limiter to app state
 app.state.limiter = limiter

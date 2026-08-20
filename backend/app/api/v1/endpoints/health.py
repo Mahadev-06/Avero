@@ -4,6 +4,7 @@ from app.core.redis import get_redis
 
 router = APIRouter()
 
+@router.get("")
 @router.get("/")
 async def health_check():
     return {"status": "ok"}

@@ -54,6 +54,7 @@ def _is_allowed_social_domain(hostname: str) -> bool:
 # POST /start  —  Start a tracked download with progress
 # ──────────────────────────────────────────────────────────────
 @router.post("/start")
+@router.post("/start/")
 @limiter.limit("20/minute")
 async def start_download(request: Request, req: DownloadRequest):
     """
