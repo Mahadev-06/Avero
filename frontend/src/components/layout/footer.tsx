@@ -13,7 +13,7 @@ export function Footer() {
       }}
     >
       <div className="container" style={{ padding: '3.5rem 1.5rem 2.5rem 1.5rem' }}>
-        <div style={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: '3rem' }}>
+        <div className="footer-content" style={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: '3rem' }}>
           
           {/* Left Side: Brand Logo & Description */}
           <div style={{ maxWidth: '340px', flexShrink: 0 }}>
@@ -35,7 +35,7 @@ export function Footer() {
           </div>
 
           {/* Right Side: 3 Columns Always Placed Side-by-Side on the Right Edge */}
-          <div style={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap', gap: '3.5rem', marginLeft: 'auto' }}>
+          <div className="footer-links-wrap" style={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap', gap: '3.5rem', marginLeft: 'auto' }}>
             
             {/* Column 1: Supported Formats & Media */}
             <div style={{ display: 'flex', flexDirection: 'column', minWidth: '150px' }}>

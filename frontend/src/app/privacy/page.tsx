@@ -7,7 +7,7 @@ export const metadata = {
 
 export default function PrivacyPage() {
   return (
-    <div style={{ paddingTop: '8.5rem', paddingBottom: '6rem', backgroundColor: 'var(--bg-color)', minHeight: '100vh' }}>
+    <div style={{ paddingTop: 'clamp(5.5rem, 8vw, 8.5rem)', paddingBottom: 'clamp(3rem, 5vw, 6rem)', backgroundColor: 'var(--bg-color)', minHeight: '100vh' }}>
       <div className="container" style={{ maxWidth: '860px', margin: '0 auto', padding: '0 1.5rem' }}>
         
         {/* Breadcrumb Navigation */}
@@ -23,7 +23,7 @@ export default function PrivacyPage() {
         <h1
           style={{
             fontFamily: 'var(--font-heading)',
-            fontSize: 'clamp(2.2rem, 4vw, 3rem)',
+            fontSize: 'clamp(1.75rem, 4.5vw, 3rem)',
             fontWeight: 850,
             letterSpacing: '-0.03em',
             color: 'var(--text-color)',

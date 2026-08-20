@@ -186,11 +186,12 @@ export default function Home() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
       />
       {/* 1. HERO SECTION */}
-      <section style={{ paddingTop: '9.5rem', paddingBottom: '4.5rem', textAlign: 'center' }}>
+      <section className="hero-section" style={{ paddingTop: '9.5rem', paddingBottom: '4.5rem', textAlign: 'center' }}>
         <div className="container" style={{ maxWidth: '1180px' }}>
           
           {/* Main Headline (H1) with 3D TextLoop Animation */}
           <h1
+            className="hero-title"
             style={{
               fontFamily: 'var(--font-heading)',
               fontSize: 'clamp(2.1rem, 4.3vw, 3.65rem)',
@@ -257,7 +258,7 @@ export default function Home() {
 
       {/* Flaticon-style Trust Badges Bar */}
       <section style={{ boxShadow: 'var(--nm-inset-sm)', borderTop: '1px solid rgba(255, 255, 255, 0.3)', borderBottom: '1px solid rgba(0, 0, 0, 0.08)', backgroundColor: 'var(--bg-color)', padding: '1.25rem 0' }}>
-        <div className="container" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '2.5rem', flexWrap: 'wrap', fontSize: '0.88rem', fontWeight: 700, color: 'var(--text-color)' }}>
+        <div className="container trust-badges-bar" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '2.5rem', flexWrap: 'wrap', fontSize: '0.88rem', fontWeight: 700, color: 'var(--text-color)' }}>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
             <Zap className="w-4 h-4 text-amber-500" /> <strong>Fast Processing</strong>
           </span>
@@ -288,7 +289,7 @@ export default function Home() {
             </h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
             {toolsList.map((tool) => (
               <Link key={tool.title} href={tool.href} style={{ textDecoration: 'none' }}>
                 <Card className="card-editorial h-full transition-transform hover:-translate-y-1" style={{ cursor: 'pointer', borderRadius: '18px' }}>
@@ -316,7 +317,7 @@ export default function Home() {
             </h2>
           </div>
 
-          <div style={{ backgroundColor: 'var(--bg-color)', border: '1px solid rgba(255, 255, 255, 0.65)', borderRadius: '24px', overflow: 'hidden', boxShadow: '8px 8px 20px var(--neumorph-dark), -8px -8px 20px var(--neumorph-light)', padding: '0.5rem' }}>
+          <div className="table-responsive-container" style={{ backgroundColor: 'var(--bg-color)', border: '1px solid rgba(255, 255, 255, 0.65)', borderRadius: '24px', overflow: 'hidden', boxShadow: '8px 8px 20px var(--neumorph-dark), -8px -8px 20px var(--neumorph-light)', padding: '0.5rem' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid rgba(0, 0, 0, 0.08)', backgroundColor: 'rgba(0, 0, 0, 0.02)' }}>

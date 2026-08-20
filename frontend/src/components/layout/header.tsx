@@ -38,6 +38,7 @@ export function Header() {
       }}
     >
       <nav
+        className="nav-floating-pill"
         style={{
           pointerEvents: 'auto',
           display: 'inline-flex',
@@ -66,9 +67,10 @@ export function Header() {
         </Link>
 
         {/* Center Nav Links */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1.4rem' }}>
+        <div className="nav-links-wrap" style={{ display: 'flex', alignItems: 'center', gap: '1.4rem' }}>
           <Link
             href="/"
+            className="nav-link-item"
             style={{
               fontSize: '0.9rem',
               fontWeight: 700,
@@ -81,6 +83,7 @@ export function Header() {
           </Link>
           <Link
             href="/about"
+            className="nav-link-item"
             style={{
               fontSize: '0.9rem',
               fontWeight: 600,
@@ -95,6 +98,7 @@ export function Header() {
           </Link>
           <Link
             href="/#faq"
+            className="nav-link-item"
             style={{
               fontSize: '0.9rem',
               fontWeight: 600,

@@ -26,15 +26,15 @@ export default function TikTokDownloaderPage() {
 
   return (
     <div style={{ paddingBottom: '5rem' }}>
-      <section style={{ paddingTop: '6.5rem', paddingBottom: '3rem', textAlign: 'center' }}>
+      <section style={{ paddingTop: 'clamp(5.5rem, 8vw, 6.5rem)', paddingBottom: '2.5rem', textAlign: 'center' }}>
         <div className="container" style={{ maxWidth: '960px' }}>
           <div style={{ display: 'inline-flex', padding: '0.35rem 0.85rem', borderRadius: 'var(--radius-full)', backgroundColor: 'var(--bg-color)', border: '1px solid rgba(255,255,255,0.6)', boxShadow: '3px 3px 6px var(--neumorph-dark), -3px -3px 6px var(--neumorph-light)', fontSize: '0.75rem', fontWeight: 800, letterSpacing: '0.08em', color: 'var(--color-accent-500)', marginBottom: '1rem' }}>
             TIKTOK DOWNLOADER
           </div>
-          <h1 className="text-4xl font-extrabold" style={{ letterSpacing: '-0.02em', marginBottom: '0.75rem', lineHeight: 1.1 }}>
+          <h1 className="text-3xl sm:text-4xl font-extrabold" style={{ letterSpacing: '-0.02em', marginBottom: '0.75rem', lineHeight: 1.15 }}>
             TikTok HD Video Downloader
           </h1>
-          <h2 className="text-xl font-medium text-muted" style={{ marginBottom: '2.5rem' }}>
+          <h2 className="text-base sm:text-xl font-medium text-muted" style={{ marginBottom: '2rem' }}>
             Save trending TikTok videos in high resolution MP4
           </h2>
 

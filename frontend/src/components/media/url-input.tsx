@@ -696,6 +696,7 @@ export function UrlInput() {
       {/* 2. Main Minimal Search & Paste Bar */}
       <form onSubmit={handleSubmit} style={{ position: 'relative', width: '100%' }}>
         <div
+          className="input-bar-inner"
           style={{
             position: 'relative',
             display: 'flex',
@@ -741,7 +742,7 @@ export function UrlInput() {
                 style={{
                   width: '100%',
                   backgroundColor: 'transparent',
-                  fontSize: '1.1rem',
+                  fontSize: '1.05rem',
                   fontWeight: 500,
                   color: 'var(--text-color)',
                   outline: 'none',
@@ -766,7 +767,7 @@ export function UrlInput() {
                     zIndex: 1,
                     width: '100%',
                     color: 'var(--text-muted)',
-                    fontSize: '1.1rem',
+                    fontSize: '1.05rem',
                     fontWeight: 500,
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
@@ -789,14 +790,14 @@ export function UrlInput() {
             </div>
           )}
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginLeft: '0.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginLeft: '0.35rem' }}>
             {!analyzing && !searching && (
               inputValue.trim() ? (
                 <button
                   type="button"
                   onClick={handleClearInput}
                   title="Clear link"
-                  className="pill-btn"
+                  className="pill-btn input-action-btn"
                   style={{
                     padding: '0.45rem 0.95rem',
                     fontSize: '0.82rem',
@@ -814,7 +815,7 @@ export function UrlInput() {
                     type="button"
                     onClick={handlePaste}
                     title="Paste from clipboard"
-                    className="pill-btn"
+                    className="pill-btn input-action-btn"
                     style={{
                       padding: '0.45rem 0.95rem',
                       fontSize: '0.82rem',
@@ -834,7 +835,7 @@ export function UrlInput() {
                 type="button"
                 onClick={() => setIsMultiMode(!isMultiMode)}
                 title={isMultiMode ? "Switch to single URL mode" : "Switch to multi-URL batch mode"}
-                className="pill-btn"
+                className="pill-btn input-action-btn"
                 style={{
                   padding: '0.45rem 0.95rem',
                   fontSize: '0.82rem',
@@ -852,7 +853,7 @@ export function UrlInput() {
               type="submit"
               disabled={analyzing || searching}
               aria-label="Process link or search"
-              className="pill-btn-black"
+              className="pill-btn-black submit-action-btn"
               style={{
                 height: '44px',
                 minHeight: '44px',
@@ -1295,6 +1296,7 @@ export function UrlInput() {
             return (
               <div
                 key={item.id}
+                className="nm-result-card"
                 style={{
                   backgroundColor: 'var(--bg-color)',
                   border: '1px solid rgba(255, 255, 255, 0.65)',
@@ -1430,45 +1432,42 @@ export function UrlInput() {
                             {defaultImage.map((opt, idx) => (
                               <div
                                 key={opt.format_id}
+                                className="nm-format-row"
                                 style={{
-                                  display: 'grid',
-                                  gridTemplateColumns: 'auto 1fr auto auto',
-                                  alignItems: 'center',
-                                  padding: '0.65rem 1rem',
                                   borderBottom: idx === defaultImage.length - 1 ? 'none' : '1px solid rgba(0, 0, 0, 0.05)',
                                   backgroundColor: idx % 2 === 0 ? 'transparent' : 'rgba(0, 0, 0, 0.02)',
-                                  fontSize: '0.88rem',
-                                  gap: '0.75rem',
                                 }}
                               >
-                                <span
-                                  style={{
-                                    padding: '0.2rem 0.45rem',
-                                    borderRadius: '6px',
-                                    backgroundColor: 'var(--bg-color)',
-                                    border: '1px solid rgba(255, 255, 255, 0.6)',
-                                    boxShadow: '1px 1px 3px var(--neumorph-dark), -1px -1px 3px var(--neumorph-light)',
-                                    color: 'var(--color-accent-500)',
-                                    fontSize: '0.72rem',
-                                    fontWeight: 900,
-                                    letterSpacing: '0.02em',
-                                    whiteSpace: 'nowrap',
-                                  }}
-                                >
-                                  {opt.ext}
-                                </span>
+                                <div className="nm-format-info">
+                                  <span
+                                    style={{
+                                      padding: '0.2rem 0.45rem',
+                                      borderRadius: '6px',
+                                      backgroundColor: 'var(--bg-color)',
+                                      border: '1px solid rgba(255, 255, 255, 0.6)',
+                                      boxShadow: '1px 1px 3px var(--neumorph-dark), -1px -1px 3px var(--neumorph-light)',
+                                      color: 'var(--color-accent-500)',
+                                      fontSize: '0.72rem',
+                                      fontWeight: 900,
+                                      letterSpacing: '0.02em',
+                                      whiteSpace: 'nowrap',
+                                    }}
+                                  >
+                                    {opt.ext}
+                                  </span>
 
-                                <span style={{ fontWeight: 800, color: 'var(--text-color)', fontSize: '0.88rem', whiteSpace: 'nowrap', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                  {opt.quality}
-                                </span>
+                                  <span className="nm-format-quality">
+                                    {opt.quality}
+                                  </span>
 
-                                <span className="tabular-nums" style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-muted)', whiteSpace: 'nowrap', textAlign: 'right', paddingRight: '0.35rem' }}>
-                                  {opt.file_size_formatted}
-                                </span>
+                                  <span className="nm-format-size tabular-nums" style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-muted)', whiteSpace: 'nowrap', textAlign: 'right', paddingRight: '0.35rem' }}>
+                                    {opt.file_size_formatted}
+                                  </span>
+                                </div>
 
                                 <button
                                   type="button"
-                                  className="pill-btn"
+                                  className="pill-btn nm-format-btn"
                                   style={{
                                     color: '#16a34a',
                                     fontWeight: 800,
@@ -1523,45 +1522,42 @@ export function UrlInput() {
                               {defaultVideo.map((opt, idx) => (
                                 <div
                                   key={opt.format_id}
+                                  className="nm-format-row"
                                   style={{
-                                    display: 'grid',
-                                    gridTemplateColumns: 'auto 1fr auto auto',
-                                    alignItems: 'center',
-                                    padding: '0.65rem 1rem',
                                     borderBottom: idx === defaultVideo.length - 1 ? 'none' : '1px solid rgba(0, 0, 0, 0.05)',
                                     backgroundColor: idx % 2 === 0 ? 'transparent' : 'rgba(0, 0, 0, 0.02)',
-                                    fontSize: '0.88rem',
-                                    gap: '0.75rem',
                                   }}
                                 >
-                                  <span
-                                    style={{
-                                      padding: '0.2rem 0.45rem',
-                                      borderRadius: '6px',
-                                      backgroundColor: 'var(--bg-color)',
-                                      border: '1px solid rgba(255, 255, 255, 0.6)',
-                                      boxShadow: '1px 1px 3px var(--neumorph-dark), -1px -1px 3px var(--neumorph-light)',
-                                      color: 'var(--color-accent-500)',
-                                      fontSize: '0.72rem',
-                                      fontWeight: 900,
-                                      letterSpacing: '0.02em',
-                                      whiteSpace: 'nowrap',
-                                    }}
-                                  >
-                                    {opt.ext}
-                                  </span>
+                                  <div className="nm-format-info">
+                                    <span
+                                      style={{
+                                        padding: '0.2rem 0.45rem',
+                                        borderRadius: '6px',
+                                        backgroundColor: 'var(--bg-color)',
+                                        border: '1px solid rgba(255, 255, 255, 0.6)',
+                                        boxShadow: '1px 1px 3px var(--neumorph-dark), -1px -1px 3px var(--neumorph-light)',
+                                        color: 'var(--color-accent-500)',
+                                        fontSize: '0.72rem',
+                                        fontWeight: 900,
+                                        letterSpacing: '0.02em',
+                                        whiteSpace: 'nowrap',
+                                      }}
+                                    >
+                                      {opt.ext}
+                                    </span>
 
-                                  <span style={{ fontWeight: 800, color: 'var(--text-color)', fontSize: '0.88rem', whiteSpace: 'nowrap', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                    {opt.quality}
-                                  </span>
+                                    <span className="nm-format-quality">
+                                      {opt.quality}
+                                    </span>
 
-                                  <span className="tabular-nums" style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-muted)', whiteSpace: 'nowrap', textAlign: 'right', paddingRight: '0.35rem' }}>
-                                    {opt.file_size_formatted}
-                                  </span>
+                                    <span className="nm-format-size tabular-nums" style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-muted)', whiteSpace: 'nowrap', textAlign: 'right', paddingRight: '0.35rem' }}>
+                                      {opt.file_size_formatted}
+                                    </span>
+                                  </div>
 
                                   <button
                                     type="button"
-                                    className="pill-btn"
+                                    className="pill-btn nm-format-btn"
                                     style={{
                                       color: '#16a34a',
                                       fontWeight: 800,
@@ -1616,45 +1612,42 @@ export function UrlInput() {
                               {defaultAudio.map((opt, idx) => (
                                 <div
                                   key={opt.format_id}
+                                  className="nm-format-row"
                                   style={{
-                                    display: 'grid',
-                                    gridTemplateColumns: 'auto 1fr auto auto',
-                                    alignItems: 'center',
-                                    padding: '0.65rem 1rem',
                                     borderBottom: idx === defaultAudio.length - 1 ? 'none' : '1px solid rgba(0, 0, 0, 0.05)',
                                     backgroundColor: idx % 2 === 0 ? 'transparent' : 'rgba(0, 0, 0, 0.02)',
-                                    fontSize: '0.88rem',
-                                    gap: '0.75rem',
                                   }}
                                 >
-                                  <span
-                                    style={{
-                                      padding: '0.2rem 0.45rem',
-                                      borderRadius: '6px',
-                                      backgroundColor: 'var(--bg-color)',
-                                      border: '1px solid rgba(255, 255, 255, 0.6)',
-                                      boxShadow: '1px 1px 3px var(--neumorph-dark), -1px -1px 3px var(--neumorph-light)',
-                                      color: 'var(--color-accent-500)',
-                                      fontSize: '0.72rem',
-                                      fontWeight: 900,
-                                      letterSpacing: '0.02em',
-                                      whiteSpace: 'nowrap',
-                                    }}
-                                  >
-                                    {opt.ext}
-                                  </span>
+                                  <div className="nm-format-info">
+                                    <span
+                                      style={{
+                                        padding: '0.2rem 0.45rem',
+                                        borderRadius: '6px',
+                                        backgroundColor: 'var(--bg-color)',
+                                        border: '1px solid rgba(255, 255, 255, 0.6)',
+                                        boxShadow: '1px 1px 3px var(--neumorph-dark), -1px -1px 3px var(--neumorph-light)',
+                                        color: 'var(--color-accent-500)',
+                                        fontSize: '0.72rem',
+                                        fontWeight: 900,
+                                        letterSpacing: '0.02em',
+                                        whiteSpace: 'nowrap',
+                                      }}
+                                    >
+                                      {opt.ext}
+                                    </span>
 
-                                  <span style={{ fontWeight: 800, color: 'var(--text-color)', fontSize: '0.88rem', whiteSpace: 'nowrap', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                    {opt.quality}
-                                  </span>
+                                    <span className="nm-format-quality">
+                                      {opt.quality}
+                                    </span>
 
-                                  <span className="tabular-nums" style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-muted)', whiteSpace: 'nowrap', textAlign: 'right', paddingRight: '0.35rem' }}>
-                                    {opt.file_size_formatted}
-                                  </span>
+                                    <span className="nm-format-size tabular-nums" style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-muted)', whiteSpace: 'nowrap', textAlign: 'right', paddingRight: '0.35rem' }}>
+                                      {opt.file_size_formatted}
+                                    </span>
+                                  </div>
 
                                   <button
                                     type="button"
-                                    className="pill-btn"
+                                    className="pill-btn nm-format-btn"
                                     style={{
                                       color: '#16a34a',
                                       fontWeight: 800,

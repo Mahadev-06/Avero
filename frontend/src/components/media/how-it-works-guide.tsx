@@ -132,7 +132,7 @@ export function HowItWorksGuide() {
             borderRadius: '24px',
             boxShadow: '8px 8px 20px var(--neumorph-dark), -8px -8px 20px var(--neumorph-light)',
             border: '1px solid rgba(255, 255, 255, 0.65)',
-            padding: '2.5rem 1.75rem',
+            padding: 'clamp(1.25rem, 3.5vw, 2.5rem) clamp(1rem, 2.5vw, 1.75rem)',
             position: 'relative',
           }}
         >

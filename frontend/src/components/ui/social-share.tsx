@@ -88,6 +88,7 @@ export function SocialShareButton({
       className="relative inline-flex"
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
+      onClick={() => setHovered((prev) => !prev)}
     >
       <div
         style={{
