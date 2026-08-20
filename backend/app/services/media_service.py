@@ -436,51 +436,43 @@ def _resolve_image_url(url: str) -> Optional[str]:
             if "i.redd.it" in url or "preview.redd.it" in url:
                 return url
             
-            from urllib.parse import urlunparse
-            old_url = urlunparse(parsed._replace(netloc="old.reddit.com"))
-            headers = {
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+            crawler_headers = {
+                "User-Agent": "facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)",
                 "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
             }
-            with httpx.Client(follow_redirects=True, timeout=10.0, headers=headers) as client:
-                resp = client.get(old_url)
+            with httpx.Client(follow_redirects=True, timeout=8.0, headers=crawler_headers) as client:
+                resp = client.get(url)
                 html = resp.text
-                
-                # Check data-url
-                data_match = re.search(r'<div[^>]+class=["\'][^"\']*thing[^"\']*["\'][^>]+data-url=["\']([^"\']+)["\']', html)
-                if data_match:
-                    media_link = data_match.group(1).replace("&amp;", "&")
-                    if any(media_link.lower().endswith(ext) for ext in (".jpg", ".jpeg", ".png", ".webp", ".gif")) or "i.redd.it" in media_link or "preview.redd.it" in media_link:
-                        return media_link
+                og_img = re.search(r'<meta\s+property=["\']og:image["\']\s+content=["\']([^"\']+)["\']', html)
+                if og_img:
+                    img_url = og_img.group(1).replace("&amp;", "&")
+                    if not any(img_url.endswith(e) for e in ("reddit_icon.png", "reddit_logo.png", "favicon.ico")):
+                        return img_url
 
-                # Check preview images in html
-                preview_match = re.search(r'https://(?:preview|i)\.redd\.it/[a-zA-Z0-9._\-?=&;]+', html)
-                if preview_match:
-                    return preview_match.group(0).replace("&amp;", "&")
-                
-                # Check oEmbed
-                oe_url = f"https://www.reddit.com/oembed?url={url}"
-                oe_resp = client.get(oe_url)
-                if oe_resp.status_code == 200:
-                    thumb = oe_resp.json().get("thumbnail_url")
-                    if thumb:
-                        return thumb
+            with httpx.Client(follow_redirects=True, timeout=8.0) as client:
+                r = client.get(f"https://rapidsave.com/info?url={url}", headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"})
+                if r.status_code == 200:
+                    img_match = re.search(r'href=["\'](https?://i\.redd\.it/[^"\']+)["\']', r.text)
+                    if img_match:
+                        return img_match.group(1)
         except Exception:
             pass
 
     # 4. Threads photo
     if "threads.net" in url or "threads.com" in url:
         try:
-            headers = {
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+            crawler_headers = {
+                "User-Agent": "facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)",
                 "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
             }
-            with httpx.Client(follow_redirects=True, timeout=10.0, headers=headers) as client:
+            with httpx.Client(follow_redirects=True, timeout=8.0, headers=crawler_headers) as client:
                 resp = client.get(url)
                 html = resp.text
                 og_img = re.search(r'<meta\s+property=["\']og:image["\']\s+content=["\']([^"\']+)["\']', html)
                 if og_img:
-                    return og_img.group(1).replace("&amp;", "&")
+                    img_url = og_img.group(1).replace("&amp;", "&")
+                    if not any(img_url.endswith(e) for e in ("favicon.ico", "threads_logo.png", "kHwIMM5b8PW.webp")):
+                        return img_url
         except Exception:
             pass
 
@@ -490,7 +482,7 @@ def _resolve_image_url(url: str) -> Optional[str]:
             'quiet': True,
             'skip_download': True,
             'http_headers': {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/124.0.0.0',
             }
         }
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -503,6 +495,54 @@ def _resolve_image_url(url: str) -> Optional[str]:
                     return thumb
     except Exception:
         pass
+
+    return None
+
+
+def _resolve_video_url(url: str) -> str | None:
+    """Resolve direct video stream URL for Reddit or Threads."""
+    import httpx
+    if "reddit.com" in url or "redd.it" in url:
+        try:
+            # 1. Social Crawler OpenGraph
+            crawler_headers = {
+                "User-Agent": "facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)",
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            }
+            with httpx.Client(follow_redirects=True, timeout=8.0, headers=crawler_headers) as client:
+                resp = client.get(url)
+                og_vid = re.search(r'<meta\s+property=["\']og:video(?::secure_url)?["\']\s+content=["\']([^"\']+)["\']', resp.text)
+                if og_vid:
+                    return og_vid.group(1).replace("&amp;", "&")
+
+            # 2. Rapidsave
+            with httpx.Client(follow_redirects=True, timeout=8.0) as client:
+                r = client.get(f"https://rapidsave.com/info?url={url}", headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"})
+                if r.status_code == 200:
+                    btn_match = re.search(r'class=["\'][^"\']*downloadbutton[^"\']*["\'][^>]*href=["\']([^"\']+)["\']', r.text)
+                    if btn_match:
+                        dl_path = btn_match.group(1)
+                        return f"https://rapidsave.com{dl_path}" if dl_path.startswith("/") else dl_path
+        except Exception:
+            pass
+
+    if "threads.net" in url or "threads.com" in url:
+        try:
+            crawler_headers = {
+                "User-Agent": "facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)",
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            }
+            with httpx.Client(follow_redirects=True, timeout=8.0, headers=crawler_headers) as client:
+                resp = client.get(url)
+                html = resp.text
+                og_vid = re.search(r'<meta\s+property=["\']og:video(?::secure_url)?["\']\s+content=["\']([^"\']+)["\']', html)
+                if og_vid:
+                    return og_vid.group(1).replace("&amp;", "&")
+                mp4_matches = re.findall(r'https?:\\?/\\?/[^"\'\\ ]+?(?:cdninstagram\.com|fbcdn\.net)[^"\'\\ ]*?\.mp4[^"\'\\ ]*', html)
+                if mp4_matches:
+                    return mp4_matches[0].replace(r"\u0026", "&").replace(r"\/", "/")
+        except Exception:
+            pass
 
     return None
 
@@ -571,7 +611,7 @@ def _download_video_direct_sync(job_id: str, video_url: str, is_audio: bool = Fa
         "Accept": "*/*",
     }
 
-    with httpx.Client(follow_redirects=True, timeout=60.0) as client:
+    with httpx.Client(follow_redirects=True, timeout=60.0, headers=headers) as client:
         with client.stream("GET", video_url, headers=headers) as resp:
             resp.raise_for_status()
             total_size = int(resp.headers.get("content-length", 0))
@@ -599,15 +639,9 @@ def _download_video_direct_sync(job_id: str, video_url: str, is_audio: bool = Fa
     else:
         final_file = _ensure_mp4_video(raw_path, target_mp4)
 
-    # Clean up raw temp file
-    if os.path.exists(raw_path) and raw_path != final_file:
-        try:
-            os.remove(raw_path)
-        except OSError:
-            pass
-
-    file_size = os.path.getsize(final_file)
-    clean_filename = sanitize_filename(os.path.basename(final_file))
+    file_size = os.path.getsize(final_file) if os.path.exists(final_file) else 0
+    raw_filename = os.path.basename(final_file)
+    clean_filename = sanitize_filename(raw_filename)
 
     _progress_store[job_id] = DownloadProgress(
         job_id=job_id,
@@ -663,7 +697,7 @@ def _download_sync(job_id: str, url: str, fmt: str, quality: str) -> str:
         or "audio" in fmt.lower()
     )
 
-    if (is_image or "pinterest.com" in url or "pin.it" in url) and not is_video_or_audio_fmt:
+    if (is_image or "pinterest.com" in url or "pin.it" in url or "reddit.com" in url or "redd.it" in url) and not is_video_or_audio_fmt:
         direct_img = _resolve_image_url(url)
         if direct_img:
             return _download_image_sync(job_id, direct_img, fmt)
@@ -689,6 +723,14 @@ def _download_sync(job_id: str, url: str, fmt: str, quality: str) -> str:
             return _download_video_direct_sync(job_id, url, is_audio, audio_quality)
         except Exception:
             pass
+
+    if ("reddit.com" in url or "redd.it" in url or "threads.net" in url or "threads.com" in url) and is_video_or_audio_fmt:
+        direct_vid = _resolve_video_url(url)
+        if direct_vid:
+            try:
+                return _download_video_direct_sync(job_id, direct_vid, is_audio, audio_quality)
+            except Exception:
+                pass
     format_string = _build_ytdlp_format(fmt, quality)
 
     unique_name = f"media_{uuid.uuid4().hex[:12]}"

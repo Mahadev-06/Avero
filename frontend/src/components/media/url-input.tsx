@@ -1269,10 +1269,7 @@ export function UrlInput() {
               )
             );
 
-            const hasVideoFormats = formatOpts.some((f) => f.media_category === 'video');
-            const isImageMedia =
-              (item.info.media_type === 'image' && !hasVideoFormats) ||
-              isExplicitDirectImage;
+            const isImageMedia = item.info.media_type === 'image' || isExplicitDirectImage;
 
             const imageFormats = formatOpts.filter((f) => f.media_category === 'image');
             const videoFormats = formatOpts.filter((f) => f.media_category === 'video');

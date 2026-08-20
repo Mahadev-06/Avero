@@ -236,7 +236,7 @@ async def _scrape_reddit(url: str) -> dict:
         resolve_and_check(parsed.hostname)
 
     try:
-        # Handle direct i.redd.it image
+        # Handle direct i.redd.it image or direct image extension
         if "i.redd.it" in url or "preview.redd.it" in url or any(url.lower().endswith(ext) for ext in (".jpg", ".jpeg", ".png", ".webp", ".gif")):
             return {
                 "title": "Reddit Image Post",
@@ -244,98 +244,80 @@ async def _scrape_reddit(url: str) -> dict:
                 "is_image": True,
             }
 
-        # 1. Fetch official Reddit oEmbed for accurate Title and Author
-        oembed_url = f"https://www.reddit.com/oembed?url={url}"
-        headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+        crawler_headers = {
+            "User-Agent": "facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)",
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
         }
         title = "Reddit Post"
         thumb_img = None
-        async with httpx.AsyncClient(follow_redirects=True, timeout=8.0) as client:
-            resp = await client.get(oembed_url, headers=headers)
-            if resp.status_code == 200:
-                oe_data = resp.json()
-                title = oe_data.get("title") or title
-                thumb_img = oe_data.get("thumbnail_url")
 
-        # 2. Fetch old.reddit.com for accurate media stream (data-url or preview)
-        from urllib.parse import urlunparse
-        old_url = urlunparse(parsed._replace(netloc="old.reddit.com"))
-        async with httpx.AsyncClient(follow_redirects=True, timeout=8.0) as client:
-            r = await client.get(old_url, headers=headers)
-            if r.status_code == 200:
-                html = r.text
-                data_match = re.search(r'data-url=["\']([^"\']+)["\']', html)
-                if data_match:
-                    media_url = data_match.group(1).replace("&amp;", "&")
-                    if "v.redd.it" in media_url or "youtube.com" in media_url or "youtu.be" in media_url:
-                        return {
-                            "title": title,
-                            "video_url": media_url,
-                            "thumbnail": thumb_img,
-                            "is_image": False,
-                        }
-                    if any(media_url.lower().endswith(ext) for ext in (".jpg", ".jpeg", ".png", ".webp", ".gif")) or "i.redd.it" in media_url or "preview.redd.it" in media_url:
-                        return {
-                            "title": title,
-                            "image_url": media_url,
-                            "is_image": True,
-                        }
-
-                preview_match = re.search(r'https://(?:i|preview)\.redd\.it/[a-zA-Z0-9._\-]+', html)
-                if preview_match:
-                    return {
-                        "title": title,
-                        "image_url": preview_match.group(0),
-                        "is_image": True,
-                    }
-
-        # 3. Try OpenGraph / HTML scraping for high-res photo or video
-        async with httpx.AsyncClient(follow_redirects=True, timeout=8.0) as client:
-            html_resp = await client.get(url, headers=headers)
-            html = html_resp.text
-            og_img = re.search(r'<meta\s+property=["\']og:image["\']\s+content=["\']([^"\']+)["\']', html)
+        # 1. Social Crawler OpenGraph Fetch (Bypasses JS Challenge)
+        async with httpx.AsyncClient(follow_redirects=True, timeout=10.0, headers=crawler_headers) as client:
+            resp = await client.get(url)
+            html = resp.text
+            
             og_vid = re.search(r'<meta\s+property=["\']og:video(?::secure_url)?["\']\s+content=["\']([^"\']+)["\']', html)
+            og_img = re.search(r'<meta\s+property=["\']og:image["\']\s+content=["\']([^"\']+)["\']', html)
+            og_title = re.search(r'<meta\s+property=["\']og:title["\']\s+content=["\']([^"\']+)["\']', html)
+
+            if og_title:
+                raw_title = og_title.group(1).replace("&amp;", "&")
+                title = re.sub(r'^(?:\[Mature Content\]\s*)?From the .*? community on Reddit:\s*', '', raw_title)
 
             if og_vid:
                 return {
-                    "title": title,
+                    "title": title or "Reddit Video",
                     "video_url": og_vid.group(1).replace("&amp;", "&"),
-                    "thumbnail": og_img.group(1).replace("&amp;", "&") if og_img else thumb_img,
+                    "thumbnail": og_img.group(1).replace("&amp;", "&") if og_img else None,
                     "is_image": False,
                 }
-            elif og_img:
+            
+            if og_img:
                 img_url = og_img.group(1).replace("&amp;", "&")
-                if not any(img_url.endswith(e) for e in ("reddit_icon.png", "reddit_logo.png", "favicon.ico")):
+                if "i.redd.it" in img_url or "preview.redd.it" in img_url or not any(img_url.endswith(e) for e in ("reddit_icon.png", "reddit_logo.png", "favicon.ico")):
                     return {
-                        "title": title,
+                        "title": title or "Reddit Image",
                         "image_url": img_url,
                         "is_image": True,
                     }
 
-        # 4. RapidSave fallback for Reddit videos
+        # 2. RapidSave fallback for Reddit media
         async with httpx.AsyncClient(follow_redirects=True, timeout=8.0) as client:
             rapid_url = f"https://rapidsave.com/info?url={url}"
             r = await client.get(rapid_url, headers={"user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36", "referer": "https://rapidsave.com/"})
             if r.status_code == 200:
+                img_match = re.search(r'href=["\'](https?://i\.redd\.it/[^"\']+)["\']', r.text)
+                if img_match:
+                    return {
+                        "title": title or "Reddit Image",
+                        "image_url": img_match.group(1),
+                        "is_image": True,
+                    }
                 btn_match = re.search(r'class=["\'][^"\']*downloadbutton[^"\']*["\'][^>]*href=["\']([^"\']+)["\']', r.text)
                 if btn_match:
                     dl_path = btn_match.group(1)
                     full_dl = f"https://rapidsave.com{dl_path}" if dl_path.startswith("/") else dl_path
                     return {
-                        "title": title,
+                        "title": title or "Reddit Video",
                         "video_url": full_dl,
                         "thumbnail": thumb_img,
                         "is_image": False,
                     }
 
-        if thumb_img and any(thumb_img.endswith(e) for e in (".jpg", ".jpeg", ".png", ".webp", ".gif")):
-            return {
-                "title": title,
-                "image_url": thumb_img,
-                "is_image": True,
-            }
+        # 3. Official Reddit oEmbed fallback
+        oembed_url = f"https://www.reddit.com/oembed?url={url}"
+        async with httpx.AsyncClient(follow_redirects=True, timeout=6.0, headers={"User-Agent": "Mozilla/5.0"}) as client:
+            resp = await client.get(oembed_url)
+            if resp.status_code == 200:
+                oe_data = resp.json()
+                title = oe_data.get("title") or title
+                thumb_img = oe_data.get("thumbnail_url")
+                if thumb_img and any(thumb_img.endswith(e) for e in (".jpg", ".jpeg", ".png", ".webp", ".gif")):
+                    return {
+                        "title": title,
+                        "image_url": thumb_img,
+                        "is_image": True,
+                    }
     except Exception:
         pass
 
@@ -347,26 +329,42 @@ async def _scrape_threads(url: str) -> dict:
     if parsed.hostname:
         resolve_and_check(parsed.hostname)
 
-    try:
-        headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
-            "Accept-Language": "en-US,en;q=0.9",
-            "Sec-Fetch-Mode": "navigate",
+    if any(url.lower().endswith(ext) or f"{ext}?" in url.lower() for ext in (".mp4", ".m4v", ".mov", ".webm")) or "cdninstagram.com" in url or "fbcdn.net" in url:
+        return {
+            "title": "Threads Video",
+            "video_url": url,
+            "is_image": False,
         }
-        
-        # 1. OpenGraph & Script Scraping
-        async with httpx.AsyncClient(follow_redirects=True, timeout=10.0) as client:
-            resp = await client.get(url, headers=headers)
+
+    if any(url.lower().endswith(ext) or f"{ext}?" in url.lower() for ext in (".jpg", ".jpeg", ".png", ".webp", ".gif")):
+        return {
+            "title": "Threads Photo",
+            "image_url": url,
+            "is_image": True,
+        }
+
+    crawler_headers = {
+        "User-Agent": "facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    }
+    
+    title = "Threads Video"
+    thumbnail_img = None
+
+    try:
+        # 1. Social Crawler OpenGraph & Embedded Script Scraping
+        async with httpx.AsyncClient(follow_redirects=True, timeout=10.0, headers=crawler_headers) as client:
+            resp = await client.get(url)
             html = resp.text
             
             og_vid = re.search(r'<meta\s+property=["\']og:video(?::secure_url)?["\']\s+content=["\']([^"\']+)["\']', html)
             og_img = re.search(r'<meta\s+property=["\']og:image["\']\s+content=["\']([^"\']+)["\']', html)
             og_title = re.search(r'<meta\s+property=["\']og:title["\']\s+content=["\']([^"\']+)["\']', html)
             
-            title = og_title.group(1) if og_title else "Threads Video"
-            if not title or "Log in" in title or "Threads •" in title or "Threads &#x2022;" in title:
-                title = "Threads Video"
+            if og_title:
+                raw_title = og_title.group(1).replace("&amp;", "&")
+                if raw_title and not any(k in raw_title for k in ("Log in", "Threads •", "Threads &#x2022;")):
+                    title = raw_title
             
             if og_vid:
                 return {
@@ -376,35 +374,28 @@ async def _scrape_threads(url: str) -> dict:
                     "is_image": False,
                 }
 
-            # Search for embedded video in JSON script tags
-            scripts = re.findall(r'<script\s+type=["\']application/json["\'][^>]*>(.*?)</script>', html, re.DOTALL)
-            for s in scripts:
-                if "video_versions" in s or "playback_url" in s or ".mp4" in s:
-                    video_matches = re.findall(r'"video_versions":\s*\[(.*?)\]', s)
-                    for vm in video_matches:
-                        urls = re.findall(r'"url":\s*"([^"]+)"', vm)
-                        if urls:
-                            clean_url = urls[0].replace(r"\u0026", "&").replace(r"\/", "/")
-                            return {
-                                "title": title,
-                                "video_url": clean_url,
-                                "thumbnail": og_img.group(1).replace("&amp;", "&") if og_img else None,
-                                "is_image": False,
-                            }
-                    mp4_urls = re.findall(r'https://[^"\'\\ ]+?(?:cdninstagram\.com|fbcdn\.net)[^"\'\\ ]*?\.mp4[^"\'\\ ]*', s)
-                    if mp4_urls:
-                        clean_url = mp4_urls[0].replace(r"\u0026", "&").replace(r"\/", "/")
-                        return {
-                            "title": title,
-                            "video_url": clean_url,
-                            "thumbnail": og_img.group(1).replace("&amp;", "&") if og_img else None,
-                            "is_image": False,
-                        }
+            # Search for embedded video in HTML or JSON script tags
+            mp4_matches = re.findall(r'https?:\\?/\\?/[^"\'\\ ]+?(?:cdninstagram\.com|fbcdn\.net)[^"\'\\ ]*?\.mp4[^"\'\\ ]*', html)
+            if mp4_matches:
+                clean_url = mp4_matches[0].replace(r"\u0026", "&").replace(r"\/", "/")
+                return {
+                    "title": title,
+                    "video_url": clean_url,
+                    "thumbnail": og_img.group(1).replace("&amp;", "&") if og_img else None,
+                    "is_image": False,
+                }
 
             if og_img:
                 img_url = og_img.group(1).replace("&amp;", "&")
-                if not any(img_url.endswith(e) for e in ("favicon.ico", "threads_logo.png")):
+                if not any(img_url.endswith(e) for e in ("favicon.ico", "threads_logo.png", "kHwIMM5b8PW.webp")):
                     thumbnail_img = img_url
+                    # Only treat as image if no video indicator exists
+                    if not any(k in html.lower() for k in ("video_versions", "playback_url", "videoobject", "playable")):
+                        return {
+                            "title": title if title != "Threads Video" else "Threads Photo",
+                            "image_url": img_url,
+                            "is_image": True,
+                        }
 
         # 2. lovethreads.net API fallback
         async with httpx.AsyncClient(follow_redirects=True, timeout=8.0) as client:
@@ -426,22 +417,23 @@ async def _scrape_threads(url: str) -> dict:
                     p_match = re.search(r'<img[^>]+src=["\'](https?://[^"\']+)["\']', data_html)
                     if v_match:
                         return {
-                            "title": "Threads Video",
+                            "title": title or "Threads Video",
                             "video_url": v_match.group(1),
                             "thumbnail": p_match.group(1) if p_match else thumbnail_img,
                             "is_image": False,
                         }
-                    elif p_match and not v_match:
+                    elif p_match and not any(k in data_html.lower() for k in ("download video", "video", ".mp4")):
                         return {
-                            "title": "Threads Photo",
+                            "title": title or "Threads Photo",
                             "image_url": p_match.group(1),
                             "is_image": True,
                         }
     except Exception:
         pass
 
+    # Default to Video so that video format options are displayed and handled properly
     return {
-        "title": "Threads Video",
+        "title": title,
         "video_url": url,
         "thumbnail": thumbnail_img,
         "is_image": False,
