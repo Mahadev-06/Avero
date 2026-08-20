@@ -485,7 +485,8 @@ export function UrlInput() {
             r.id === item.id ? { ...r, downloadState: 'failed' as const, progress: finalProgress } : r
           )
         );
-        setStatusMsg(finalProgress.error ? `Download failed: ${finalProgress.error}` : 'Download failed. Please retry.');
+        const errText = finalProgress.error || 'Download failed. Please retry.';
+        setStatusMsg(errText.startsWith('Unfortunately') || errText.startsWith('Unable') || errText.startsWith('Access') || errText.startsWith('This media') ? errText : `Download failed: ${errText}`);
       }
     } catch (err) {
       console.error('Download error:', err);

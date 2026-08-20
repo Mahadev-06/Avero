@@ -46,8 +46,21 @@ _file_store: dict[str, str] = {}
 _timestamp_store: dict[str, float] = {}
 
 
+def _is_youtube_bot_challenge(exc: Exception) -> bool:
+    """Detect YouTube BotGuard / Sign in to confirm you're not a bot challenge."""
+    msg = str(exc).lower()
+    return (
+        "sign in to confirm you're not a bot" in msg
+        or "sign in to confirm you’re not a bot" in msg
+        or "botguard" in msg
+        or ("bot" in msg and ("sign in" in msg or "confirm" in msg or "challenge" in msg))
+    )
+
+
 def _sanitize_error_message(exc: Exception) -> str:
     """Sanitize internal errors to prevent leaking server paths, stack traces, or credentials."""
+    if _is_youtube_bot_challenge(exc):
+        return "Unfortunately, YouTube downloads are currently unavailable from our server. Please try again later."
     msg = str(exc).lower()
     if isinstance(exc, SSRFBlockedError) or "ssrf" in msg:
         return "Access to the requested resource is not permitted."
@@ -631,6 +644,9 @@ def _download_sync(job_id: str, url: str, fmt: str, quality: str) -> str:
     unique_name = f"media_{uuid.uuid4().hex[:12]}"
     output_path = str(TEMP_DOWNLOAD_DIR / unique_name)
 
+    start_time = time.time()
+    is_youtube = "youtube.com" in url or "youtu.be" in url
+
     ydl_opts = {
         "outtmpl": output_path,
         "format": format_string,
@@ -639,8 +655,8 @@ def _download_sync(job_id: str, url: str, fmt: str, quality: str) -> str:
         "overwrites": True,
         "progress_hooks": [_make_progress_hook(job_id)],
         "socket_timeout": 30,
-        "retries": 5,
-        "fragment_retries": 5,
+        "retries": 1 if is_youtube else 5,
+        "fragment_retries": 1 if is_youtube else 5,
         "extractor_args": {
             "youtube": {
                 "player_client": ["ios", "android"]
@@ -713,67 +729,88 @@ def _download_sync(job_id: str, url: str, fmt: str, quality: str) -> str:
         )
         _file_store[job_id] = actual_file
 
-        logger.info("download_completed", job_id=job_id, size=file_size)
+        duration = round(time.time() - start_time, 3)
+        logger.info("download_completed", job_id=job_id, size=file_size, processing_duration=duration)
         return actual_file
 
     except Exception as e:
-        # 1. Fallback for Reddit videos via RapidSave
-        if "reddit.com" in url or "redd.it" in url:
-            try:
-                rapid_url = f"https://rapidsave.com/info?url={url}"
-                with httpx.Client(follow_redirects=True, timeout=10.0, headers={"user-agent": "Mozilla/5.0", "referer": "https://rapidsave.com/"}) as client:
-                    r = client.get(rapid_url)
-                    if r.status_code == 200:
-                        btn_match = re.search(r'class=["\'][^"\']*downloadbutton[^"\']*["\'][^>]*href=["\']([^"\']+)["\']', r.text)
-                        if btn_match:
-                            dl_path = btn_match.group(1)
-                            full_dl = f"https://rapidsave.com{dl_path}" if dl_path.startswith("/") else dl_path
-                            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                                ydl.download([full_dl])
-                            actual_file = _find_output_file(output_path)
-                            if actual_file and os.path.exists(actual_file):
-                                actual_file = _ensure_mp4_video(actual_file, f"{output_path}.mp4")
-                                file_size = os.path.getsize(actual_file)
-                                raw_filename = os.path.basename(actual_file)
-                                clean_filename = sanitize_filename(raw_filename)
-                                _progress_store[job_id] = DownloadProgress(
-                                    job_id=job_id,
-                                    status=JobStatus.COMPLETED,
-                                    percent=100.0,
-                                    speed="",
-                                    eta="",
-                                    file_size=file_size,
-                                    filename=clean_filename,
-                                    )
-                                _file_store[job_id] = actual_file
-                                logger.info("download_completed_via_rapidsave", job_id=job_id, size=file_size)
-                                return actual_file
-            except Exception:
-                pass
+        duration = round(time.time() - start_time, 3)
+        if is_youtube and _is_youtube_bot_challenge(e):
+            logger.warning(
+                "media_download_failed",
+                platform="youtube",
+                error_category="bot_challenge",
+                job_id=job_id,
+                timestamp=time.time(),
+                processing_duration=duration,
+            )
+        else:
+            logger.error(
+                "download_failed",
+                job_id=job_id,
+                platform="youtube" if is_youtube else "other",
+                processing_duration=duration,
+            )
 
-        # 2. Fallback for Threads posts
-        if "threads.net" in url or "threads.com" in url:
-            try:
-                from app.platforms.universal_extractor import _scrape_threads
-                loop = asyncio.new_event_loop()
-                th_data = loop.run_until_complete(_scrape_threads(url))
-                loop.close()
-                if th_data.get("video_url") and not is_image:
-                    return _download_video_direct_sync(job_id, th_data["video_url"], is_audio, audio_quality)
-                elif th_data.get("image_url") and is_image:
-                    return _download_image_sync(job_id, th_data["image_url"], fmt)
-            except Exception:
-                pass
-
-        if is_image:
-            direct_img = _resolve_image_url(url)
-            if direct_img:
+        # Non-YouTube fallbacks
+        if not is_youtube:
+            # 1. Fallback for Reddit videos via RapidSave
+            if "reddit.com" in url or "redd.it" in url:
                 try:
-                    return _download_image_sync(job_id, direct_img, fmt)
+                    rapid_url = f"https://rapidsave.com/info?url={url}"
+                    with httpx.Client(follow_redirects=True, timeout=10.0, headers={"user-agent": "Mozilla/5.0", "referer": "https://rapidsave.com/"}) as client:
+                        r = client.get(rapid_url)
+                        if r.status_code == 200:
+                            btn_match = re.search(r'class=["\'][^"\']*downloadbutton[^"\']*["\'][^>]*href=["\']([^"\']+)["\']', r.text)
+                            if btn_match:
+                                dl_path = btn_match.group(1)
+                                full_dl = f"https://rapidsave.com{dl_path}" if dl_path.startswith("/") else dl_path
+                                with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                                    ydl.download([full_dl])
+                                actual_file = _find_output_file(output_path)
+                                if actual_file and os.path.exists(actual_file):
+                                    actual_file = _ensure_mp4_video(actual_file, f"{output_path}.mp4")
+                                    file_size = os.path.getsize(actual_file)
+                                    raw_filename = os.path.basename(actual_file)
+                                    clean_filename = sanitize_filename(raw_filename)
+                                    _progress_store[job_id] = DownloadProgress(
+                                        job_id=job_id,
+                                        status=JobStatus.COMPLETED,
+                                        percent=100.0,
+                                        speed="",
+                                        eta="",
+                                        file_size=file_size,
+                                        filename=clean_filename,
+                                    )
+                                    _file_store[job_id] = actual_file
+                                    logger.info("download_completed_via_rapidsave", job_id=job_id, size=file_size)
+                                    return actual_file
                 except Exception:
                     pass
 
-        # Clean up partial files on failure
+            # 2. Fallback for Threads posts
+            if "threads.net" in url or "threads.com" in url:
+                try:
+                    from app.platforms.universal_extractor import _scrape_threads
+                    loop = asyncio.new_event_loop()
+                    th_data = loop.run_until_complete(_scrape_threads(url))
+                    loop.close()
+                    if th_data.get("video_url") and not is_image:
+                        return _download_video_direct_sync(job_id, th_data["video_url"], is_audio, audio_quality)
+                    elif th_data.get("image_url") and is_image:
+                        return _download_image_sync(job_id, th_data["image_url"], fmt)
+                except Exception:
+                    pass
+
+            if is_image:
+                direct_img = _resolve_image_url(url)
+                if direct_img:
+                    try:
+                        return _download_image_sync(job_id, direct_img, fmt)
+                    except Exception:
+                        pass
+
+        # Clean up partial files immediately on failure
         for candidate in glob.glob(f"{output_path}*"):
             try:
                 os.remove(candidate)
@@ -787,7 +824,6 @@ def _download_sync(job_id: str, url: str, fmt: str, quality: str) -> str:
             percent=0.0,
             error=clean_error,
         )
-        logger.error("download_failed", job_id=job_id, error=str(e)[:100])
         raise
 
 
