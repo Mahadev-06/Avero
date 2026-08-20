@@ -289,7 +289,7 @@ export default function Home() {
             </h2>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
+          <div className="tools-grid">
             {toolsList.map((tool) => (
               <Link key={tool.title} href={tool.href} style={{ textDecoration: 'none' }}>
                 <Card className="card-editorial h-full transition-transform hover:-translate-y-1" style={{ cursor: 'pointer', borderRadius: '18px' }}>
