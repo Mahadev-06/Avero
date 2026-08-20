@@ -61,14 +61,35 @@ def _get_youtube_cookiefile() -> str | None:
     """Return path to YouTube cookie file if configured via environment variables."""
     if settings.YOUTUBE_COOKIES_FILE and os.path.exists(settings.YOUTUBE_COOKIES_FILE):
         return settings.YOUTUBE_COOKIES_FILE
-    if settings.YOUTUBE_COOKIES_TEXT:
+
+    # Check Base64 encoded cookies first (safe from cloud newline/tab mangling)
+    b64_cookies = getattr(settings, "YOUTUBE_COOKIES_B64", None) or os.getenv("YOUTUBE_COOKIES_B64")
+    if b64_cookies and b64_cookies.strip():
+        try:
+            import base64
+            decoded = base64.b64decode(b64_cookies.strip()).decode("utf-8")
+            cookie_path = str(TEMP_DOWNLOAD_DIR / "youtube_cookies.txt")
+            with open(cookie_path, "w", encoding="utf-8") as f:
+                f.write(decoded)
+            return cookie_path
+        except Exception as e:
+            logger.warning("failed_to_decode_b64_cookies", error=str(e))
+
+    # Check raw cookie text
+    raw_text = settings.YOUTUBE_COOKIES_TEXT or os.getenv("YOUTUBE_COOKIES_TEXT")
+    if raw_text and raw_text.strip():
         cookie_path = str(TEMP_DOWNLOAD_DIR / "youtube_cookies.txt")
         try:
+            # Handle literal \n or \t if escaped by environment variable loaders
+            normalized = raw_text.strip()
+            if "\\n" in normalized and "\n" not in normalized:
+                normalized = normalized.replace("\\n", "\n").replace("\\t", "\t")
             with open(cookie_path, "w", encoding="utf-8") as f:
-                f.write(settings.YOUTUBE_COOKIES_TEXT.strip())
+                f.write(normalized)
             return cookie_path
-        except OSError:
-            pass
+        except OSError as e:
+            logger.warning("failed_to_write_cookies_file", error=str(e))
+
     return None
 
 

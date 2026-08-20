@@ -23,6 +23,7 @@ class Settings(BaseSettings):
     REDIS_URL: str = "redis://localhost:6379/0"
     YOUTUBE_API_KEY: str | None = None
     YOUTUBE_COOKIES_TEXT: str | None = None
+    YOUTUBE_COOKIES_B64: str | None = None
     YOUTUBE_COOKIES_FILE: str | None = None
     COBALT_API_URL: str | None = None
     
