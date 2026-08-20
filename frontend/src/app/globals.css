@@ -893,7 +893,15 @@ button {
     min-height: 38px !important;
     width: 38px !important;
     min-width: 38px !important;
+    padding: 0 !important;
     font-size: 1rem !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  .submit-btn-text {
+    display: none !important;
   }
 
   .mode-switcher-row {
@@ -948,7 +956,11 @@ button {
     min-height: 36px !important;
     width: 36px !important;
     min-width: 36px !important;
+    padding: 0 !important;
     font-size: 0.95rem !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
   }
 
   .footer-links-wrap {

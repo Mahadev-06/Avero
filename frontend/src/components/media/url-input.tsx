@@ -1009,7 +1009,7 @@ export function UrlInput() {
                       <div /><div /><div /><div /><div />
                       <div /><div /><div /><div /><div />
                     </div>
-                    <span>{isSearchMode ? 'Searching...' : 'Analyzing...'}</span>
+                    <span className="submit-btn-text">{isSearchMode ? 'Searching...' : 'Analyzing...'}</span>
                   </>
                 ) : (
                   <span>➔</span>
