@@ -98,17 +98,16 @@ def _build_ytdlp_format(fmt: str, quality: str) -> str:
 
     if height:
         return (
-            f"bestvideo[height<={height}][vcodec^=avc1]+bestaudio[acodec^=mp4a]/"
-            f"bestvideo[height<={height}][ext=mp4]+bestaudio[ext=m4a]/"
+            f"bestvideo[height={height}]+bestaudio/"
             f"bestvideo[height<={height}]+bestaudio/"
+            f"bestvideo[height<={height}][ext=mp4]+bestaudio[ext=m4a]/"
             f"best[height<={height}]/"
             f"best"
         )
 
     return (
-        "bestvideo[vcodec^=avc1]+bestaudio[acodec^=mp4a]/"
-        "bestvideo[ext=mp4]+bestaudio[ext=m4a]/"
         "bestvideo+bestaudio/"
+        "bestvideo[ext=mp4]+bestaudio[ext=m4a]/"
         "best[ext=mp4]/"
         "best"
     )
@@ -237,7 +236,7 @@ def _ensure_mp4_video(input_path: str, target_mp4_path: str) -> str:
         # 2. Transcode video to universal H.264 (yuv420p) + AAC (handles VP9, AV1, HEVC, WebM, FLV, TS, etc.)
         cmd_transcode = [
             "ffmpeg", "-y", "-i", input_path,
-            "-c:v", "libx264", "-preset", "veryfast", "-crf", "20", "-pix_fmt", "yuv420p",
+            "-c:v", "libx264", "-preset", "veryfast", "-crf", "18", "-pix_fmt", "yuv420p",
             "-c:a", "aac", "-b:a", "192k",
             "-movflags", "+faststart",
             transcode_temp
@@ -635,7 +634,7 @@ def _download_sync(job_id: str, url: str, fmt: str, quality: str) -> str:
         "js_runtimes": {"node": {}},
         "extractor_args": {
             "youtube": {
-                "player_client": ["android", "ios", "web"]
+                "player_client": ["all"]
             }
         },
         "http_headers": {
