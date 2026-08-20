@@ -838,24 +838,16 @@ button {
 
 .mode-switcher-row {
   display: flex !important;
-  flex-direction: row !important;
-  flex-wrap: nowrap !important;
-  align-items: center !important;
   justify-content: center !important;
-  width: 100% !important;
-  max-width: 480px !important;
-  margin: 1.65rem auto 1rem auto !important;
-  gap: 0.45rem !important;
+  align-items: center !important;
+  gap: 0.85rem !important;
+  margin: 1.75rem auto 1rem auto !important;
 }
 
 .mode-switcher-row button {
-  flex: 1 1 0px !important;
-  min-width: 0 !important;
-  white-space: nowrap !important;
-  text-align: center !important;
-  justify-content: center !important;
-  padding: 0.5rem 0.35rem !important;
-  font-size: 0.82rem !important;
+  padding: 0.55rem 1.45rem !important;
+  font-size: 0.88rem !important;
+  font-weight: 800 !important;
 }
 
 @media (max-width: 640px) {
@@ -876,13 +868,9 @@ button {
     border-radius: 20px !important;
   }
 
-  .desktop-multi-btn {
-    display: none !important;
-  }
-
   .input-action-btn {
-    padding: 0.35rem 0.75rem !important;
-    font-size: 0.78rem !important;
+    padding: 0.35rem 0.65rem !important;
+    font-size: 0.76rem !important;
     font-weight: 800 !important;
     min-height: 36px !important;
     border-radius: 9999px !important;
@@ -905,14 +893,14 @@ button {
   }
 
   .mode-switcher-row {
-    gap: 0.35rem !important;
+    gap: 0.65rem !important;
     margin-top: 1.25rem !important;
     margin-bottom: 0.75rem !important;
   }
 
   .mode-switcher-row button {
-    padding: 0.45rem 0.25rem !important;
-    font-size: 0.76rem !important;
+    padding: 0.45rem 1.15rem !important;
+    font-size: 0.82rem !important;
   }
 }
 
@@ -946,8 +934,8 @@ button {
   }
 
   .input-action-btn {
-    padding: 0.3rem 0.65rem !important;
-    font-size: 0.76rem !important;
+    padding: 0.3rem 0.55rem !important;
+    font-size: 0.74rem !important;
     min-height: 34px !important;
   }
 
@@ -971,12 +959,12 @@ button {
 
 @media (max-width: 380px) {
   .mode-switcher-row {
-    gap: 0.2rem !important;
+    gap: 0.45rem !important;
   }
 
   .mode-switcher-row button {
-    padding: 0.4rem 0.15rem !important;
-    font-size: 0.7rem !important;
+    padding: 0.4rem 0.95rem !important;
+    font-size: 0.78rem !important;
   }
 }
 

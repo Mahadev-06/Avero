@@ -964,7 +964,7 @@ export function UrlInput() {
                   type="button"
                   onClick={() => setIsMultiMode(!isMultiMode)}
                   title={isMultiMode ? "Switch to single URL mode" : "Switch to multi-URL batch mode"}
-                  className="pill-btn input-action-btn desktop-multi-btn"
+                  className="pill-btn input-action-btn"
                   style={{
                     padding: '0.45rem 0.95rem',
                     fontSize: '0.82rem',
@@ -1072,19 +1072,15 @@ export function UrlInput() {
         )}
       </form>
 
-      {/* Mode Switcher Pills (Paste Link vs Multi-Link vs Search Video) - Always 3 in 1 Row */}
+      {/* Mode Switcher Pills (Paste Link vs Search Video) */}
       <div
         className="mode-switcher-row"
         style={{
           display: 'flex',
-          flexDirection: 'row',
-          flexWrap: 'nowrap',
           justifyContent: 'center',
-          alignItems: 'center',
-          gap: '0.45rem',
-          width: '100%',
-          maxWidth: '460px',
-          margin: '1.65rem auto 1rem auto',
+          gap: '0.85rem',
+          marginTop: '1.75rem',
+          marginBottom: '1rem',
         }}
       >
         <button
@@ -1094,46 +1090,15 @@ export function UrlInput() {
             setIsMultiMode(false);
             setStatusMsg(null);
           }}
-          className={!isSearchMode && !isMultiMode ? "pill-btn-black" : "pill-btn"}
+          className={!isSearchMode ? "pill-btn-black" : "pill-btn"}
           style={{
-            flex: '1 1 0px',
-            minWidth: 0,
-            padding: '0.5rem 0.4rem',
-            fontSize: '0.82rem',
+            padding: '0.55rem 1.45rem',
+            fontSize: '0.88rem',
             fontWeight: 800,
             cursor: 'pointer',
-            whiteSpace: 'nowrap',
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            textAlign: 'center',
           }}
         >
           Paste Link
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            setIsSearchMode(false);
-            setIsMultiMode(!isMultiMode);
-            setStatusMsg(null);
-          }}
-          className={!isSearchMode && isMultiMode ? "pill-btn-black" : "pill-btn"}
-          style={{
-            flex: '1 1 0px',
-            minWidth: 0,
-            padding: '0.5rem 0.4rem',
-            fontSize: '0.82rem',
-            fontWeight: 800,
-            cursor: 'pointer',
-            whiteSpace: 'nowrap',
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            textAlign: 'center',
-          }}
-        >
-          Multi-Link
         </button>
         <button
           type="button"
@@ -1144,21 +1109,16 @@ export function UrlInput() {
           }}
           className={isSearchMode ? "pill-btn-black" : "pill-btn"}
           style={{
-            flex: '1 1 0px',
-            minWidth: 0,
-            padding: '0.5rem 0.4rem',
-            fontSize: '0.82rem',
+            padding: '0.55rem 1.45rem',
+            fontSize: '0.88rem',
             fontWeight: 800,
             cursor: 'pointer',
-            whiteSpace: 'nowrap',
             display: 'inline-flex',
             alignItems: 'center',
-            justifyContent: 'center',
-            textAlign: 'center',
-            gap: '0.35rem',
+            gap: '0.45rem',
           }}
         >
-          <Search className="w-3.5 h-3.5 flex-shrink-0" /> Search Video
+          <Search className="w-4 h-4" /> Search Video
         </button>
       </div>
 
