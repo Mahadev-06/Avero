@@ -64,7 +64,7 @@ class YouTubeAdapter(PlatformAdapter):
                 media_type="video",
                 formats=formats,
                 format_options=format_opts,
-                download_url=direct_stream_url or url,
+                download_url=url,
                 download_supported=True,
                 embed_supported=True,
             )

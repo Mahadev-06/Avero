@@ -416,10 +416,7 @@ export function UrlInput() {
   };
 
   const handleSpecificDownload = useCallback(async (item: VideoResultItem, ext: string, quality: string) => {
-    const isVideo = ext.toLowerCase() === 'mp4' || quality.toLowerCase().includes('p');
-    const targetUrl = (isVideo && item.info.url && item.info.url.startsWith('http'))
-      ? item.info.url
-      : (item.info.download_url || item.info.url);
+    const targetUrl = item.info.url || item.info.download_url;
 
     if (!targetUrl) return;
 
