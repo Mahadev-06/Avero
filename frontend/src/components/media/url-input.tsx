@@ -1434,8 +1434,8 @@ export function UrlInput() {
                   </div>
 
                   {/* RIGHT COLUMN: FORMAT RESOLUTION TABLES */}
-                  <div style={{ width: '100%' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: isImageMedia ? '1fr' : 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.25rem', alignItems: 'start' }}>
+                  <div style={{ width: '100%', minWidth: 0 }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', width: '100%' }}>
                       
                       {/* SUB-COLUMN 1: IMAGE OR VIDEO OPTIONS */}
                       {isImageMedia ? (
@@ -1463,16 +1463,16 @@ export function UrlInput() {
                                   display: 'grid',
                                   gridTemplateColumns: 'auto 1fr auto auto',
                                   alignItems: 'center',
-                                  padding: '0.65rem 0.85rem',
+                                  padding: '0.65rem 1rem',
                                   borderBottom: idx === defaultImage.length - 1 ? 'none' : '1px solid rgba(0, 0, 0, 0.05)',
                                   backgroundColor: idx % 2 === 0 ? 'transparent' : 'rgba(0, 0, 0, 0.02)',
                                   fontSize: '0.88rem',
-                                  gap: '0.45rem',
+                                  gap: '0.75rem',
                                 }}
                               >
                                 <span
                                   style={{
-                                    padding: '0.15rem 0.4rem',
+                                    padding: '0.2rem 0.45rem',
                                     borderRadius: '6px',
                                     backgroundColor: 'var(--bg-color)',
                                     border: '1px solid rgba(255, 255, 255, 0.6)',
@@ -1491,7 +1491,7 @@ export function UrlInput() {
                                   {opt.quality}
                                 </span>
 
-                                <span className="tabular-nums" style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-muted)', whiteSpace: 'nowrap', textAlign: 'right', paddingRight: '0.25rem' }}>
+                                <span className="tabular-nums" style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-muted)', whiteSpace: 'nowrap', textAlign: 'right', paddingRight: '0.35rem' }}>
                                   {opt.file_size_formatted}
                                 </span>
 
@@ -1556,22 +1556,22 @@ export function UrlInput() {
                                     display: 'grid',
                                     gridTemplateColumns: 'auto 1fr auto auto',
                                     alignItems: 'center',
-                                    padding: '0.55rem 0.75rem',
+                                    padding: '0.65rem 1rem',
                                     borderBottom: idx === defaultVideo.length - 1 ? 'none' : '1px solid rgba(0, 0, 0, 0.05)',
                                     backgroundColor: idx % 2 === 0 ? 'transparent' : 'rgba(0, 0, 0, 0.02)',
-                                    fontSize: '0.85rem',
-                                    gap: '0.45rem',
+                                    fontSize: '0.88rem',
+                                    gap: '0.75rem',
                                   }}
                                 >
                                   <span
                                     style={{
-                                      padding: '0.15rem 0.35rem',
-                                      borderRadius: '5px',
+                                      padding: '0.2rem 0.45rem',
+                                      borderRadius: '6px',
                                       backgroundColor: 'var(--bg-color)',
                                       border: '1px solid rgba(255, 255, 255, 0.6)',
                                       boxShadow: '1px 1px 3px var(--neumorph-dark), -1px -1px 3px var(--neumorph-light)',
                                       color: 'var(--color-accent-500)',
-                                      fontSize: '0.68rem',
+                                      fontSize: '0.72rem',
                                       fontWeight: 900,
                                       letterSpacing: '0.02em',
                                       whiteSpace: 'nowrap',
@@ -1580,11 +1580,11 @@ export function UrlInput() {
                                     {opt.ext}
                                   </span>
 
-                                  <span style={{ fontWeight: 800, color: 'var(--text-color)', fontSize: '0.82rem', whiteSpace: 'nowrap', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                  <span style={{ fontWeight: 800, color: 'var(--text-color)', fontSize: '0.88rem', whiteSpace: 'nowrap', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                     {opt.quality}
                                   </span>
 
-                                  <span className="tabular-nums" style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-muted)', whiteSpace: 'nowrap', textAlign: 'right', paddingRight: '0.2rem' }}>
+                                  <span className="tabular-nums" style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-muted)', whiteSpace: 'nowrap', textAlign: 'right', paddingRight: '0.35rem' }}>
                                     {opt.file_size_formatted}
                                   </span>
 
@@ -1594,12 +1594,12 @@ export function UrlInput() {
                                     style={{
                                       color: '#16a34a',
                                       fontWeight: 800,
-                                      fontSize: '0.75rem',
-                                      padding: '0.3rem 0.65rem',
+                                      fontSize: '0.78rem',
+                                      padding: '0.35rem 0.85rem',
                                       display: 'inline-flex',
                                       alignItems: 'center',
-                                      gap: '0.25rem',
-                                      minHeight: '30px',
+                                      gap: '0.3rem',
+                                      minHeight: '32px',
                                       cursor: 'pointer',
                                       whiteSpace: 'nowrap',
                                     }}
@@ -1615,7 +1615,7 @@ export function UrlInput() {
                                       </>
                                     ) : (
                                       <>
-                                        <Download className="w-3 h-3" /> <span>Download</span>
+                                        <Download className="w-3.5 h-3.5" /> <span>Download</span>
                                       </>
                                     )}
                                   </button>
@@ -1649,22 +1649,22 @@ export function UrlInput() {
                                     display: 'grid',
                                     gridTemplateColumns: 'auto 1fr auto auto',
                                     alignItems: 'center',
-                                    padding: '0.55rem 0.75rem',
+                                    padding: '0.65rem 1rem',
                                     borderBottom: idx === defaultAudio.length - 1 ? 'none' : '1px solid rgba(0, 0, 0, 0.05)',
                                     backgroundColor: idx % 2 === 0 ? 'transparent' : 'rgba(0, 0, 0, 0.02)',
-                                    fontSize: '0.85rem',
-                                    gap: '0.45rem',
+                                    fontSize: '0.88rem',
+                                    gap: '0.75rem',
                                   }}
                                 >
                                   <span
                                     style={{
-                                      padding: '0.15rem 0.35rem',
-                                      borderRadius: '5px',
+                                      padding: '0.2rem 0.45rem',
+                                      borderRadius: '6px',
                                       backgroundColor: 'var(--bg-color)',
                                       border: '1px solid rgba(255, 255, 255, 0.6)',
                                       boxShadow: '1px 1px 3px var(--neumorph-dark), -1px -1px 3px var(--neumorph-light)',
                                       color: 'var(--color-accent-500)',
-                                      fontSize: '0.68rem',
+                                      fontSize: '0.72rem',
                                       fontWeight: 900,
                                       letterSpacing: '0.02em',
                                       whiteSpace: 'nowrap',
@@ -1673,11 +1673,11 @@ export function UrlInput() {
                                     {opt.ext}
                                   </span>
 
-                                  <span style={{ fontWeight: 800, color: 'var(--text-color)', fontSize: '0.82rem', whiteSpace: 'nowrap', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                  <span style={{ fontWeight: 800, color: 'var(--text-color)', fontSize: '0.88rem', whiteSpace: 'nowrap', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                     {opt.quality}
                                   </span>
 
-                                  <span className="tabular-nums" style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-muted)', whiteSpace: 'nowrap', textAlign: 'right', paddingRight: '0.2rem' }}>
+                                  <span className="tabular-nums" style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-muted)', whiteSpace: 'nowrap', textAlign: 'right', paddingRight: '0.35rem' }}>
                                     {opt.file_size_formatted}
                                   </span>
 
@@ -1687,12 +1687,12 @@ export function UrlInput() {
                                     style={{
                                       color: '#16a34a',
                                       fontWeight: 800,
-                                      fontSize: '0.75rem',
-                                      padding: '0.3rem 0.65rem',
+                                      fontSize: '0.78rem',
+                                      padding: '0.35rem 0.85rem',
                                       display: 'inline-flex',
                                       alignItems: 'center',
-                                      gap: '0.25rem',
-                                      minHeight: '30px',
+                                      gap: '0.3rem',
+                                      minHeight: '32px',
                                       cursor: 'pointer',
                                       whiteSpace: 'nowrap',
                                     }}
@@ -1708,7 +1708,7 @@ export function UrlInput() {
                                       </>
                                     ) : (
                                       <>
-                                        <Download className="w-3 h-3" /> <span>Download</span>
+                                        <Download className="w-3.5 h-3.5" /> <span>Download</span>
                                       </>
                                     )}
                                   </button>

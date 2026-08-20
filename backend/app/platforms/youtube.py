@@ -21,6 +21,11 @@ class YouTubeAdapter(PlatformAdapter):
             'no_warnings': True,
             'skip_download': True,
             'format': 'best',
+            'extractor_args': {
+                'youtube': {
+                    'player_client': ['android', 'ios']
+                }
+            },
         }
 
         def _extract():

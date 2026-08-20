@@ -634,7 +634,7 @@ def _download_sync(job_id: str, url: str, fmt: str, quality: str) -> str:
         "js_runtimes": {"node": {}},
         "extractor_args": {
             "youtube": {
-                "player_client": ["all"]
+                "player_client": ["android", "ios"]
             }
         },
         "http_headers": {
