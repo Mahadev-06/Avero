@@ -72,10 +72,10 @@ app.state.limiter = limiter
 # Middleware Pipeline
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.CORS_ORIGINS,
+    allow_origins=["*"],
     allow_credentials=False,
-    allow_methods=["GET", "POST", "DELETE", "OPTIONS"],
-    allow_headers=["Content-Type", "Authorization", "X-Request-ID", "Accept"],
+    allow_methods=["*"],
+    allow_headers=["*"],
     expose_headers=["X-Request-ID", "Content-Disposition"],
 )
 app.add_middleware(SecurityHeadersMiddleware)

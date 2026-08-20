@@ -95,7 +95,14 @@ export interface DownloadProgress {
 }
 
 class ApiClient {
-  private baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+  private get baseUrl(): string {
+    const raw = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+    let clean = raw.trim().replace(/\/+$/, '');
+    if (clean.endsWith('/api/v1')) {
+      clean = clean.slice(0, -7).replace(/\/+$/, '');
+    }
+    return clean;
+  }
 
   private async fetchJson<T>(endpoint: string, options?: RequestInit): Promise<T> {
     try {
