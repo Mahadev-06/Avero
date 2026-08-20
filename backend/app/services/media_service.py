@@ -99,7 +99,7 @@ def _build_ytdlp_format(fmt: str, quality: str) -> str:
 
     # Audio formats
     if fmt in ("mp3", "audio", "m4a") or "kbps" in quality:
-        return "bestaudio/best"
+        return "bestaudio[ext=m4a]/bestaudio/best"
 
     # Extract height if present (e.g. 2160p (4k) -> 2160, 4k -> 2160, 1080p -> 1080)
     height = None
@@ -128,18 +128,23 @@ def _build_ytdlp_format(fmt: str, quality: str) -> str:
         w_portrait = height
         h_portrait = int(height * 16 / 9) + 50
         return (
+            f"bestvideo[height<={height}][ext=mp4]+bestaudio[ext=m4a]/"
+            f"bestvideo[width<={w_portrait}][ext=mp4]+bestaudio[ext=m4a]/"
+            f"bestvideo[height<={h_portrait}][width<={w_portrait}][ext=mp4]+bestaudio[ext=m4a]/"
             f"bestvideo[height<={height}]+bestaudio/"
             f"bestvideo[width<={w_portrait}]+bestaudio/"
             f"bestvideo[height<={h_portrait}][width<={w_portrait}]+bestaudio/"
             f"best[height<={height}]/"
             f"best[width<={w_portrait}]/"
+            f"bestvideo[ext=mp4]+bestaudio[ext=m4a]/"
             f"bestvideo+bestaudio/"
+            f"best[ext=mp4]/"
             f"best"
         )
 
     return (
-        "bestvideo+bestaudio/"
         "bestvideo[ext=mp4]+bestaudio[ext=m4a]/"
+        "bestvideo+bestaudio/"
         "best[ext=mp4]/"
         "best"
     )
