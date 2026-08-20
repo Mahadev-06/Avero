@@ -46,6 +46,11 @@ class YouTubeAdapter(PlatformAdapter):
             },
         }
 
+        from app.services.media_service import _get_youtube_cookiefile
+        cookie_file = _get_youtube_cookiefile()
+        if cookie_file:
+            ydl_opts['cookiefile'] = cookie_file
+
         def _extract():
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 return ydl.extract_info(clean_url, download=False)

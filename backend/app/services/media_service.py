@@ -57,6 +57,21 @@ def _is_youtube_bot_challenge(exc: Exception) -> bool:
     )
 
 
+def _get_youtube_cookiefile() -> str | None:
+    """Return path to YouTube cookie file if configured via environment variables."""
+    if settings.YOUTUBE_COOKIES_FILE and os.path.exists(settings.YOUTUBE_COOKIES_FILE):
+        return settings.YOUTUBE_COOKIES_FILE
+    if settings.YOUTUBE_COOKIES_TEXT:
+        cookie_path = str(TEMP_DOWNLOAD_DIR / "youtube_cookies.txt")
+        try:
+            with open(cookie_path, "w", encoding="utf-8") as f:
+                f.write(settings.YOUTUBE_COOKIES_TEXT.strip())
+            return cookie_path
+        except OSError:
+            pass
+    return None
+
+
 def _sanitize_error_message(exc: Exception) -> str:
     """Sanitize internal errors to prevent leaking server paths, stack traces, or credentials."""
     if _is_youtube_bot_challenge(exc):
@@ -667,6 +682,11 @@ def _download_sync(job_id: str, url: str, fmt: str, quality: str) -> str:
             "Accept-Language": "en-US,en;q=0.9",
         },
     }
+
+    if is_youtube:
+        cookie_file = _get_youtube_cookiefile()
+        if cookie_file:
+            ydl_opts["cookiefile"] = cookie_file
 
     if is_audio:
         audio_quality = "320"

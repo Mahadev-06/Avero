@@ -22,6 +22,9 @@ class Settings(BaseSettings):
     
     REDIS_URL: str = "redis://localhost:6379/0"
     YOUTUBE_API_KEY: str | None = None
+    YOUTUBE_COOKIES_TEXT: str | None = None
+    YOUTUBE_COOKIES_FILE: str | None = None
+    COBALT_API_URL: str | None = None
     
     MAX_URLS_PER_BATCH: int = 20
     MAX_CONCURRENT_JOBS: int = 2
