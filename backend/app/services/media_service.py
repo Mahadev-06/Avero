@@ -592,7 +592,15 @@ def _download_sync(job_id: str, url: str, fmt: str, quality: str) -> str:
     if is_direct_img:
         return _download_image_sync(job_id, url, fmt)
 
-    if is_image or "pinterest.com" in url or "pin.it" in url:
+    is_video_or_audio_fmt = (
+        fmt.lower() in ("mp4", "webm", "mp3", "m4a", "wav", "360p", "480p", "720p", "1080p", "best")
+        or "mp4" in fmt.lower()
+        or "mp3" in fmt.lower()
+        or "video" in fmt.lower()
+        or "audio" in fmt.lower()
+    )
+
+    if (is_image or "pinterest.com" in url or "pin.it" in url) and not is_video_or_audio_fmt:
         direct_img = _resolve_image_url(url)
         if direct_img:
             return _download_image_sync(job_id, direct_img, fmt)
@@ -608,6 +616,8 @@ def _download_sync(job_id: str, url: str, fmt: str, quality: str) -> str:
         "cdninstagram.com" in url
         or "fbcdn.net" in url
         or "lovethreads.net" in url
+        or "v.pinimg.com" in url
+        or "v1.pinimg.com" in url
         or (any(url.lower().endswith(ext) or f"{ext}?" in url.lower() for ext in (".mp4", ".m4v", ".mov", ".webm")) and "youtube.com" not in url and "youtu.be" not in url)
     )
 

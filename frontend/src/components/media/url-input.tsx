@@ -1270,7 +1270,6 @@ export function UrlInput() {
             const hasVideoFormats = formatOpts.some((f) => f.media_category === 'video');
             const isImageMedia =
               (item.info.media_type === 'image' && !hasVideoFormats) ||
-              item.info.platform === 'pinterest' ||
               isExplicitDirectImage;
 
             const imageFormats = formatOpts.filter((f) => f.media_category === 'image');

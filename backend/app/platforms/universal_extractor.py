@@ -151,9 +151,32 @@ def build_format_options(
 
     return options
 
+def resolve_pinterest_shortlink(url: str) -> str:
+    if "pin.it" not in url:
+        return url
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+    }
+    try:
+        curr = url
+        for _ in range(5):
+            with httpx.Client(follow_redirects=False, headers=headers, timeout=5.0) as client:
+                resp = client.get(curr)
+                loc = resp.headers.get("location")
+                if not loc:
+                    break
+                if "/pin/" in loc:
+                    return re.sub(r'/sent/.*$', '/', loc)
+                curr = loc
+        return curr
+    except Exception:
+        return url
+
+
 async def _scrape_pinterest(url: str) -> dict:
-    """Scrape Pinterest pin metadata with SSRF validation."""
-    parsed = urlparse(url)
+    """Scrape Pinterest pin metadata with SSRF validation and video detection."""
+    target_url = resolve_pinterest_shortlink(url)
+    parsed = urlparse(target_url)
     if parsed.hostname:
         resolve_and_check(parsed.hostname)
 
@@ -162,9 +185,28 @@ async def _scrape_pinterest(url: str) -> dict:
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
         "Accept-Language": "en-US,en;q=0.9",
     }
-    async with httpx.AsyncClient(follow_redirects=True, timeout=12.0) as client:
-        resp = await client.get(url, headers=headers)
+    async with httpx.AsyncClient(follow_redirects=True, timeout=12.0, headers=headers) as client:
+        resp = await client.get(target_url)
         html = resp.text
+        final_url = str(resp.url)
+
+    # Search for video URLs in HTML or JSON
+    video_url = None
+    og_video = re.search(r'<meta\s+property=["\']og:video(?::url)?["\']\s+content=["\']([^"\']+)["\']', html)
+    if og_video:
+        video_url = og_video.group(1).replace('&amp;', '&')
+
+    if not video_url:
+        mp4_matches = re.findall(r'https?:\\?/\\?/(?:v1?\.pinimg\.com|[^\s"\']+\.pinimg\.com)[^"\']+\.mp4[^"\']*', html)
+        if mp4_matches:
+            video_url = mp4_matches[0].replace('\\/', '/').replace('&amp;', '&')
+
+    if not video_url:
+        any_mp4 = re.findall(r'https?:\\?/\\?/[^"\']+\.mp4[^"\']*', html)
+        if any_mp4:
+            clean = any_mp4[0].replace('\\/', '/').replace('&amp;', '&')
+            if "pinimg.com" in clean or "pinterest" in clean or "v.pinimg" in clean:
+                video_url = clean
 
     img_match = re.search(r'https://i\.pinimg\.com/[0-9]+x/([a-zA-Z0-9/_.\-]+)', html)
     orig_img = None
@@ -178,10 +220,13 @@ async def _scrape_pinterest(url: str) -> dict:
     title_match = re.search(r'<meta\s+property=["\']og:title["\']\s+content=["\']([^"\']+)["\']', html)
     title = title_match.group(1) if title_match else "Pinterest Pin"
 
+    is_video = bool(video_url) or "/video/" in target_url or "/video/" in final_url or "v.pinimg" in html or "VideoObject" in html
+
     return {
         "title": title,
         "image_url": orig_img,
-        "is_image": True,
+        "video_url": video_url,
+        "is_video": is_video,
     }
 
 async def _scrape_reddit(url: str) -> dict:
@@ -429,7 +474,24 @@ async def extract_media_info(url: str, platform_name: str) -> MediaInfo:
     if "pinterest.com" in url or "pin.it" in url or "pinimg.com" in url:
         try:
             pin_data = await _scrape_pinterest(url)
-            if pin_data.get("image_url"):
+            is_video = pin_data.get("is_video", False)
+            if is_video or pin_data.get("video_url"):
+                format_opts = build_format_options(duration_sec=60)
+                download_url = pin_data.get("video_url") or url
+                return MediaInfo(
+                    url=url,
+                    platform="pinterest",
+                    title=pin_data.get("title", "Pinterest Pin Video"),
+                    thumbnail_url=pin_data.get("image_url"),
+                    media_type="video",
+                    duration=60,
+                    formats=[f"{opt.ext} {opt.quality} ({opt.file_size_formatted})" for opt in format_opts],
+                    format_options=format_opts,
+                    download_url=download_url,
+                    download_supported=True,
+                    embed_supported=True,
+                )
+            elif pin_data.get("image_url"):
                 format_opts = build_image_format_options(pin_data["image_url"])
                 return MediaInfo(
                     url=url,
