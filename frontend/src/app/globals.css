@@ -928,7 +928,27 @@ button {
   }
 }
 
-/* Responsive Table Horizontal Scroll */
+/* Responsive Table & Cards for Format Support */
+.desktop-format-table {
+  display: block;
+}
+
+.mobile-format-cards {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .desktop-format-table {
+    display: none !important;
+  }
+
+  .mobile-format-cards {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 1rem !important;
+  }
+}
+
 .table-responsive-container {
   width: 100%;
   overflow-x: auto;
