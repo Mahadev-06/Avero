@@ -664,6 +664,8 @@ def _download_sync(job_id: str, url: str, fmt: str, quality: str) -> str:
             "preferredcodec": "mp3",
             "preferredquality": audio_quality,
         }]
+    elif not is_image:
+        ydl_opts["merge_output_format"] = "mp4"
     target_dl_url = url
     if "youtube.com" in url or "youtu.be" in url:
         shorts_match = re.search(r'(?:youtube\.com|youtu\.be)/shorts/([a-zA-Z0-9_\-]+)', url)

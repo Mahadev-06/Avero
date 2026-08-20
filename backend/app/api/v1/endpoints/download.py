@@ -76,11 +76,17 @@ async def start_download(request: Request, req: DownloadRequest):
     fmt = req.format.lower().strip()
     quality = req.quality.lower().strip()
 
-    if " " in req.format:
+    if "mp3" in fmt or "audio" in fmt or "kbps" in quality:
+        fmt = "mp3"
+        quality = req.quality.lower().replace("mp3", "").strip() or "320kbps"
+    elif "mp4" in fmt or "video" in fmt or any(q in quality for q in ("360", "480", "720", "1080", "1440", "2160", "4k", "best")):
+        fmt = "mp4"
+        quality = req.quality.lower().replace("mp4", "").strip() or "best"
+    elif " " in req.format:
         parts = req.format.split(" ", 1)
         fmt = parts[0].lower().strip()
         quality = parts[1].lower().strip()
-    if " " in req.quality:
+    elif " " in req.quality:
         parts = req.quality.split(" ", 1)
         fmt = parts[0].lower().strip()
         quality = parts[1].lower().strip()
