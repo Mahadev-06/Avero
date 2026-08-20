@@ -353,25 +353,19 @@ export function UrlInput() {
       }));
 
       setResults(items);
-      if (isMultiMode && urlsToAnalyze.length > 1) {
-        setStatusMsg(`Ready to download! Analyzed ${items.length} items.`);
-      } else {
-        setStatusMsg(`Ready to download! Select your desired format below.`);
-      }
+      setStatusMsg('Ready to download');
     } catch (err: unknown) {
       console.error('Analysis error:', err);
       const fallbackItems: VideoResultItem[] = urlsToAnalyze.map((url, idx) => ({
         id: `fallback-${Date.now()}-${idx}`,
         info: {
           url,
-          platform: url.includes('youtu') ? 'YOUTUBE' : 'DIRECT LINK',
-          title: url.includes('youtu') ? 'YouTube Video Stream' : url,
-          duration: 59,
+          platform: url.includes('youtu') ? 'youtube' : 'direct',
+          title: url.includes('youtu') ? 'YouTube Media Video' : 'Media Video',
+          media_type: 'video',
           download_supported: true,
           embed_supported: true,
           format_options: [
-            { format_id: 'mp4_144p', ext: 'MP4', quality: '144P', file_size_formatted: '503.1 KB', media_category: 'video' as const },
-            { format_id: 'mp4_240p', ext: 'MP4', quality: '240P', file_size_formatted: '1.13 MB', media_category: 'video' as const },
             { format_id: 'mp4_360p', ext: 'MP4', quality: '360P', file_size_formatted: '3.12 MB', media_category: 'video' as const },
             { format_id: 'mp4_480p', ext: 'MP4', quality: '480P', file_size_formatted: '5.18 MB', media_category: 'video' as const },
             { format_id: 'mp4_720p', ext: 'MP4', quality: '720P', file_size_formatted: '23.67 MB', media_category: 'video' as const },
@@ -385,7 +379,7 @@ export function UrlInput() {
         progress: null,
       }));
       setResults(fallbackItems);
-      setStatusMsg('Loaded download options.');
+      setStatusMsg('Ready to download');
     } finally {
       setAnalyzing(false);
     }
@@ -1199,8 +1193,8 @@ export function UrlInput() {
                 {isMultiMode ? `BATCH DOWNLOAD (${results.length})` : `PROCESSED MEDIA (${results.length})`}
               </div>
 
-              {/* Download All (Best Quality) Sequential Download Button (White Neumorphic Style) */}
-              {results.length > 0 && (
+              {/* Download All (Best Quality) Sequential Download Button (White Neumorphic Style - Only shown for multi download) */}
+              {results.length > 1 && (
                 <button
                   type="button"
                   onClick={handleDownloadAllBestQuality}
