@@ -128,6 +128,9 @@ def _build_ytdlp_format(fmt: str, quality: str) -> str:
         w_portrait = height
         h_portrait = int(height * 16 / 9) + 50
         return (
+            f"bestvideo[height<={height}][vcodec^=avc1]+bestaudio[acodec^=mp4a]/"
+            f"bestvideo[width<={w_portrait}][vcodec^=avc1]+bestaudio[acodec^=mp4a]/"
+            f"bestvideo[height<={h_portrait}][width<={w_portrait}][vcodec^=avc1]+bestaudio[acodec^=mp4a]/"
             f"bestvideo[height<={height}][ext=mp4]+bestaudio[ext=m4a]/"
             f"bestvideo[width<={w_portrait}][ext=mp4]+bestaudio[ext=m4a]/"
             f"bestvideo[height<={h_portrait}][width<={w_portrait}][ext=mp4]+bestaudio[ext=m4a]/"
@@ -136,6 +139,7 @@ def _build_ytdlp_format(fmt: str, quality: str) -> str:
             f"bestvideo[height<={h_portrait}][width<={w_portrait}]+bestaudio/"
             f"best[height<={height}]/"
             f"best[width<={w_portrait}]/"
+            f"bestvideo[vcodec^=avc1]+bestaudio[acodec^=mp4a]/"
             f"bestvideo[ext=mp4]+bestaudio[ext=m4a]/"
             f"bestvideo+bestaudio/"
             f"best[ext=mp4]/"
@@ -143,6 +147,7 @@ def _build_ytdlp_format(fmt: str, quality: str) -> str:
         )
 
     return (
+        "bestvideo[vcodec^=avc1]+bestaudio[acodec^=mp4a]/"
         "bestvideo[ext=mp4]+bestaudio[ext=m4a]/"
         "bestvideo+bestaudio/"
         "best[ext=mp4]/"
