@@ -664,12 +664,21 @@ def _download_sync(job_id: str, url: str, fmt: str, quality: str) -> str:
             "preferredcodec": "mp3",
             "preferredquality": audio_quality,
         }]
-    elif not is_image:
-        ydl_opts["merge_output_format"] = "mp4"
+    target_dl_url = url
+    if "youtube.com" in url or "youtu.be" in url:
+        shorts_match = re.search(r'(?:youtube\.com|youtu\.be)/shorts/([a-zA-Z0-9_\-]+)', url)
+        if shorts_match:
+            target_dl_url = f"https://www.youtube.com/watch?v={shorts_match.group(1)}"
+        else:
+            youtu_match = re.search(r'youtu\.be/([a-zA-Z0-9_\-]+)', url)
+            if youtu_match:
+                target_dl_url = f"https://www.youtube.com/watch?v={youtu_match.group(1)}"
+            elif "m.youtube.com" in url:
+                target_dl_url = url.replace("m.youtube.com", "www.youtube.com")
 
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            ydl.download([url])
+            ydl.download([target_dl_url])
 
         actual_file = _find_output_file(output_path)
         if not actual_file or not os.path.exists(actual_file):

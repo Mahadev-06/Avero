@@ -7,6 +7,23 @@ from app.schemas.analyze import MediaInfo
 from app.schemas.search import SearchResponse, SearchResult
 from app.platforms.universal_extractor import build_format_options
 
+import re
+
+def normalize_youtube_url(url: str) -> str:
+    """Normalize YouTube URLs (Shorts, youtu.be, mobile) to standard watch format."""
+    shorts_match = re.search(r'(?:youtube\.com|youtu\.be)/shorts/([a-zA-Z0-9_\-]+)', url)
+    if shorts_match:
+        return f"https://www.youtube.com/watch?v={shorts_match.group(1)}"
+    
+    youtu_match = re.search(r'youtu\.be/([a-zA-Z0-9_\-]+)', url)
+    if youtu_match:
+        return f"https://www.youtube.com/watch?v={youtu_match.group(1)}"
+    
+    if "m.youtube.com" in url:
+        return url.replace("m.youtube.com", "www.youtube.com")
+        
+    return url
+
 class YouTubeAdapter(PlatformAdapter):
     name = "youtube"
     url_patterns = ["youtube.com", "youtu.be"]
@@ -16,6 +33,7 @@ class YouTubeAdapter(PlatformAdapter):
         return any(p in url for p in self.url_patterns)
 
     async def analyze(self, url: str) -> MediaInfo:
+        clean_url = normalize_youtube_url(url)
         ydl_opts = {
             'quiet': True,
             'no_warnings': True,
@@ -30,7 +48,7 @@ class YouTubeAdapter(PlatformAdapter):
 
         def _extract():
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                return ydl.extract_info(url, download=False)
+                return ydl.extract_info(clean_url, download=False)
 
         loop = asyncio.get_event_loop()
         try:
