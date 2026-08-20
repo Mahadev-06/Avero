@@ -318,40 +318,49 @@ export default function Home() {
           </div>
 
           {/* Desktop Table View (>= 769px) */}
-          <div className="desktop-format-table table-responsive-container" style={{ backgroundColor: 'var(--bg-color)', border: '1px solid rgba(255, 255, 255, 0.65)', borderRadius: '24px', overflow: 'hidden', boxShadow: '8px 8px 20px var(--neumorph-dark), -8px -8px 20px var(--neumorph-light)', padding: '0.5rem' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
+          <div
+            className="desktop-format-table table-responsive-container"
+            style={{
+              backgroundColor: 'var(--bg-color)',
+              border: '1px solid rgba(255, 255, 255, 0.65)',
+              borderRadius: '24px',
+              overflow: 'hidden',
+              boxShadow: '8px 8px 20px var(--neumorph-dark), -8px -8px 20px var(--neumorph-light)',
+            }}
+          >
+            <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0, textAlign: 'left', fontSize: '0.9rem' }}>
               <thead>
-                <tr style={{ borderBottom: '1px solid rgba(0, 0, 0, 0.08)', backgroundColor: 'rgba(0, 0, 0, 0.02)' }}>
-                  <th style={{ padding: '1.1rem 1.25rem', fontWeight: 800 }}>Media Type</th>
-                  <th style={{ padding: '1.1rem 1.25rem', fontWeight: 800 }}>Format</th>
-                  <th style={{ padding: '1.1rem 1.25rem', fontWeight: 800 }}>Available Qualities</th>
-                  <th style={{ padding: '1.1rem 1.25rem', fontWeight: 800 }}>Compatibility</th>
+                <tr style={{ backgroundColor: 'rgba(0, 0, 0, 0.03)' }}>
+                  <th style={{ padding: '1.15rem 1.4rem', fontWeight: 800, borderBottom: '1px solid rgba(0, 0, 0, 0.07)', borderTopLeftRadius: '24px' }}>Media Type</th>
+                  <th style={{ padding: '1.15rem 1.4rem', fontWeight: 800, borderBottom: '1px solid rgba(0, 0, 0, 0.07)' }}>Format</th>
+                  <th style={{ padding: '1.15rem 1.4rem', fontWeight: 800, borderBottom: '1px solid rgba(0, 0, 0, 0.07)' }}>Available Qualities</th>
+                  <th style={{ padding: '1.15rem 1.4rem', fontWeight: 800, borderBottom: '1px solid rgba(0, 0, 0, 0.07)', borderTopRightRadius: '24px' }}>Compatibility</th>
                 </tr>
               </thead>
               <tbody>
-                <tr style={{ borderBottom: '1px solid rgba(0, 0, 0, 0.05)' }}>
-                  <td style={{ padding: '1.1rem 1.25rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <tr>
+                  <td style={{ padding: '1.15rem 1.4rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem', borderBottom: '1px solid rgba(0, 0, 0, 0.05)' }}>
                     <FileVideo className="w-4 h-4 text-blue-500" /> Video
                   </td>
-                  <td style={{ padding: '1.1rem 1.25rem' }}>MP4 (H.264 + AAC)</td>
-                  <td style={{ padding: '1.1rem 1.25rem' }}>1080p Full HD, 720p HD, 480p, 360p</td>
-                  <td style={{ padding: '1.1rem 1.25rem', color: '#16a34a', fontWeight: 700 }}>Universal (Windows, Mac, iOS, Android)</td>
-                </tr>
-                <tr style={{ borderBottom: '1px solid rgba(0, 0, 0, 0.05)' }}>
-                  <td style={{ padding: '1.1rem 1.25rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <FileAudio className="w-4 h-4 text-amber-500" /> Audio
-                  </td>
-                  <td style={{ padding: '1.1rem 1.25rem' }}>MP3 / M4A</td>
-                  <td style={{ padding: '1.1rem 1.25rem' }}>320kbps High Quality, 192kbps, 128kbps</td>
-                  <td style={{ padding: '1.1rem 1.25rem', color: '#16a34a', fontWeight: 700 }}>Universal</td>
+                  <td style={{ padding: '1.15rem 1.4rem', borderBottom: '1px solid rgba(0, 0, 0, 0.05)' }}>MP4 (H.264 + AAC)</td>
+                  <td style={{ padding: '1.15rem 1.4rem', borderBottom: '1px solid rgba(0, 0, 0, 0.05)' }}>1080p Full HD, 720p HD, 480p, 360p</td>
+                  <td style={{ padding: '1.15rem 1.4rem', color: '#16a34a', fontWeight: 700, borderBottom: '1px solid rgba(0, 0, 0, 0.05)' }}>Universal (Windows, Mac, iOS, Android)</td>
                 </tr>
                 <tr>
-                  <td style={{ padding: '1.1rem 1.25rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <td style={{ padding: '1.15rem 1.4rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem', borderBottom: '1px solid rgba(0, 0, 0, 0.05)' }}>
+                    <FileAudio className="w-4 h-4 text-amber-500" /> Audio
+                  </td>
+                  <td style={{ padding: '1.15rem 1.4rem', borderBottom: '1px solid rgba(0, 0, 0, 0.05)' }}>MP3 / M4A</td>
+                  <td style={{ padding: '1.15rem 1.4rem', borderBottom: '1px solid rgba(0, 0, 0, 0.05)' }}>320kbps High Quality, 192kbps, 128kbps</td>
+                  <td style={{ padding: '1.15rem 1.4rem', color: '#16a34a', fontWeight: 700, borderBottom: '1px solid rgba(0, 0, 0, 0.05)' }}>Universal</td>
+                </tr>
+                <tr>
+                  <td style={{ padding: '1.15rem 1.4rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem', borderBottomLeftRadius: '24px' }}>
                     <FileCode className="w-4 h-4 text-purple-500" /> Direct Media
                   </td>
-                  <td style={{ padding: '1.1rem 1.25rem' }}>Original (WebM, WAV, OGG, PNG)</td>
-                  <td style={{ padding: '1.1rem 1.25rem' }}>Original Resolution</td>
-                  <td style={{ padding: '1.1rem 1.25rem', color: '#16a34a', fontWeight: 700 }}>Native Browser Save</td>
+                  <td style={{ padding: '1.15rem 1.4rem' }}>Original (WebM, WAV, OGG, PNG)</td>
+                  <td style={{ padding: '1.15rem 1.4rem' }}>Original Resolution</td>
+                  <td style={{ padding: '1.15rem 1.4rem', color: '#16a34a', fontWeight: 700, borderBottomRightRadius: '24px' }}>Native Browser Save</td>
                 </tr>
               </tbody>
             </table>
