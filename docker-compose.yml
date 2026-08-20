@@ -1,0 +1,102 @@
+services:
+  # Redis 7.4 — Queue broker, Pub/Sub, ephemeral state
+  redis:
+    image: redis:7.4-alpine
+    container_name: mediaflow_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - mediaflow_net
+
+  # FastAPI Backend API
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    container_name: mediaflow_api
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+      - media_storage:/tmp/media_storage
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - API_SECRET_TOKEN=${API_SECRET_TOKEN:-local-dev-secret-key-change-me-32chars}
+      - CORS_ORIGINS=["http://localhost:3000"]
+      - MEDIA_STORAGE_PATH=/tmp/media_storage
+      - YOUTUBE_API_KEY=${YOUTUBE_API_KEY:-}
+      - MAX_URLS_PER_BATCH=20
+      - MAX_CONCURRENT_JOBS=2
+      - MAX_FILE_SIZE_MB=500
+      - JOB_TIMEOUT_SECONDS=600
+      - TEMP_FILE_TTL_SECONDS=3600
+      - RATE_LIMIT_PER_MINUTE=30
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - mediaflow_net
+
+  # ARQ Background Worker
+  worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    container_name: mediaflow_worker
+    command: arq app.worker.worker_main.WorkerSettings
+    volumes:
+      - ./backend:/app
+      - media_storage:/tmp/media_storage
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - MEDIA_STORAGE_PATH=/tmp/media_storage
+      - MAX_CONCURRENT_JOBS=2
+      - JOB_TIMEOUT_SECONDS=600
+      - TEMP_FILE_TTL_SECONDS=3600
+    depends_on:
+      redis:
+        condition: service_healthy
+      api:
+        condition: service_started
+    networks:
+      - mediaflow_net
+
+  # Next.js 15 Frontend
+  web:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: mediaflow_web
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+      - NEXT_PUBLIC_APP_URL=http://localhost:3000
+      - NEXT_PUBLIC_ADS_ENABLED=false
+      - INTERNAL_API_URL=http://api:8000
+      - WATCHPACK_POLLING=true
+    depends_on:
+      - api
+    networks:
+      - mediaflow_net
+
+networks:
+  mediaflow_net:
+    driver: bridge
+
+volumes:
+  redis_data:
+  media_storage:

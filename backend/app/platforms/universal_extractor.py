@@ -1,0 +1,639 @@
+from __future__ import annotations
+import asyncio
+import re
+from urllib.parse import urlparse
+import httpx
+import yt_dlp
+from app.core.security.ssrf import resolve_and_check, SSRFBlockedError
+from app.schemas.analyze import MediaInfo, FormatOption
+
+def format_bytes(size_bytes: float) -> str:
+    """Format bytes into KB / MB human-readable strings."""
+    if size_bytes < 1024 * 1024:
+        return f"{size_bytes / 1024:.1f} KB"
+    return f"{size_bytes / (1024 * 1024):.2f} MB"
+
+def build_image_format_options(thumbnail_or_orig: str = None) -> list[FormatOption]:
+    """Build format options for high-resolution images, Pinterest pins, Instagram photos, X pictures."""
+    return [
+        FormatOption(
+            format_id="jpg_original",
+            ext="JPG",
+            quality="Original High-Res",
+            file_size_formatted="Master Quality",
+            media_category="image",
+        ),
+        FormatOption(
+            format_id="png_hd",
+            ext="PNG",
+            quality="Ultra-HD",
+            file_size_formatted="Lossless",
+            media_category="image",
+        ),
+        FormatOption(
+            format_id="webp_hd",
+            ext="WEBP",
+            quality="Web-Optimized",
+            file_size_formatted="Fast",
+            media_category="image",
+        ),
+    ]
+
+def build_format_options(
+    duration_sec: int = 60,
+    raw_formats: list = None,
+    max_height: int = None,
+    max_width: int = None
+) -> list[FormatOption]:
+    """
+    Build rich video & audio format options showing ONLY available resolutions.
+    If a video is only available in 480p or 720p, higher unavailable resolutions (e.g. 1080p)
+    are strictly excluded.
+    """
+    dur = max(duration_sec or 60, 5)
+
+    standard_tiers = [
+        ("2160p (4K)", 2160, 15_000_000),
+        ("1440p (2K)", 1440, 8_000_000),
+        ("1080p", 1080, 5_200_000),
+        ("720p", 720, 2_800_000),
+        ("480p", 480, 750_000),
+        ("360p", 360, 420_000),
+        ("240p", 240, 180_000),
+        ("144p", 144, 80_000),
+    ]
+
+    # 1. Detect actual max available resolution
+    detected_max_res = 0
+    found_tier_sizes = {}
+
+    if max_height and max_width:
+        # Effective resolution for vertical vs horizontal videos
+        detected_max_res = min(max_height, max_width) if (max_height > max_width and max_width >= 240) else max_height
+    elif max_height:
+        detected_max_res = max_height
+
+    if raw_formats:
+        for f in raw_formats:
+            if f.get('vcodec') == 'none':
+                continue
+            h = f.get('height') or 0
+            w = f.get('width') or 0
+            res = min(h, w) if (h > 0 and w > 0 and (h > w or w > h)) else (h or w)
+            if res > 0:
+                if res > detected_max_res:
+                    detected_max_res = res
+
+                # Calculate or estimate size
+                size = f.get('filesize') or f.get('filesize_approx')
+                if not size:
+                    tbr = f.get('tbr') or 1000
+                    size = int((tbr * 1000 / 8) * dur)
+
+                # Map to standard tier key
+                if res >= 2160:
+                    found_tier_sizes["2160p (4k)"] = max(found_tier_sizes.get("2160p (4k)", 0), size)
+                elif res >= 1440:
+                    found_tier_sizes["1440p (2k)"] = max(found_tier_sizes.get("1440p (2k)", 0), size)
+                elif res >= 1080:
+                    found_tier_sizes["1080p"] = max(found_tier_sizes.get("1080p", 0), size)
+                elif res >= 720:
+                    found_tier_sizes["720p"] = max(found_tier_sizes.get("720p", 0), size)
+                elif res >= 480:
+                    found_tier_sizes["480p"] = max(found_tier_sizes.get("480p", 0), size)
+                elif res >= 360:
+                    found_tier_sizes["360p"] = max(found_tier_sizes.get("360p", 0), size)
+                elif res >= 240:
+                    found_tier_sizes["240p"] = max(found_tier_sizes.get("240p", 0), size)
+                elif res >= 144:
+                    found_tier_sizes["144p"] = max(found_tier_sizes.get("144p", 0), size)
+
+    # If no resolution detected, default conservatively to 720p
+    if detected_max_res <= 0:
+        detected_max_res = 720
+
+    options: list[FormatOption] = []
+
+    # Add only available video tiers (highest to lowest)
+    for q_label, min_h, bitrate in standard_tiers:
+        # If the tier exceeds the video's actual resolution, skip it!
+        if min_h > detected_max_res * 1.05:
+            continue
+
+        size = found_tier_sizes.get(q_label.lower())
+        if not size:
+            size = int((bitrate / 8) * dur)
+
+        options.append(FormatOption(
+            format_id=f"mp4_{q_label.split()[0].lower()}",
+            ext="MP4",
+            quality=q_label,
+            file_size_formatted=format_bytes(size),
+            media_category="video"
+        ))
+
+    # Add Standard Audio Tiers
+    audio_tiers = [
+        ("48KBPS", 48_000),
+        ("128KBPS", 128_000),
+        ("256KBPS", 256_000),
+        ("320KBPS", 320_000),
+    ]
+    for q_label, bitrate in audio_tiers:
+        est_size = (bitrate / 8) * dur
+        options.append(FormatOption(
+            format_id=f"mp3_{q_label.lower()}",
+            ext="MP3",
+            quality=q_label,
+            file_size_formatted=format_bytes(est_size),
+            media_category="audio"
+        ))
+
+    return options
+
+async def _scrape_pinterest(url: str) -> dict:
+    """Scrape Pinterest pin metadata with SSRF validation."""
+    parsed = urlparse(url)
+    if parsed.hostname:
+        resolve_and_check(parsed.hostname)
+
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.9",
+    }
+    async with httpx.AsyncClient(follow_redirects=True, timeout=12.0) as client:
+        resp = await client.get(url, headers=headers)
+        html = resp.text
+
+    img_match = re.search(r'https://i\.pinimg\.com/[0-9]+x/([a-zA-Z0-9/_.\-]+)', html)
+    orig_img = None
+    if img_match:
+        orig_img = f"https://i.pinimg.com/originals/{img_match.group(1)}"
+    else:
+        og_match = re.search(r'<meta\s+property=["\']og:image["\']\s+content=["\']([^"\']+)["\']', html)
+        if og_match:
+            orig_img = re.sub(r'/[0-9]+x/', '/originals/', og_match.group(1))
+
+    title_match = re.search(r'<meta\s+property=["\']og:title["\']\s+content=["\']([^"\']+)["\']', html)
+    title = title_match.group(1) if title_match else "Pinterest Pin"
+
+    return {
+        "title": title,
+        "image_url": orig_img,
+        "is_image": True,
+    }
+
+async def _scrape_reddit(url: str) -> dict:
+    """Extract Reddit post (photo, gallery, or video) with SSRF validation."""
+    parsed = urlparse(url)
+    if parsed.hostname:
+        resolve_and_check(parsed.hostname)
+
+    try:
+        # Handle direct i.redd.it image
+        if "i.redd.it" in url or "preview.redd.it" in url or any(url.lower().endswith(ext) for ext in (".jpg", ".jpeg", ".png", ".webp", ".gif")):
+            return {
+                "title": "Reddit Image Post",
+                "image_url": url,
+                "is_image": True,
+            }
+
+        # 1. Fetch official Reddit oEmbed for accurate Title and Author
+        oembed_url = f"https://www.reddit.com/oembed?url={url}"
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        }
+        title = "Reddit Post"
+        thumb_img = None
+        async with httpx.AsyncClient(follow_redirects=True, timeout=8.0) as client:
+            resp = await client.get(oembed_url, headers=headers)
+            if resp.status_code == 200:
+                oe_data = resp.json()
+                title = oe_data.get("title") or title
+                thumb_img = oe_data.get("thumbnail_url")
+
+        # 2. Fetch old.reddit.com for accurate media stream (data-url or preview)
+        from urllib.parse import urlunparse
+        old_url = urlunparse(parsed._replace(netloc="old.reddit.com"))
+        async with httpx.AsyncClient(follow_redirects=True, timeout=8.0) as client:
+            r = await client.get(old_url, headers=headers)
+            if r.status_code == 200:
+                html = r.text
+                data_match = re.search(r'data-url=["\']([^"\']+)["\']', html)
+                if data_match:
+                    media_url = data_match.group(1).replace("&amp;", "&")
+                    if "v.redd.it" in media_url or "youtube.com" in media_url or "youtu.be" in media_url:
+                        return {
+                            "title": title,
+                            "video_url": media_url,
+                            "thumbnail": thumb_img,
+                            "is_image": False,
+                        }
+                    if any(media_url.lower().endswith(ext) for ext in (".jpg", ".jpeg", ".png", ".webp", ".gif")) or "i.redd.it" in media_url or "preview.redd.it" in media_url:
+                        return {
+                            "title": title,
+                            "image_url": media_url,
+                            "is_image": True,
+                        }
+
+                preview_match = re.search(r'https://(?:i|preview)\.redd\.it/[a-zA-Z0-9._\-]+', html)
+                if preview_match:
+                    return {
+                        "title": title,
+                        "image_url": preview_match.group(0),
+                        "is_image": True,
+                    }
+
+        # 3. Try OpenGraph / HTML scraping for high-res photo or video
+        async with httpx.AsyncClient(follow_redirects=True, timeout=8.0) as client:
+            html_resp = await client.get(url, headers=headers)
+            html = html_resp.text
+            og_img = re.search(r'<meta\s+property=["\']og:image["\']\s+content=["\']([^"\']+)["\']', html)
+            og_vid = re.search(r'<meta\s+property=["\']og:video(?::secure_url)?["\']\s+content=["\']([^"\']+)["\']', html)
+
+            if og_vid:
+                return {
+                    "title": title,
+                    "video_url": og_vid.group(1).replace("&amp;", "&"),
+                    "thumbnail": og_img.group(1).replace("&amp;", "&") if og_img else thumb_img,
+                    "is_image": False,
+                }
+            elif og_img:
+                img_url = og_img.group(1).replace("&amp;", "&")
+                if not any(img_url.endswith(e) for e in ("reddit_icon.png", "reddit_logo.png", "favicon.ico")):
+                    return {
+                        "title": title,
+                        "image_url": img_url,
+                        "is_image": True,
+                    }
+
+        # 4. RapidSave fallback for Reddit videos
+        async with httpx.AsyncClient(follow_redirects=True, timeout=8.0) as client:
+            rapid_url = f"https://rapidsave.com/info?url={url}"
+            r = await client.get(rapid_url, headers={"user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36", "referer": "https://rapidsave.com/"})
+            if r.status_code == 200:
+                btn_match = re.search(r'class=["\'][^"\']*downloadbutton[^"\']*["\'][^>]*href=["\']([^"\']+)["\']', r.text)
+                if btn_match:
+                    dl_path = btn_match.group(1)
+                    full_dl = f"https://rapidsave.com{dl_path}" if dl_path.startswith("/") else dl_path
+                    return {
+                        "title": title,
+                        "video_url": full_dl,
+                        "thumbnail": thumb_img,
+                        "is_image": False,
+                    }
+
+        if thumb_img and any(thumb_img.endswith(e) for e in (".jpg", ".jpeg", ".png", ".webp", ".gif")):
+            return {
+                "title": title,
+                "image_url": thumb_img,
+                "is_image": True,
+            }
+    except Exception:
+        pass
+
+    return {}
+
+async def _scrape_threads(url: str) -> dict:
+    """Scrape Threads post for image or video with multi-tier extraction."""
+    parsed = urlparse(url)
+    if parsed.hostname:
+        resolve_and_check(parsed.hostname)
+
+    try:
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+            "Accept-Language": "en-US,en;q=0.9",
+            "Sec-Fetch-Mode": "navigate",
+        }
+        
+        # 1. OpenGraph & Script Scraping
+        async with httpx.AsyncClient(follow_redirects=True, timeout=10.0) as client:
+            resp = await client.get(url, headers=headers)
+            html = resp.text
+            
+            og_vid = re.search(r'<meta\s+property=["\']og:video(?::secure_url)?["\']\s+content=["\']([^"\']+)["\']', html)
+            og_img = re.search(r'<meta\s+property=["\']og:image["\']\s+content=["\']([^"\']+)["\']', html)
+            og_title = re.search(r'<meta\s+property=["\']og:title["\']\s+content=["\']([^"\']+)["\']', html)
+            
+            title = og_title.group(1) if og_title else "Threads Video"
+            if not title or "Log in" in title or "Threads •" in title or "Threads &#x2022;" in title:
+                title = "Threads Video"
+            
+            if og_vid:
+                return {
+                    "title": title,
+                    "video_url": og_vid.group(1).replace("&amp;", "&"),
+                    "thumbnail": og_img.group(1).replace("&amp;", "&") if og_img else None,
+                    "is_image": False,
+                }
+
+            # Search for embedded video in JSON script tags
+            scripts = re.findall(r'<script\s+type=["\']application/json["\'][^>]*>(.*?)</script>', html, re.DOTALL)
+            for s in scripts:
+                if "video_versions" in s or "playback_url" in s or ".mp4" in s:
+                    video_matches = re.findall(r'"video_versions":\s*\[(.*?)\]', s)
+                    for vm in video_matches:
+                        urls = re.findall(r'"url":\s*"([^"]+)"', vm)
+                        if urls:
+                            clean_url = urls[0].replace(r"\u0026", "&").replace(r"\/", "/")
+                            return {
+                                "title": title,
+                                "video_url": clean_url,
+                                "thumbnail": og_img.group(1).replace("&amp;", "&") if og_img else None,
+                                "is_image": False,
+                            }
+                    mp4_urls = re.findall(r'https://[^"\'\\ ]+?(?:cdninstagram\.com|fbcdn\.net)[^"\'\\ ]*?\.mp4[^"\'\\ ]*', s)
+                    if mp4_urls:
+                        clean_url = mp4_urls[0].replace(r"\u0026", "&").replace(r"\/", "/")
+                        return {
+                            "title": title,
+                            "video_url": clean_url,
+                            "thumbnail": og_img.group(1).replace("&amp;", "&") if og_img else None,
+                            "is_image": False,
+                        }
+
+            if og_img:
+                img_url = og_img.group(1).replace("&amp;", "&")
+                if not any(img_url.endswith(e) for e in ("favicon.ico", "threads_logo.png")):
+                    thumbnail_img = img_url
+
+        # 2. lovethreads.net API fallback
+        async with httpx.AsyncClient(follow_redirects=True, timeout=8.0) as client:
+            endpoint = "https://lovethreads.net/api/ajaxSearch"
+            data = {"q": url, "t": "media", "lang": "en"}
+            lt_headers = {
+                "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
+                "origin": "https://lovethreads.net",
+                "referer": "https://lovethreads.net/en",
+                "x-requested-with": "XMLHttpRequest",
+                "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+            }
+            r = await client.post(endpoint, data=data, headers=lt_headers)
+            if r.status_code == 200:
+                res = r.json()
+                if res.get("status") == "ok":
+                    data_html = res.get("data", "")
+                    v_match = re.search(r'href=["\'](https?://[^"\']+)["\'][^>]*title=["\']Download Video["\']', data_html)
+                    p_match = re.search(r'<img[^>]+src=["\'](https?://[^"\']+)["\']', data_html)
+                    if v_match:
+                        return {
+                            "title": "Threads Video",
+                            "video_url": v_match.group(1),
+                            "thumbnail": p_match.group(1) if p_match else thumbnail_img,
+                            "is_image": False,
+                        }
+                    elif p_match and not v_match:
+                        return {
+                            "title": "Threads Photo",
+                            "image_url": p_match.group(1),
+                            "is_image": True,
+                        }
+    except Exception:
+        pass
+
+    return {
+        "title": "Threads Video",
+        "video_url": url,
+        "thumbnail": thumbnail_img,
+        "is_image": False,
+    }
+
+async def extract_media_info(url: str, platform_name: str) -> MediaInfo:
+    # SSRF check on target URL
+    parsed = urlparse(url)
+    if parsed.hostname:
+        resolve_and_check(parsed.hostname)
+
+    # 1. Check if direct image URL
+    if any(url.lower().endswith(ext) or f"{ext}?" in url.lower() for ext in (".jpg", ".jpeg", ".png", ".webp", ".gif", ".svg", ".avif")):
+        filename = url.split("/")[-1].split("?")[0]
+        format_opts = build_image_format_options(url)
+        return MediaInfo(
+            url=url,
+            platform=platform_name,
+            title=filename or "High-Resolution Image",
+            thumbnail_url=url,
+            media_type="image",
+            formats=[f"{opt.ext} {opt.quality} ({opt.file_size_formatted})" for opt in format_opts],
+            format_options=format_opts,
+            download_url=url,
+            download_supported=True,
+            embed_supported=False,
+        )
+
+    # 2. Pinterest pin handler
+    if "pinterest.com" in url or "pin.it" in url or "pinimg.com" in url:
+        try:
+            pin_data = await _scrape_pinterest(url)
+            if pin_data.get("image_url"):
+                format_opts = build_image_format_options(pin_data["image_url"])
+                return MediaInfo(
+                    url=url,
+                    platform="pinterest",
+                    title=pin_data.get("title", "Pinterest Pin"),
+                    thumbnail_url=pin_data["image_url"],
+                    media_type="image",
+                    formats=[f"{opt.ext} {opt.quality} ({opt.file_size_formatted})" for opt in format_opts],
+                    format_options=format_opts,
+                    download_url=pin_data["image_url"],
+                    download_supported=True,
+                    embed_supported=True,
+                )
+        except Exception:
+            pass
+
+    # 3. Reddit specific photo / gallery / video handler
+    if "reddit.com" in url or "redd.it" in url:
+        try:
+            reddit_data = await _scrape_reddit(url)
+            if reddit_data.get("is_image") and reddit_data.get("image_url"):
+                format_opts = build_image_format_options(reddit_data["image_url"])
+                return MediaInfo(
+                    url=url,
+                    platform="reddit",
+                    title=reddit_data.get("title", "Reddit Post"),
+                    thumbnail_url=reddit_data["image_url"],
+                    media_type="image",
+                    formats=[f"{opt.ext} {opt.quality} ({opt.file_size_formatted})" for opt in format_opts],
+                    format_options=format_opts,
+                    download_url=reddit_data["image_url"],
+                    download_supported=True,
+                    embed_supported=True,
+                )
+            elif reddit_data.get("video_url"):
+                v_url = reddit_data["video_url"]
+                max_h = reddit_data.get("max_height")
+                if not max_h:
+                    h_match = re.search(r'[_/](\d{3,4})\.(?:mp4|m3u8|webm)', v_url)
+                    if h_match:
+                        max_h = int(h_match.group(1))
+                format_opts = build_format_options(30, max_height=max_h)
+                return MediaInfo(
+                    url=url,
+                    platform="reddit",
+                    title=reddit_data.get("title", "Reddit Video"),
+                    thumbnail_url=reddit_data.get("thumbnail"),
+                    duration=30,
+                    media_type="video",
+                    formats=[f"{opt.ext} {opt.quality} ({opt.file_size_formatted})" for opt in format_opts],
+                    format_options=format_opts,
+                    download_url=reddit_data["video_url"],
+                    download_supported=True,
+                    embed_supported=True,
+                )
+        except Exception:
+            pass
+
+    # 4. Threads photo/video handler
+    if "threads.net" in url or "threads.com" in url:
+        try:
+            th_data = await _scrape_threads(url)
+            if th_data.get("is_image") and th_data.get("image_url"):
+                format_opts = build_image_format_options(th_data["image_url"])
+                return MediaInfo(
+                    url=url,
+                    platform="threads",
+                    title=th_data.get("title", "Threads Photo"),
+                    thumbnail_url=th_data["image_url"],
+                    media_type="image",
+                    formats=[f"{opt.ext} {opt.quality} ({opt.file_size_formatted})" for opt in format_opts],
+                    format_options=format_opts,
+                    download_url=th_data["image_url"],
+                    download_supported=True,
+                    embed_supported=True,
+                )
+            else:
+                video_url = th_data.get("video_url") or url
+                thumbnail = th_data.get("thumbnail") or th_data.get("image_url")
+                format_opts = build_format_options(30)
+                return MediaInfo(
+                    url=url,
+                    platform="threads",
+                    title=th_data.get("title", "Threads Video"),
+                    thumbnail_url=thumbnail,
+                    duration=30,
+                    media_type="video",
+                    formats=[f"{opt.ext} {opt.quality} ({opt.file_size_formatted})" for opt in format_opts],
+                    format_options=format_opts,
+                    download_url=video_url,
+                    download_supported=True,
+                    embed_supported=True,
+                )
+        except Exception:
+            pass
+
+    # 5. Universal yt-dlp extraction for videos and rich media
+    ydl_opts = {
+        'quiet': True,
+        'no_warnings': True,
+        'skip_download': True,
+        'format': 'bestvideo+bestaudio/best',
+        'socket_timeout': 15,
+        'http_headers': {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+            'Accept-Language': 'en-US,en;q=0.9',
+        },
+    }
+
+    def _extract():
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            return ydl.extract_info(url, download=False)
+
+    loop = asyncio.get_event_loop()
+    try:
+        info = await loop.run_in_executor(None, _extract)
+        clean_platform_label = platform_name.replace('_', ' ').title()
+        title = info.get('title') or info.get('description') or f"{clean_platform_label} Media"
+        thumbnail = info.get('thumbnail') or (info.get('thumbnails', [{}])[-1].get('url') if info.get('thumbnails') else None)
+        duration = info.get('duration', 0)
+        
+        # Check if media is purely an image/photo post
+        has_video_formats = bool(info.get('formats') and any(f.get('vcodec') != 'none' for f in info['formats']))
+        
+        if not has_video_formats and thumbnail:
+            format_opts = build_image_format_options(thumbnail)
+            formats = [f"{opt.ext} {opt.quality} ({opt.file_size_formatted})" for opt in format_opts]
+            return MediaInfo(
+                url=url,
+                platform=platform_name,
+                title=title[:100],
+                thumbnail_url=thumbnail,
+                duration=0,
+                media_type="image",
+                formats=formats,
+                format_options=format_opts,
+                download_url=thumbnail,
+                download_supported=True,
+                embed_supported=True,
+            )
+
+        direct_download_url = info.get('url')
+        if not direct_download_url and info.get('formats'):
+            best_fmt = [f for f in info['formats'] if f.get('url') and f.get('vcodec') != 'none']
+            if best_fmt:
+                direct_download_url = best_fmt[-1].get('url')
+            else:
+                direct_download_url = info['formats'][-1].get('url')
+
+        format_opts = build_format_options(
+            duration_sec=duration,
+            raw_formats=info.get('formats'),
+            max_height=info.get('height'),
+            max_width=info.get('width')
+        )
+        formats = [f"{opt.ext} {opt.quality} ({opt.file_size_formatted})" for opt in format_opts]
+
+        return MediaInfo(
+            url=url,
+            platform=platform_name,
+            title=title[:100],
+            thumbnail_url=thumbnail,
+            duration=duration,
+            media_type="video",
+            formats=formats,
+            format_options=format_opts,
+            download_url=direct_download_url or url,
+            download_supported=True,
+            embed_supported=True,
+        )
+    except Exception:
+        clean_platform_label = platform_name.replace('_', ' ').title()
+        is_probable_image = (
+            platform_name == "pinterest"
+            or "pin" in url.lower()
+            or any(url.lower().endswith(e) or f"{e}?" in url.lower() for e in (".jpg", ".jpeg", ".png", ".webp", ".gif"))
+        )
+        
+        if is_probable_image:
+            format_opts = build_image_format_options(url)
+            formats = [f"{opt.ext} {opt.quality} ({opt.file_size_formatted})" for opt in format_opts]
+            return MediaInfo(
+                url=url,
+                platform=platform_name,
+                title=f"{clean_platform_label} Photo Post",
+                thumbnail_url=url if any(url.lower().endswith(e) for e in (".jpg", ".jpeg", ".png", ".webp", ".gif")) else None,
+                media_type="image",
+                formats=formats,
+                format_options=format_opts,
+                download_url=url,
+                download_supported=True,
+                embed_supported=True,
+            )
+
+        format_opts = build_format_options(60)
+        formats = [f"{opt.ext} {opt.quality} ({opt.file_size_formatted})" for opt in format_opts]
+        return MediaInfo(
+            url=url,
+            platform=platform_name,
+            title=f"{clean_platform_label} Media Content",
+            media_type="video",
+            formats=formats,
+            format_options=format_opts,
+            download_url=url,
+            download_supported=True,
+            embed_supported=True,
+        )

@@ -1,0 +1,22 @@
+# Python / Backend Git Ignore
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.venv/
+venv/
+env/
+ENV/
+.env
+.env.*
+*.env
+!.env.example
+media_storage/
+/tmp/media_storage/
+mediaflow_downloads/
+*.tmp
+*.log
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/

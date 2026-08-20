@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mediaflow-backend"
+version = "0.1.0"
+description = "MediaFlow FastAPI Backend"
+authors = [{name = "Developer"}]
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.32.0",
+    "pydantic>=2.10.0",
+    "pydantic-settings>=2.7.0",
+    "httpx>=0.28.0",
+    "redis[hiredis]>=5.2.0",
+    "arq>=0.26.0",
+    "slowapi>=0.1.9",
+    "structlog>=24.4.0",
+    "python-multipart>=0.0.18",
+    "aiofiles>=24.1.0",
+    "orjson>=3.10.0"
+]
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "-ra -q"
+testpaths = ["tests"]
+asyncio_mode = "auto"
