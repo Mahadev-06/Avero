@@ -730,8 +730,9 @@ button {
   }
 
   .platform-marquee-container {
-    max-width: 330px !important;
-    margin: 0 auto 2rem auto !important;
+    max-width: 320px !important;
+    margin: 0 auto 1.75rem auto !important;
+    padding: 6px 0 !important;
   }
 
   .container {
@@ -779,6 +780,51 @@ button {
   }
 }
 
+@media (max-width: 640px) {
+  .platform-marquee-container {
+    max-width: 310px !important;
+    margin: 0 auto 1.35rem auto !important;
+    padding: 4px 0 !important;
+  }
+
+  .input-bar-inner {
+    padding: 0.4rem 0.5rem 0.4rem 1.15rem !important;
+    min-height: 52px !important;
+    border-radius: 9999px !important;
+  }
+
+  .desktop-multi-btn {
+    display: none !important;
+  }
+
+  .input-action-btn {
+    padding: 0.35rem 0.75rem !important;
+    font-size: 0.78rem !important;
+    font-weight: 800 !important;
+    min-height: 36px !important;
+    border-radius: 9999px !important;
+  }
+
+  .submit-action-btn {
+    height: 38px !important;
+    min-height: 38px !important;
+    width: 38px !important;
+    min-width: 38px !important;
+    font-size: 1rem !important;
+  }
+
+  .mode-switcher-row {
+    gap: 0.45rem !important;
+    margin-top: 1.25rem !important;
+    margin-bottom: 0.75rem !important;
+  }
+
+  .mode-switcher-row button {
+    padding: 0.45rem 0.85rem !important;
+    font-size: 0.78rem !important;
+  }
+}
+
 @media (max-width: 480px) {
   .hero-section {
     padding-top: 5.5rem !important;
@@ -787,12 +833,12 @@ button {
 
   .hero-title {
     font-size: clamp(1.45rem, 6.2vw, 2.1rem) !important;
-    margin-bottom: 1.5rem !important;
+    margin-bottom: 1.35rem !important;
   }
 
   .platform-marquee-container {
-    max-width: 295px !important;
-    margin: 0 auto 1.5rem auto !important;
+    max-width: 290px !important;
+    margin: 0 auto 1.25rem auto !important;
   }
 
   .container {
@@ -805,21 +851,21 @@ button {
   }
 
   .input-bar-inner {
-    padding: 0.45rem 0.5rem 0.45rem 0.95rem !important;
+    padding: 0.35rem 0.45rem 0.35rem 1rem !important;
   }
 
   .input-action-btn {
-    padding: 0.35rem 0.65rem !important;
+    padding: 0.3rem 0.65rem !important;
     font-size: 0.76rem !important;
     min-height: 34px !important;
   }
 
   .submit-action-btn {
-    height: 38px !important;
-    min-height: 38px !important;
-    width: 38px !important;
-    min-width: 38px !important;
-    font-size: 1rem !important;
+    height: 36px !important;
+    min-height: 36px !important;
+    width: 36px !important;
+    min-width: 36px !important;
+    font-size: 0.95rem !important;
   }
 
   .footer-links-wrap {

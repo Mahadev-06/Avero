@@ -23,7 +23,7 @@ const PLATFORM_ICONS: PlatformIcon[] = [
     name: 'YouTube',
     type: 'youtube',
     color: '#FF0000',
-    placeholder: 'Paste YouTube video or Shorts link...',
+    placeholder: 'Paste YouTube link...',
     svg: (
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
         <path fill="#FF0000" d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814z"/>
@@ -35,7 +35,7 @@ const PLATFORM_ICONS: PlatformIcon[] = [
     name: 'Instagram',
     type: 'instagram',
     color: '#E1306C',
-    placeholder: 'Paste Instagram Reel or post link...',
+    placeholder: 'Paste Instagram link...',
     svg: (
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
         <defs>
@@ -57,7 +57,7 @@ const PLATFORM_ICONS: PlatformIcon[] = [
     name: 'TikTok',
     type: 'tiktok',
     color: '#00F2FE',
-    placeholder: 'Paste TikTok video link...',
+    placeholder: 'Paste TikTok link...',
     svg: (
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
         <path fill="#25F4EE" d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.82.56-1.31 1.55-1.24 2.55.05.9.6 1.75 1.41 2.16.85.45 1.92.42 2.73-.06.77-.45 1.28-1.29 1.34-2.19.04-3.58.02-7.16.02-10.74z"/>
@@ -70,7 +70,7 @@ const PLATFORM_ICONS: PlatformIcon[] = [
     name: 'Facebook',
     type: 'facebook',
     color: '#1877F2',
-    placeholder: 'Paste Facebook video link...',
+    placeholder: 'Paste Facebook link...',
     svg: (
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
         <circle cx="12" cy="12" r="12" fill="#1877F2" />
@@ -82,7 +82,7 @@ const PLATFORM_ICONS: PlatformIcon[] = [
     name: 'X / Twitter',
     type: 'x_twitter',
     color: '#FFFFFF',
-    placeholder: 'Paste X / Twitter post or photo link...',
+    placeholder: 'Paste X (Twitter) link...',
     svg: (
       <img
         src="/x-logo.png"
@@ -102,7 +102,7 @@ const PLATFORM_ICONS: PlatformIcon[] = [
     name: 'Pinterest',
     type: 'pinterest',
     color: '#E60023',
-    placeholder: 'Paste Pinterest pin, photo, or video link...',
+    placeholder: 'Paste Pinterest link...',
     svg: (
       <img
         src="/pinterest-logo.png"
@@ -123,7 +123,7 @@ const PLATFORM_ICONS: PlatformIcon[] = [
     name: 'Reddit',
     type: 'reddit',
     color: '#FF4500',
-    placeholder: 'Paste Reddit post, video, or photo link...',
+    placeholder: 'Paste Reddit link...',
     svg: (
       <img
         src="/reddit-logo.png"
@@ -144,7 +144,7 @@ const PLATFORM_ICONS: PlatformIcon[] = [
     name: 'Threads',
     type: 'threads',
     color: '#FFFFFF',
-    placeholder: 'Paste Threads video, photo, or post link...',
+    placeholder: 'Paste Threads link...',
     svg: (
       <img
         src="/threads-logo.png"
@@ -165,7 +165,7 @@ const PLATFORM_ICONS: PlatformIcon[] = [
     name: 'Direct Media',
     type: 'direct',
     color: '#10B981',
-    placeholder: 'Paste direct video or image link (MP4, JPG, PNG, WebM)...',
+    placeholder: 'Paste direct media link (MP4, JPG)...',
     svg: (
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
         <circle cx="12" cy="12" r="12" fill="#10B981" />
@@ -184,14 +184,14 @@ interface VideoResultItem {
 }
 
 const ROTATING_PLACEHOLDERS = [
-  'Paste YouTube video link here...',
-  'Paste TikTok video link here...',
-  'Paste Instagram Reel, post, or photo link here...',
-  'Paste Pinterest pin, photo, or video link here...',
-  'Paste Reddit post, video, or photo link here...',
-  'Paste Threads video or post link here...',
-  'Paste Facebook video link here...',
-  'Paste X (Twitter) post or video link here...',
+  'Paste YouTube link here...',
+  'Paste TikTok link here...',
+  'Paste Instagram link here...',
+  'Paste Pinterest link here...',
+  'Paste Reddit link here...',
+  'Paste Threads link here...',
+  'Paste Facebook link here...',
+  'Paste X (Twitter) link here...',
 ];
 
 function formatDurationSeconds(sec?: number): string {
@@ -835,7 +835,7 @@ export function UrlInput() {
                 type="button"
                 onClick={() => setIsMultiMode(!isMultiMode)}
                 title={isMultiMode ? "Switch to single URL mode" : "Switch to multi-URL batch mode"}
-                className="pill-btn input-action-btn"
+                className="pill-btn input-action-btn desktop-multi-btn"
                 style={{
                   padding: '0.45rem 0.95rem',
                   fontSize: '0.82rem',
@@ -957,23 +957,51 @@ export function UrlInput() {
         )}
       </form>
 
-      {/* Mode Switcher Pills (Paste Link vs Search Engine) */}
-      <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginTop: '2rem', marginBottom: '1rem' }}>
+      {/* Mode Switcher Pills (Paste Link vs Multi Mode vs Search Engine) */}
+      <div
+        className="mode-switcher-row"
+        style={{
+          display: 'flex',
+          justifyContent: 'center',
+          gap: '0.75rem',
+          marginTop: '1.75rem',
+          marginBottom: '1rem',
+          flexWrap: 'wrap',
+        }}
+      >
         <button
           type="button"
           onClick={() => {
             setIsSearchMode(false);
+            setIsMultiMode(false);
             setStatusMsg(null);
           }}
-          className={!isSearchMode ? "pill-btn-black" : "pill-btn"}
+          className={!isSearchMode && !isMultiMode ? "pill-btn-black" : "pill-btn"}
           style={{
-            padding: '0.55rem 1.45rem',
-            fontSize: '0.88rem',
+            padding: '0.5rem 1.25rem',
+            fontSize: '0.85rem',
             fontWeight: 800,
             cursor: 'pointer',
           }}
         >
-          Paste Link Mode
+          Paste Link
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setIsSearchMode(false);
+            setIsMultiMode(!isMultiMode);
+            setStatusMsg(null);
+          }}
+          className={!isSearchMode && isMultiMode ? "pill-btn-black" : "pill-btn"}
+          style={{
+            padding: '0.5rem 1.25rem',
+            fontSize: '0.85rem',
+            fontWeight: 800,
+            cursor: 'pointer',
+          }}
+        >
+          Multi-Link Mode
         </button>
         <button
           type="button"
@@ -984,8 +1012,8 @@ export function UrlInput() {
           }}
           className={isSearchMode ? "pill-btn-black" : "pill-btn"}
           style={{
-            padding: '0.55rem 1.45rem',
-            fontSize: '0.88rem',
+            padding: '0.5rem 1.25rem',
+            fontSize: '0.85rem',
             fontWeight: 800,
             cursor: 'pointer',
             display: 'inline-flex',
@@ -993,7 +1021,7 @@ export function UrlInput() {
             gap: '0.45rem',
           }}
         >
-          <Search className="w-4 h-4" /> Search Video Engine
+          <Search className="w-4 h-4" /> Search Video
         </button>
       </div>
 
