@@ -780,6 +780,35 @@ button {
   }
 }
 
+.input-bar-multi {
+  border-radius: 22px !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  padding: 1.15rem 1.25rem 0.85rem 1.25rem !important;
+}
+
+.mode-switcher-row {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 100% !important;
+  max-width: 480px !important;
+  margin: 1.65rem auto 1rem auto !important;
+  gap: 0.45rem !important;
+}
+
+.mode-switcher-row button {
+  flex: 1 1 0px !important;
+  min-width: 0 !important;
+  white-space: nowrap !important;
+  text-align: center !important;
+  justify-content: center !important;
+  padding: 0.5rem 0.35rem !important;
+  font-size: 0.82rem !important;
+}
+
 @media (max-width: 640px) {
   .platform-marquee-container {
     max-width: 310px !important;
@@ -791,6 +820,11 @@ button {
     padding: 0.4rem 0.5rem 0.4rem 1.15rem !important;
     min-height: 52px !important;
     border-radius: 9999px !important;
+  }
+
+  .input-bar-multi {
+    padding: 0.95rem 1rem 0.75rem 1rem !important;
+    border-radius: 20px !important;
   }
 
   .desktop-multi-btn {
@@ -814,14 +848,14 @@ button {
   }
 
   .mode-switcher-row {
-    gap: 0.45rem !important;
+    gap: 0.35rem !important;
     margin-top: 1.25rem !important;
     margin-bottom: 0.75rem !important;
   }
 
   .mode-switcher-row button {
-    padding: 0.45rem 0.85rem !important;
-    font-size: 0.78rem !important;
+    padding: 0.45rem 0.25rem !important;
+    font-size: 0.76rem !important;
   }
 }
 
@@ -871,6 +905,17 @@ button {
   .footer-links-wrap {
     grid-template-columns: 1fr 1fr !important;
     gap: 1.75rem 1rem !important;
+  }
+}
+
+@media (max-width: 380px) {
+  .mode-switcher-row {
+    gap: 0.2rem !important;
+  }
+
+  .mode-switcher-row button {
+    padding: 0.4rem 0.15rem !important;
+    font-size: 0.7rem !important;
   }
 }
 

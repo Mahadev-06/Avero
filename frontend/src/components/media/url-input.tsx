@@ -695,21 +695,22 @@ export function UrlInput() {
 
       {/* 2. Main Minimal Search & Paste Bar */}
       <form onSubmit={handleSubmit} style={{ position: 'relative', width: '100%' }}>
-        <div
-          className="input-bar-inner"
-          style={{
-            position: 'relative',
-            display: 'flex',
-            alignItems: 'center',
-            backgroundColor: 'var(--bg-color)',
-            border: '1px solid rgba(255, 255, 255, 0.45)',
-            borderRadius: isMultiMode && !isSearchMode ? 'var(--radius-xl)' : 'var(--radius-full)',
-            padding: '0.6rem 0.75rem 0.6rem 1.85rem',
-            boxShadow: 'var(--nm-inset-md)',
-            transition: 'border-radius 0.2s ease, box-shadow 0.2s ease',
-          }}
-        >
-          {isMultiMode && !isSearchMode ? (
+        {isMultiMode && !isSearchMode ? (
+          /* Multi-URL Batch Textarea Container */
+          <div
+            className="input-bar-multi"
+            style={{
+              position: 'relative',
+              display: 'flex',
+              flexDirection: 'column',
+              backgroundColor: 'var(--bg-color)',
+              border: '1px solid rgba(255, 255, 255, 0.5)',
+              borderRadius: '22px',
+              padding: '1.15rem 1.25rem 0.95rem 1.25rem',
+              boxShadow: 'var(--nm-inset-md)',
+              transition: 'border-radius 0.2s ease, box-shadow 0.2s ease',
+            }}
+          >
             <textarea
               rows={4}
               value={inputValue}
@@ -718,15 +719,144 @@ export function UrlInput() {
               style={{
                 width: '100%',
                 backgroundColor: 'transparent',
-                fontSize: '1.05rem',
+                fontSize: '0.98rem',
+                lineHeight: 1.55,
                 color: 'var(--text-color)',
                 outline: 'none',
                 resize: 'none',
-                padding: '0.5rem 0',
+                padding: '0.2rem 0',
+                border: 'none',
                 fontFamily: 'monospace',
+                minHeight: '105px',
               }}
             />
-          ) : (
+
+            {/* Bottom Row Inside Multi Box: Helper Count + Actions */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginTop: '0.75rem',
+                paddingTop: '0.65rem',
+                borderTop: '1px solid rgba(0, 0, 0, 0.06)',
+                gap: '0.5rem',
+                flexWrap: 'wrap',
+              }}
+            >
+              <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)' }}>
+                {inputValue.trim()
+                  ? `${inputValue.trim().split('\n').filter(Boolean).length} URL(s) detected`
+                  : 'Batch Download Mode'}
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                {inputValue.trim() ? (
+                  <button
+                    type="button"
+                    onClick={handleClearInput}
+                    title="Clear links"
+                    className="pill-btn input-action-btn"
+                    style={{
+                      padding: '0.35rem 0.85rem',
+                      fontSize: '0.78rem',
+                      fontWeight: 700,
+                      whiteSpace: 'nowrap',
+                      minHeight: '34px',
+                      color: 'var(--text-color)',
+                    }}
+                  >
+                    Clear All
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handlePaste}
+                    title="Paste from clipboard"
+                    className="pill-btn input-action-btn"
+                    style={{
+                      padding: '0.35rem 0.85rem',
+                      fontSize: '0.78rem',
+                      fontWeight: 700,
+                      whiteSpace: 'nowrap',
+                      minHeight: '34px',
+                    }}
+                  >
+                    Paste
+                  </button>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => setIsMultiMode(false)}
+                  title="Switch to single URL mode"
+                  className="pill-btn input-action-btn"
+                  style={{
+                    padding: '0.35rem 0.85rem',
+                    fontSize: '0.78rem',
+                    fontWeight: 700,
+                    whiteSpace: 'nowrap',
+                    minHeight: '34px',
+                    color: 'var(--text-color)',
+                  }}
+                >
+                  Single
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={analyzing || searching || !inputValue.trim()}
+                  aria-label="Process links"
+                  className="pill-btn-black"
+                  style={{
+                    height: '36px',
+                    minHeight: '36px',
+                    borderRadius: 'var(--radius-full)',
+                    padding: '0 1.15rem',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.45rem',
+                    fontSize: '0.82rem',
+                    fontWeight: 800,
+                    cursor: analyzing || searching ? 'wait' : 'pointer',
+                    flexShrink: 0,
+                  }}
+                >
+                  {analyzing ? (
+                    <>
+                      <div className="spinner" style={{ color: '#ffffff' }}>
+                        <div /><div /><div /><div /><div />
+                        <div /><div /><div /><div /><div />
+                      </div>
+                      <span>Analyzing...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>Process</span>
+                      <span style={{ fontSize: '0.95rem' }}>➔</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : (
+          /* Single URL Input Pill Container */
+          <div
+            className="input-bar-inner"
+            style={{
+              position: 'relative',
+              display: 'flex',
+              alignItems: 'center',
+              backgroundColor: 'var(--bg-color)',
+              border: '1px solid rgba(255, 255, 255, 0.45)',
+              borderRadius: 'var(--radius-full)',
+              padding: '0.6rem 0.75rem 0.6rem 1.85rem',
+              boxShadow: 'var(--nm-inset-md)',
+              transition: 'border-radius 0.2s ease, box-shadow 0.2s ease',
+            }}
+          >
             <div style={{ position: 'relative', flex: 1, display: 'flex', alignItems: 'center', minWidth: 0, textAlign: 'left' }}>
               <input
                 type="text"
@@ -788,16 +918,53 @@ export function UrlInput() {
                 </div>
               )}
             </div>
-          )}
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginLeft: '0.35rem' }}>
-            {!analyzing && !searching && (
-              inputValue.trim() ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginLeft: '0.35rem' }}>
+              {!analyzing && !searching && (
+                inputValue.trim() ? (
+                  <button
+                    type="button"
+                    onClick={handleClearInput}
+                    title="Clear link"
+                    className="pill-btn input-action-btn"
+                    style={{
+                      padding: '0.45rem 0.95rem',
+                      fontSize: '0.82rem',
+                      fontWeight: 700,
+                      whiteSpace: 'nowrap',
+                      minHeight: '38px',
+                      color: 'var(--text-color)',
+                    }}
+                  >
+                    Clear
+                  </button>
+                ) : (
+                  !isSearchMode && (
+                    <button
+                      type="button"
+                      onClick={handlePaste}
+                      title="Paste from clipboard"
+                      className="pill-btn input-action-btn"
+                      style={{
+                        padding: '0.45rem 0.95rem',
+                        fontSize: '0.82rem',
+                        fontWeight: 700,
+                        whiteSpace: 'nowrap',
+                        minHeight: '38px',
+                      }}
+                    >
+                      Paste
+                    </button>
+                  )
+                )
+              )}
+
+              {!isSearchMode && !analyzing && !searching && (
                 <button
                   type="button"
-                  onClick={handleClearInput}
-                  title="Clear link"
-                  className="pill-btn input-action-btn"
+                  onClick={() => setIsMultiMode(!isMultiMode)}
+                  title={isMultiMode ? "Switch to single URL mode" : "Switch to multi-URL batch mode"}
+                  className="pill-btn input-action-btn desktop-multi-btn"
                   style={{
                     padding: '0.45rem 0.95rem',
                     fontSize: '0.82rem',
@@ -807,102 +974,50 @@ export function UrlInput() {
                     color: 'var(--text-color)',
                   }}
                 >
-                  Clear
+                  {isMultiMode ? 'Single' : 'Multi'}
                 </button>
-              ) : (
-                !isSearchMode && (
-                  <button
-                    type="button"
-                    onClick={handlePaste}
-                    title="Paste from clipboard"
-                    className="pill-btn input-action-btn"
-                    style={{
-                      padding: '0.45rem 0.95rem',
-                      fontSize: '0.82rem',
-                      fontWeight: 700,
-                      whiteSpace: 'nowrap',
-                      minHeight: '38px',
-                    }}
-                  >
-                    Paste
-                  </button>
-                )
-              )
-            )}
+              )}
 
-            {!isSearchMode && !analyzing && !searching && (
               <button
-                type="button"
-                onClick={() => setIsMultiMode(!isMultiMode)}
-                title={isMultiMode ? "Switch to single URL mode" : "Switch to multi-URL batch mode"}
-                className="pill-btn input-action-btn desktop-multi-btn"
+                type="submit"
+                disabled={analyzing || searching}
+                aria-label="Process link or search"
+                className="pill-btn-black submit-action-btn"
                 style={{
-                  padding: '0.45rem 0.95rem',
-                  fontSize: '0.82rem',
-                  fontWeight: 700,
-                  whiteSpace: 'nowrap',
-                  minHeight: '38px',
-                  color: 'var(--text-color)',
+                  height: '44px',
+                  minHeight: '44px',
+                  width: analyzing || searching ? 'auto' : '44px',
+                  minWidth: analyzing || searching ? '170px' : '44px',
+                  borderRadius: 'var(--radius-full)',
+                  padding: analyzing || searching ? '0 1.25rem' : '0',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.75rem',
+                  fontSize: analyzing || searching ? '0.85rem' : '1.15rem',
+                  fontWeight: 800,
+                  flexShrink: 0,
+                  cursor: analyzing || searching ? 'wait' : 'pointer',
+                  transition: 'all 0.25s cubic-bezier(0.2, 0, 0, 1)',
+                  position: 'relative',
+                  zIndex: 10,
                 }}
               >
-                {isMultiMode ? 'Single' : 'Multi'}
+                {analyzing || searching ? (
+                  <>
+                    <div className="spinner" style={{ color: '#ffffff' }}>
+                      <div /><div /><div /><div /><div />
+                      <div /><div /><div /><div /><div />
+                    </div>
+                    <span>{isSearchMode ? 'Searching...' : 'Analyzing...'}</span>
+                  </>
+                ) : (
+                  <span>➔</span>
+                )}
               </button>
-            )}
-
-            <button
-              type="submit"
-              disabled={analyzing || searching}
-              aria-label="Process link or search"
-              className="pill-btn-black submit-action-btn"
-              style={{
-                height: '44px',
-                minHeight: '44px',
-                width: analyzing || searching ? 'auto' : '44px',
-                minWidth: analyzing || searching ? '170px' : '44px',
-                borderRadius: 'var(--radius-full)',
-                padding: analyzing || searching ? '0 1.25rem' : '0',
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '0.75rem',
-                fontSize: analyzing || searching ? '0.85rem' : '1.15rem',
-                fontWeight: 800,
-                flexShrink: 0,
-                cursor: analyzing || searching ? 'wait' : 'pointer',
-                transition: 'all 0.25s cubic-bezier(0.2, 0, 0, 1)',
-                position: 'relative',
-                zIndex: 10,
-              }}
-            >
-              {analyzing || searching ? (
-                <>
-                  <div className="spinner" style={{ color: '#ffffff' }}>
-                    <div /><div /><div /><div /><div />
-                    <div /><div /><div /><div /><div />
-                  </div>
-                  <TextShimmerWave
-                    className="font-extrabold tracking-tight"
-                    duration={1.2}
-                    spread={1}
-                    zDistance={4}
-                    scaleDistance={1.06}
-                    rotateYDistance={15}
-                    style={{
-                      // @ts-expect-error CSS variable
-                      '--base-color': '#ffffff',
-                      '--base-gradient-color': 'var(--color-accent-400)',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    {isSearchMode ? 'Searching...' : 'Analyzing...'}
-                  </TextShimmerWave>
-                </>
-              ) : (
-                '➔'
-              )}
-            </button>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Live YouTube Autocomplete Suggestions Dropdown */}
         {isSearchMode && showSuggestions && suggestions.length > 0 && (
@@ -957,16 +1072,19 @@ export function UrlInput() {
         )}
       </form>
 
-      {/* Mode Switcher Pills (Paste Link vs Multi Mode vs Search Engine) */}
+      {/* Mode Switcher Pills (Paste Link vs Multi-Link vs Search Video) - Always 3 in 1 Row */}
       <div
         className="mode-switcher-row"
         style={{
           display: 'flex',
+          flexDirection: 'row',
+          flexWrap: 'nowrap',
           justifyContent: 'center',
-          gap: '0.75rem',
-          marginTop: '1.75rem',
-          marginBottom: '1rem',
-          flexWrap: 'wrap',
+          alignItems: 'center',
+          gap: '0.45rem',
+          width: '100%',
+          maxWidth: '460px',
+          margin: '1.65rem auto 1rem auto',
         }}
       >
         <button
@@ -978,10 +1096,17 @@ export function UrlInput() {
           }}
           className={!isSearchMode && !isMultiMode ? "pill-btn-black" : "pill-btn"}
           style={{
-            padding: '0.5rem 1.25rem',
-            fontSize: '0.85rem',
+            flex: '1 1 0px',
+            minWidth: 0,
+            padding: '0.5rem 0.4rem',
+            fontSize: '0.82rem',
             fontWeight: 800,
             cursor: 'pointer',
+            whiteSpace: 'nowrap',
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            textAlign: 'center',
           }}
         >
           Paste Link
@@ -995,13 +1120,20 @@ export function UrlInput() {
           }}
           className={!isSearchMode && isMultiMode ? "pill-btn-black" : "pill-btn"}
           style={{
-            padding: '0.5rem 1.25rem',
-            fontSize: '0.85rem',
+            flex: '1 1 0px',
+            minWidth: 0,
+            padding: '0.5rem 0.4rem',
+            fontSize: '0.82rem',
             fontWeight: 800,
             cursor: 'pointer',
+            whiteSpace: 'nowrap',
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            textAlign: 'center',
           }}
         >
-          Multi-Link Mode
+          Multi-Link
         </button>
         <button
           type="button"
@@ -1012,16 +1144,21 @@ export function UrlInput() {
           }}
           className={isSearchMode ? "pill-btn-black" : "pill-btn"}
           style={{
-            padding: '0.5rem 1.25rem',
-            fontSize: '0.85rem',
+            flex: '1 1 0px',
+            minWidth: 0,
+            padding: '0.5rem 0.4rem',
+            fontSize: '0.82rem',
             fontWeight: 800,
             cursor: 'pointer',
+            whiteSpace: 'nowrap',
             display: 'inline-flex',
             alignItems: 'center',
-            gap: '0.45rem',
+            justifyContent: 'center',
+            textAlign: 'center',
+            gap: '0.35rem',
           }}
         >
-          <Search className="w-4 h-4" /> Search Video
+          <Search className="w-3.5 h-3.5 flex-shrink-0" /> Search Video
         </button>
       </div>
 
