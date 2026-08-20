@@ -833,7 +833,7 @@ export function UrlInput() {
               <button
                 type="button"
                 onClick={() => setIsMultiMode(!isMultiMode)}
-                title="Toggle multi-video batch download mode"
+                title={isMultiMode ? "Switch to single URL mode" : "Switch to multi-URL batch mode"}
                 className="pill-btn"
                 style={{
                   padding: '0.45rem 0.95rem',
@@ -841,12 +841,10 @@ export function UrlInput() {
                   fontWeight: 700,
                   whiteSpace: 'nowrap',
                   minHeight: '38px',
-                  color: isMultiMode ? 'var(--color-accent-500)' : 'var(--text-color)',
-                  boxShadow: isMultiMode ? 'inset 2px 2px 5px var(--neumorph-dark), inset -2px -2px 5px var(--neumorph-light)' : undefined,
-                  border: isMultiMode ? '1px solid rgba(255, 255, 255, 0.8)' : undefined,
+                  color: 'var(--text-color)',
                 }}
               >
-                {isMultiMode ? 'Multi Mode ✓' : 'Multi'}
+                {isMultiMode ? 'Single' : 'Multi'}
               </button>
             )}
 
