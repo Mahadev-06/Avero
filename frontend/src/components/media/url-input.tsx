@@ -834,13 +834,16 @@ export function UrlInput() {
                 type="button"
                 onClick={() => setIsMultiMode(!isMultiMode)}
                 title="Toggle multi-video batch download mode"
-                className={isMultiMode ? "pill-btn-black" : "pill-btn"}
+                className="pill-btn"
                 style={{
                   padding: '0.45rem 0.95rem',
                   fontSize: '0.82rem',
                   fontWeight: 700,
                   whiteSpace: 'nowrap',
                   minHeight: '38px',
+                  color: isMultiMode ? 'var(--color-accent-500)' : 'var(--text-color)',
+                  boxShadow: isMultiMode ? 'inset 2px 2px 5px var(--neumorph-dark), inset -2px -2px 5px var(--neumorph-light)' : undefined,
+                  border: isMultiMode ? '1px solid rgba(255, 255, 255, 0.8)' : undefined,
                 }}
               >
                 {isMultiMode ? 'Multi Mode ✓' : 'Multi'}
