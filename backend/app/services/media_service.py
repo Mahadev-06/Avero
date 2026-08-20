@@ -709,7 +709,7 @@ def _download_sync(job_id: str, url: str, fmt: str, quality: str) -> str:
         "fragment_retries": 1 if is_youtube else 5,
         "extractor_args": {
             "youtube": {
-                "player_client": ["ios", "android"]
+                "player_client": ["mweb", "android", "ios"]
             }
         },
         "http_headers": {
@@ -722,7 +722,7 @@ def _download_sync(job_id: str, url: str, fmt: str, quality: str) -> str:
         cookie_file = _get_youtube_cookiefile()
         if cookie_file:
             ydl_opts["cookiefile"] = cookie_file
-            ydl_opts["extractor_args"]["youtube"]["player_client"] = ["web", "mweb", "android", "ios"]
+            ydl_opts["extractor_args"]["youtube"]["player_client"] = ["mweb", "web", "android", "ios"]
 
     if is_audio:
         audio_quality = "320"
