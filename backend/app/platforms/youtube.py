@@ -38,7 +38,7 @@ class YouTubeAdapter(PlatformAdapter):
             'quiet': True,
             'no_warnings': True,
             'skip_download': True,
-            'format': 'best',
+            'format': 'bestvideo+bestaudio/best',
             'extractor_args': {
                 'youtube': {
                     'player_client': ['ios', 'android']
