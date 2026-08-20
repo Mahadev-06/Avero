@@ -50,6 +50,7 @@ class YouTubeAdapter(PlatformAdapter):
         cookie_file = _get_youtube_cookiefile()
         if cookie_file:
             ydl_opts['cookiefile'] = cookie_file
+            ydl_opts['extractor_args']['youtube']['player_client'] = ['web', 'mweb', 'android', 'ios']
 
         def _extract():
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:

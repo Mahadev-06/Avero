@@ -125,11 +125,15 @@ def _build_ytdlp_format(fmt: str, quality: str) -> str:
             height = int(m.group(1))
 
     if height:
+        w_portrait = height
+        h_portrait = int(height * 16 / 9) + 50
         return (
-            f"bestvideo[height={height}]+bestaudio/"
             f"bestvideo[height<={height}]+bestaudio/"
-            f"bestvideo[height<={height}][ext=mp4]+bestaudio[ext=m4a]/"
+            f"bestvideo[width<={w_portrait}]+bestaudio/"
+            f"bestvideo[height<={h_portrait}][width<={w_portrait}]+bestaudio/"
             f"best[height<={height}]/"
+            f"best[width<={w_portrait}]/"
+            f"bestvideo+bestaudio/"
             f"best"
         )
 
@@ -687,6 +691,7 @@ def _download_sync(job_id: str, url: str, fmt: str, quality: str) -> str:
         cookie_file = _get_youtube_cookiefile()
         if cookie_file:
             ydl_opts["cookiefile"] = cookie_file
+            ydl_opts["extractor_args"]["youtube"]["player_client"] = ["web", "mweb", "android", "ios"]
 
     if is_audio:
         audio_quality = "320"
