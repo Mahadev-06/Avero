@@ -1,9 +1,9 @@
-import { QueueItemStatus } from '@/stores/queue-store';
+export type MediaItemStatus = 'pending' | 'analyzing' | 'processing' | 'downloading' | 'converting' | 'completed' | 'failed' | 'cancelled';
 import { TextShimmerWave } from '@/components/core/text-shimmer-wave';
 
 interface ProgressBarProps {
   progress: number;
-  status: QueueItemStatus;
+  status: MediaItemStatus;
 }
 
 export function ProgressBar({ progress, status }: ProgressBarProps) {

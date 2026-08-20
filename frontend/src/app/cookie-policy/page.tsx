@@ -72,7 +72,7 @@ export default function CookiePolicyPage() {
               <strong>AVERO does not use third-party tracking cookies or advertising pixels.</strong> We only utilize client-side browser storage (such as <code>localStorage</code>) for necessary functional features:
             </p>
             <ul style={{ paddingLeft: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.45rem', listStyleType: 'disc' }}>
-              <li><strong>Download Queue Persistence:</strong> Saving the links added to your active batch queue locally on your machine so they persist when you refresh or navigate across pages.</li>
+              <li><strong>Download Session Preferences:</strong> Retaining your interface configuration locally on your machine for smooth navigation across the site.</li>
               <li><strong>UI Preferences:</strong> Remembering your visual display choices and functional interface settings.</li>
             </ul>
           </section>
@@ -83,7 +83,7 @@ export default function CookiePolicyPage() {
               3. Managing Your Browser Storage
             </h2>
             <p>
-              You can easily clear your browser cache and local storage at any time through your browser&apos;s settings. Doing so will simply reset your active download queue items and return the application to its default state.
+              You can easily clear your browser cache and local storage at any time through your browser&apos;s settings. Doing so will simply reset your session preferences and return the application to its default state.
             </p>
           </section>
 

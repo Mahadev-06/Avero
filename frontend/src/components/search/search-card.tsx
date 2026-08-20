@@ -7,12 +7,11 @@ import { Badge } from '@/components/ui/badge';
 
 interface SearchCardProps {
   result: SearchResult;
-  onAddQueue: (url: string) => void;
-  onAddToQueue?: (url: string) => void;
+  onSelectMedia?: (url: string) => void;
 }
 
-export function SearchCard({ result, onAddQueue, onAddToQueue }: SearchCardProps) {
-  const handleAdd = onAddQueue || onAddToQueue || (() => {});
+export function SearchCard({ result, onSelectMedia }: SearchCardProps) {
+  const handleSelect = onSelectMedia || (() => {});
   const formattedDuration = result.duration
     ? `${Math.floor(result.duration / 60)}:${result.duration % 60 < 10 ? '0' : ''}${result.duration % 60}`
     : '0:00';
@@ -44,8 +43,8 @@ export function SearchCard({ result, onAddQueue, onAddToQueue }: SearchCardProps
 
       <CardContent className="p-4 pt-0 mt-auto">
         <div className="flex flex-col gap-2">
-          <Button variant="default" className="w-full justify-center" onClick={() => handleAdd(result.url)}>
-            Add to Queue
+          <Button variant="default" className="w-full justify-center" onClick={() => handleSelect(result.url)}>
+            Download Video
           </Button>
           <div className="flex gap-2">
             <a href={result.url} target="_blank" rel="noopener noreferrer" className="flex-1">

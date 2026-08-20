@@ -7,10 +7,10 @@ import { SearchCard } from './search-card';
 interface SearchResultsProps {
   results: SearchResult[];
   loading: boolean;
-  onAddQueue: (url: string) => void;
+  onSelectMedia?: (url: string) => void;
 }
 
-export const SearchResults: React.FC<SearchResultsProps> = ({ results, loading, onAddQueue }) => {
+export const SearchResults: React.FC<SearchResultsProps> = ({ results, loading, onSelectMedia }) => {
   if (loading) {
     return (
       <div
@@ -55,7 +55,7 @@ export const SearchResults: React.FC<SearchResultsProps> = ({ results, loading, 
       }}
     >
       {results.map((item) => (
-        <SearchCard key={item.id} result={item} onAddQueue={onAddQueue} />
+        <SearchCard key={item.id} result={item} onSelectMedia={onSelectMedia} />
       ))}
     </div>
   );

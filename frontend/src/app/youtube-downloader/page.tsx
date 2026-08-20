@@ -82,7 +82,7 @@ export default function YouTubeDownloaderPage() {
                 </div>
                 <CardTitle>Shorts & Playlists</CardTitle>
                 <CardDescription>
-                  Full support for YouTube Shorts and multi-link batch queue processing.
+                  Full support for YouTube Shorts and multi-link batch processing.
                 </CardDescription>
               </CardHeader>
             </Card>

@@ -14,7 +14,6 @@ import {
   ShieldCheck, 
   Sparkles, 
   Smartphone, 
-  Layers, 
   FileVideo, 
   FileAudio, 
   FileCode,
@@ -40,7 +39,7 @@ export default function Home() {
     {
       id: 'faq-3',
       q: 'How does batch / multi-video downloading work?',
-      a: 'Toggle to "Multi Mode" in the search bar, paste multiple URLs (one per line), and click process. AVERO queues the items and lets you download them all smoothly.',
+      a: 'Toggle to "Multi Mode" in the search bar, paste multiple URLs (one per line), and click process. AVERO analyzes all links at once and lets you download each video in your chosen resolution.',
     },
     {
       id: 'faq-4',
@@ -161,16 +160,6 @@ export default function Home() {
             height={18}
             style={{ width: '18px', height: '18px', objectFit: 'contain' }}
           />
-        </div>
-      ),
-    },
-    {
-      title: 'Batch Queue Manager',
-      desc: 'Process up to 20 media URLs simultaneously with live progress tracking.',
-      href: '/queue',
-      icon: (
-        <div style={{ width: '28px', height: '28px', borderRadius: '50%', backgroundColor: 'rgba(245, 158, 11, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <Layers className="w-5 h-5 text-amber-600" />
         </div>
       ),
     },

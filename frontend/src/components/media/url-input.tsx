@@ -1,6 +1,5 @@
 "use client";
 
-import Link from 'next/link';
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { apiClient, MediaInfo, DownloadProgress, SearchResult } from '@/lib/api-client';
 import { Card } from '@/components/ui/card';
@@ -8,8 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { MediaPreview } from './media-preview';
 import { triggerFileDownload } from '@/lib/utils';
-import { Video, Music, Download, Clock, Search, Loader2, Copy, Check, Plus, Play, AlertCircle, Layers, Image as ImageIcon, Trash2, ArrowUpLeft, X } from 'lucide-react';
-import { useQueueStore } from '@/stores/queue-store';
+import { Video, Music, Download, Clock, Search, Loader2, Copy, Check, Plus, Play, AlertCircle, Image as ImageIcon, Trash2, ArrowUpLeft, X } from 'lucide-react';
 import { TextShimmerWave } from '@/components/core/text-shimmer-wave';
 
 interface PlatformIcon {
@@ -228,9 +226,8 @@ export function UrlInput() {
   const [results, setResults] = useState<VideoResultItem[]>([]);
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [addedId, setAddedId] = useState<string | null>(null);
 
-  // Batch Queue Download State
+  // Batch Download State
   const [isBatchDownloading, setIsBatchDownloading] = useState(false);
   const [batchDownloadIndex, setBatchDownloadIndex] = useState<number | null>(null);
 
@@ -243,9 +240,6 @@ export function UrlInput() {
   // Auto-Rotating Placeholder Index for SlotText
   const [placeholderIndex, setPlaceholderIndex] = useState(0);
   const [isInputFocused, setIsInputFocused] = useState(false);
-
-  const queueItems = useQueueStore((state) => state.items);
-  const addItemsToQueue = useQueueStore((state) => state.addItems);
 
   // Close suggestions on click outside
   useEffect(() => {
@@ -349,11 +343,6 @@ export function UrlInput() {
     setSearchResults([]);
     setStatusMsg(`Analyzing ${urlsToAnalyze.length} link(s)...`);
 
-    // In multi-mode with multiple URLs, synchronize to Global Queue Store
-    if (isMultiMode && urlsToAnalyze.length > 1) {
-      addItemsToQueue(urlsToAnalyze);
-    }
-
     try {
       const res = await apiClient.analyzeUrls(urlsToAnalyze);
       const items: VideoResultItem[] = res.results.map((info, idx) => ({
@@ -365,7 +354,7 @@ export function UrlInput() {
 
       setResults(items);
       if (isMultiMode && urlsToAnalyze.length > 1) {
-        setStatusMsg(`Ready to download! Added ${items.length} items to Queue.`);
+        setStatusMsg(`Ready to download! Analyzed ${items.length} items.`);
       } else {
         setStatusMsg(`Ready to download! Select your desired format below.`);
       }
@@ -591,7 +580,7 @@ export function UrlInput() {
 
     setIsBatchDownloading(true);
     const total = results.length;
-    setStatusMsg(`Starting queue download: 1 of ${total}...`);
+    setStatusMsg(`Starting batch download: 1 of ${total}...`);
 
     for (let i = 0; i < total; i++) {
       const item = results[i];
@@ -663,12 +652,6 @@ export function UrlInput() {
       console.error('Copy failed', err);
     }
   }, []);
-
-  const handleAddToQueue = useCallback((id: string, result: SearchResult) => {
-    addItemsToQueue([result.url]);
-    setAddedId(id);
-    setTimeout(() => setAddedId(null), 2000);
-  }, [addItemsToQueue]);
 
   const overflowCount = PLATFORM_ICONS.length - 3;
 
@@ -858,7 +841,7 @@ export function UrlInput() {
               <button
                 type="button"
                 onClick={() => setIsMultiMode(!isMultiMode)}
-                title="Toggle multi-video queue download mode"
+                title="Toggle multi-video batch download mode"
                 className={isMultiMode ? "pill-btn-black" : "pill-btn"}
                 style={{
                   padding: '0.45rem 0.95rem',
@@ -1185,34 +1168,6 @@ export function UrlInput() {
                         alignItems: 'center',
                         gap: '0.35rem',
                       }}
-                      onClick={() => handleAddToQueue(res.id, res)}
-                    >
-                      {addedId === res.id ? (
-                        <>
-                          <Check className="w-3.5 h-3.5 text-emerald-500" />
-                          <span>Queued</span>
-                        </>
-                      ) : (
-                        <>
-                          <Plus className="w-3.5 h-3.5 text-amber-500" />
-                          <span>Queue</span>
-                        </>
-                      )}
-                    </button>
-
-                    <button
-                      type="button"
-                      className="pill-btn"
-                      style={{
-                        fontSize: '0.78rem',
-                        fontWeight: 700,
-                        padding: '0.35rem 0.7rem',
-                        minHeight: '32px',
-                        cursor: 'pointer',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '0.35rem',
-                      }}
                       onClick={() => handleCopyLink(res.id, res.url)}
                     >
                       {copiedId === res.id ? (
@@ -1241,10 +1196,10 @@ export function UrlInput() {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem', flexWrap: 'wrap', gap: '0.75rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
               <div style={{ display: 'inline-flex', alignItems: 'center', height: '36px', padding: '0 1rem', borderRadius: 'var(--radius-full)', backgroundColor: 'var(--bg-color)', border: '1px solid rgba(255,255,255,0.6)', boxShadow: '3px 3px 6px var(--neumorph-dark), -3px -3px 6px var(--neumorph-light)', fontSize: '0.75rem', fontWeight: 800, letterSpacing: '0.08em', color: 'var(--color-accent-500)' }}>
-                {isMultiMode ? `MULTI DOWNLOAD QUEUE (${results.length})` : `PROCESSED MEDIA (${results.length})`}
+                {isMultiMode ? `BATCH DOWNLOAD (${results.length})` : `PROCESSED MEDIA (${results.length})`}
               </div>
 
-              {/* Download All (Best Quality) Sequential Queue Button (White Neumorphic Style) */}
+              {/* Download All (Best Quality) Sequential Download Button (White Neumorphic Style) */}
               {results.length > 0 && (
                 <button
                   type="button"
@@ -1282,28 +1237,6 @@ export function UrlInput() {
                   )}
                 </button>
               )}
-
-              {/* Direct Link to Queue Page */}
-              <Link href="/queue" style={{ textDecoration: 'none' }}>
-                <button
-                  type="button"
-                  className="pill-btn"
-                  style={{
-                    height: '36px',
-                    padding: '0 1rem',
-                    fontSize: '0.8rem',
-                    fontWeight: 800,
-                    color: 'var(--text-color)',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '0.45rem',
-                    cursor: 'pointer',
-                  }}
-                >
-                  <Layers className="w-3.5 h-3.5 text-amber-500" />
-                  <span>Open Queue Manager ({queueItems.length}) ➔</span>
-                </button>
-              </Link>
             </div>
 
             <button
@@ -1419,39 +1352,6 @@ export function UrlInput() {
                           <span>{formatDurationSeconds(item.info.duration || 59)}</span>
                         </div>
                       ) : null}
-
-                      <button
-                        type="button"
-                        className="pill-btn"
-                        style={{
-                          height: '34px',
-                          padding: '0 0.85rem',
-                          fontSize: '0.8rem',
-                          fontWeight: 800,
-                          color: 'var(--text-color)',
-                          cursor: 'pointer',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '0.35rem',
-                        }}
-                        onClick={() => {
-                          addItemsToQueue([item.info.url]);
-                          setAddedId(item.id);
-                          setTimeout(() => setAddedId(null), 2000);
-                        }}
-                      >
-                        {addedId === item.id ? (
-                          <>
-                            <Check className="w-3.5 h-3.5 text-emerald-500" />
-                            <span>In Queue ✓</span>
-                          </>
-                        ) : (
-                          <>
-                            <Plus className="w-3.5 h-3.5 text-amber-500" />
-                            <span>Queue</span>
-                          </>
-                        )}
-                      </button>
 
                       <button
                         type="button"

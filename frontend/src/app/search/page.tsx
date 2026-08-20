@@ -14,7 +14,7 @@ export default function SearchPage() {
           Search & Discover YouTube Media
         </h1>
         <p className="text-muted text-pretty" style={{ fontSize: '1.05rem', lineHeight: 1.6 }}>
-          Search videos, music, and podcasts directly in MediaFlow. Copy links or add them straight to your queue.
+          Search videos, music, and podcasts directly in AVERO. Copy links or download them in high resolution.
         </p>
       </div>
 

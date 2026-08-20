@@ -100,7 +100,7 @@ export default function PrivacyPage() {
             </p>
             <ul style={{ paddingLeft: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.45rem', listStyleType: 'disc' }}>
               <li><strong>No Tracking Cookies:</strong> AVERO does not use invasive third-party tracking cookies or behavioral advertising pixels.</li>
-              <li><strong>Client-Side LocalStorage:</strong> We utilize your browser&apos;s native <code>localStorage</code> solely for functional preferences, such as retaining your local <strong>Download Queue</strong> items across page navigation and saving your visual theme preferences. This data remains on your device and is never transmitted to third parties.</li>
+              <li><strong>Client-Side LocalStorage:</strong> We utilize your browser&apos;s native <code>localStorage</code> solely for functional preferences, such as retaining your local UI preferences and visual settings. This data remains on your device and is never transmitted to third parties.</li>
             </ul>
           </section>
 

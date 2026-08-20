@@ -2,11 +2,10 @@
 
 import { useState, useCallback } from 'react';
 import { apiClient, SearchResult } from '@/lib/api-client';
-import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { useQueueStore } from '@/stores/queue-store';
-import { Search, Loader2, Download, Copy, Check, Plus, ExternalLink, Play } from 'lucide-react';
+import { Search, Loader2, Download, Copy, Check, Play } from 'lucide-react';
 
 interface LiveSearchProps {
   onSelectVideoForDownload?: (url: string) => void;
@@ -25,8 +24,6 @@ export function LiveSearch({ onSelectVideoForDownload }: LiveSearchProps) {
   const [results, setResults] = useState<SearchResult[]>([]);
   const [searched, setSearched] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [addedId, setAddedId] = useState<string | null>(null);
-  const addItemsToQueue = useQueueStore((state) => state.addItems);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,12 +52,6 @@ export function LiveSearch({ onSelectVideoForDownload }: LiveSearchProps) {
       console.error('Copy failed', err);
     }
   }, []);
-
-  const handleAddToQueue = useCallback((id: string, result: SearchResult) => {
-    addItemsToQueue([result.url]);
-    setAddedId(id);
-    setTimeout(() => setAddedId(null), 2000);
-  }, [addItemsToQueue]);
 
   return (
     <div style={{ width: '100%', maxWidth: '1000px', margin: '0 auto' }}>
@@ -271,23 +262,6 @@ export function LiveSearch({ onSelectVideoForDownload }: LiveSearchProps) {
                       ) : (
                         <>
                           <Copy className="w-3.5 h-3.5 mr-1" /> Copy
-                        </>
-                      )}
-                    </Button>
-
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      style={{ fontSize: '0.78rem', padding: '0.3rem 0.6rem', minHeight: '34px' }}
-                      onClick={() => handleAddToQueue(res.id, res)}
-                    >
-                      {addedId === res.id ? (
-                        <>
-                          <Check className="w-3.5 h-3.5 text-emerald-500 mr-1" /> Queued
-                        </>
-                      ) : (
-                        <>
-                          <Plus className="w-3.5 h-3.5 mr-1" /> Queue
                         </>
                       )}
                     </Button>
