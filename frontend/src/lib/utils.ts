@@ -14,7 +14,7 @@ export async function triggerFileDownload(url: string, suggestedFilename?: strin
   const filename = suggestedFilename || 'mediaflow_download.mp4';
 
   try {
-    const res = await fetch(url);
+    const res = await fetch(url, { mode: 'cors' });
     if (res.ok) {
       const blob = await res.blob();
       const blobUrl = window.URL.createObjectURL(blob);
@@ -24,7 +24,7 @@ export async function triggerFileDownload(url: string, suggestedFilename?: strin
       link.download = filename;
       link.setAttribute('download', filename);
       document.body.appendChild(link);
-      link.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }));
+      link.click();
       setTimeout(() => {
         window.URL.revokeObjectURL(blobUrl);
         try {
@@ -34,14 +34,14 @@ export async function triggerFileDownload(url: string, suggestedFilename?: strin
         } catch {
           // ignore
         }
-      }, 30000);
+      }, 60000);
       return;
     }
   } catch (err) {
-    console.warn('[triggerFileDownload] Blob fetch failed, falling back to direct anchor:', err);
+    console.warn('[triggerFileDownload] Blob fetch failed, falling back to direct navigation:', err);
   }
 
-  // Fallback: Direct anchor
+  // Fallback 1: Direct anchor with download attribute
   const link = document.createElement('a');
   link.style.display = 'none';
   link.href = url;
