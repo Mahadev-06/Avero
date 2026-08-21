@@ -25,6 +25,12 @@ class Settings(BaseSettings):
     YOUTUBE_COOKIES_TEXT: str | None = None
     YOUTUBE_COOKIES_B64: str | None = None
     YOUTUBE_COOKIES_FILE: str | None = None
+    INSTAGRAM_COOKIES_TEXT: str | None = None
+    INSTAGRAM_COOKIES_B64: str | None = None
+    INSTAGRAM_COOKIES_FILE: str | None = None
+    COOKIES_TEXT: str | None = None
+    COOKIES_B64: str | None = None
+    COOKIES_FILE: str | None = None
     COBALT_API_URL: str | None = None
     
     MAX_URLS_PER_BATCH: int = 20

@@ -416,7 +416,19 @@ export function UrlInput() {
   };
 
   const handleSpecificDownload = useCallback(async (item: VideoResultItem, ext: string, quality: string) => {
-    const targetUrl = item.info.url || item.info.download_url;
+    // If a direct media/stream URL was extracted (e.g. cdninstagram, fbcdn, v.redd.it, pinimg, or direct media extension), prefer it
+    const isDirectStream = Boolean(
+      item.info.download_url && (
+        item.info.download_url.includes('cdninstagram.com') ||
+        item.info.download_url.includes('fbcdn.net') ||
+        item.info.download_url.includes('v.redd.it') ||
+        item.info.download_url.includes('pinimg.com') ||
+        item.info.download_url.includes('lovethreads.net') ||
+        /\.(mp4|webm|mp3|wav|m4a|ogg|flac|mov|jpg|jpeg|png|webp)(\?.*)?$/i.test(item.info.download_url)
+      )
+    );
+
+    const targetUrl = (isDirectStream ? item.info.download_url : item.info.url) || item.info.download_url || item.info.url;
 
     if (!targetUrl) return;
 

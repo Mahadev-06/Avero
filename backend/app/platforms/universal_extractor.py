@@ -323,6 +323,107 @@ async def _scrape_reddit(url: str) -> dict:
 
     return {}
 
+
+async def _scrape_instagram(url: str) -> dict:
+    """Extract Instagram Reel, Post, or Photo with multi-tier extraction."""
+    parsed = urlparse(url)
+    if parsed.hostname:
+        resolve_and_check(parsed.hostname)
+
+    if any(url.lower().endswith(ext) or f"{ext}?" in url.lower() for ext in (".mp4", ".m4v", ".mov", ".webm")) or "cdninstagram.com" in url or "fbcdn.net" in url:
+        return {
+            "title": "Instagram Video",
+            "video_url": url,
+            "is_image": False,
+        }
+
+    if any(url.lower().endswith(ext) or f"{ext}?" in url.lower() for ext in (".jpg", ".jpeg", ".png", ".webp", ".gif")):
+        return {
+            "title": "Instagram Photo",
+            "image_url": url,
+            "is_image": True,
+        }
+
+    shortcode_match = re.search(r'(?:instagram\.com|instagr\.am)/(?:p|reel|tv)/([a-zA-Z0-9_\-]+)', url)
+    shortcode = shortcode_match.group(1) if shortcode_match else None
+
+    title = "Instagram Media"
+    thumbnail_img = None
+
+    # Tier 1: Embed captioned page extraction
+    if shortcode:
+        try:
+            embed_url = f"https://www.instagram.com/p/{shortcode}/embed/captioned/"
+            headers = {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+                "Accept-Language": "en-US,en;q=0.9",
+            }
+            async with httpx.AsyncClient(follow_redirects=True, timeout=8.0, headers=headers) as client:
+                resp = await client.get(embed_url)
+                if resp.status_code == 200:
+                    html = resp.text
+                    caption_match = re.search(r'class=["\']CaptionText["\'][^>]*>(.*?)</div>', html, re.DOTALL)
+                    if caption_match:
+                        raw_caption = re.sub(r'<[^>]+>', '', caption_match.group(1)).strip()
+                        if raw_caption:
+                            title = raw_caption[:80]
+                    
+                    img_match = re.search(r'class=["\']EmbeddedMediaImage["\'][^>]*src=["\']([^"\']+)["\']', html)
+                    if img_match:
+                        thumbnail_img = img_match.group(1).replace("&amp;", "&")
+
+                    mp4_matches = re.findall(r'https?:\\?/\\?/[^"\'\\ ]+?(?:cdninstagram\.com|fbcdn\.net)[^"\'\\ ]*?\.mp4[^"\'\\ ]*', html)
+                    if mp4_matches:
+                        clean_url = mp4_matches[0].replace(r"\u0026", "&").replace(r"\/", "/")
+                        return {
+                            "title": title or "Instagram Video",
+                            "video_url": clean_url,
+                            "thumbnail": thumbnail_img,
+                            "is_image": False,
+                        }
+        except Exception:
+            pass
+
+    # Tier 2: OpenGraph social crawler
+    try:
+        crawler_headers = {
+            "User-Agent": "facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        }
+        async with httpx.AsyncClient(follow_redirects=True, timeout=8.0, headers=crawler_headers) as client:
+            resp = await client.get(url)
+            html = resp.text
+            
+            og_vid = re.search(r'<meta\s+property=["\']og:video(?::secure_url)?["\']\s+content=["\']([^"\']+)["\']', html)
+            og_img = re.search(r'<meta\s+property=["\']og:image["\']\s+content=["\']([^"\']+)["\']', html)
+            og_title = re.search(r'<meta\s+property=["\']og:title["\']\s+content=["\']([^"\']+)["\']', html)
+
+            if og_title:
+                raw_title = og_title.group(1).replace("&amp;", "&")
+                if raw_title and not any(k in raw_title for k in ("Login", "Instagram")):
+                    title = raw_title
+
+            if og_vid:
+                return {
+                    "title": title or "Instagram Video",
+                    "video_url": og_vid.group(1).replace("&amp;", "&"),
+                    "thumbnail": og_img.group(1).replace("&amp;", "&") if og_img else thumbnail_img,
+                    "is_image": False,
+                }
+            if og_img and not thumbnail_img:
+                thumbnail_img = og_img.group(1).replace("&amp;", "&")
+    except Exception:
+        pass
+
+    return {
+        "title": title,
+        "video_url": url,
+        "thumbnail": thumbnail_img,
+        "is_image": False,
+    }
+
+
 async def _scrape_threads(url: str) -> dict:
     """Scrape Threads post for image or video with multi-tier extraction."""
     parsed = urlparse(url)
@@ -580,7 +681,43 @@ async def extract_media_info(url: str, platform_name: str) -> MediaInfo:
         except Exception:
             pass
 
-    # 5. Universal yt-dlp extraction for videos and rich media
+    # 5. Instagram photo/video handler
+    if "instagram.com" in url or "instagr.am" in url:
+        try:
+            ig_data = await _scrape_instagram(url)
+            if ig_data.get("video_url") and ("cdninstagram.com" in ig_data["video_url"] or "fbcdn.net" in ig_data["video_url"]):
+                format_opts = build_format_options(30)
+                return MediaInfo(
+                    url=url,
+                    platform="instagram",
+                    title=ig_data.get("title", "Instagram Video"),
+                    thumbnail_url=ig_data.get("thumbnail"),
+                    duration=30,
+                    media_type="video",
+                    formats=[f"{opt.ext} {opt.quality} ({opt.file_size_formatted})" for opt in format_opts],
+                    format_options=format_opts,
+                    download_url=ig_data["video_url"],
+                    download_supported=True,
+                    embed_supported=True,
+                )
+            elif ig_data.get("is_image") and ig_data.get("image_url"):
+                format_opts = build_image_format_options(ig_data["image_url"])
+                return MediaInfo(
+                    url=url,
+                    platform="instagram",
+                    title=ig_data.get("title", "Instagram Photo"),
+                    thumbnail_url=ig_data["image_url"],
+                    media_type="image",
+                    formats=[f"{opt.ext} {opt.quality} ({opt.file_size_formatted})" for opt in format_opts],
+                    format_options=format_opts,
+                    download_url=ig_data["image_url"],
+                    download_supported=True,
+                    embed_supported=True,
+                )
+        except Exception:
+            pass
+
+    # 6. Universal yt-dlp extraction for videos and rich media
     ydl_opts = {
         'quiet': True,
         'no_warnings': True,
@@ -598,11 +735,16 @@ async def extract_media_info(url: str, platform_name: str) -> MediaInfo:
         },
     }
 
-    from app.services.media_service import _get_youtube_cookiefile
-    cookie_file = _get_youtube_cookiefile()
-    if cookie_file:
-        ydl_opts['cookiefile'] = cookie_file
-        ydl_opts['extractor_args']['youtube']['player_client'] = ['web', 'mweb', 'android', 'ios']
+    from app.services.media_service import _get_youtube_cookiefile, _get_instagram_cookiefile
+    if "youtube.com" in url or "youtu.be" in url:
+        cookie_file = _get_youtube_cookiefile()
+        if cookie_file:
+            ydl_opts['cookiefile'] = cookie_file
+            ydl_opts['extractor_args']['youtube']['player_client'] = ['web', 'mweb', 'android', 'ios']
+    elif "instagram.com" in url or "instagr.am" in url:
+        ig_cookie = _get_instagram_cookiefile()
+        if ig_cookie:
+            ydl_opts['cookiefile'] = ig_cookie
 
     def _extract():
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:

@@ -57,30 +57,50 @@ def _is_youtube_bot_challenge(exc: Exception) -> bool:
     )
 
 
-def _get_youtube_cookiefile() -> str | None:
-    """Return path to YouTube cookie file if configured via environment variables."""
-    if settings.YOUTUBE_COOKIES_FILE and os.path.exists(settings.YOUTUBE_COOKIES_FILE):
-        return settings.YOUTUBE_COOKIES_FILE
+def _get_platform_cookiefile(platform: str = "general") -> str | None:
+    """Return path to cookie file for specified platform or general cookies."""
+    platform = platform.lower()
 
-    # Check Base64 encoded cookies first (safe from cloud newline/tab mangling)
-    b64_cookies = getattr(settings, "YOUTUBE_COOKIES_B64", None) or os.getenv("YOUTUBE_COOKIES_B64")
-    if b64_cookies and b64_cookies.strip():
+    # 1. Platform-specific file path
+    if platform == "youtube" and settings.YOUTUBE_COOKIES_FILE and os.path.exists(settings.YOUTUBE_COOKIES_FILE):
+        return settings.YOUTUBE_COOKIES_FILE
+    if platform == "instagram" and settings.INSTAGRAM_COOKIES_FILE and os.path.exists(settings.INSTAGRAM_COOKIES_FILE):
+        return settings.INSTAGRAM_COOKIES_FILE
+    if settings.COOKIES_FILE and os.path.exists(settings.COOKIES_FILE):
+        return settings.COOKIES_FILE
+
+    # 2. Platform-specific Base64
+    b64_val = None
+    if platform == "youtube":
+        b64_val = getattr(settings, "YOUTUBE_COOKIES_B64", None) or os.getenv("YOUTUBE_COOKIES_B64")
+    elif platform == "instagram":
+        b64_val = getattr(settings, "INSTAGRAM_COOKIES_B64", None) or os.getenv("INSTAGRAM_COOKIES_B64")
+    if not b64_val:
+        b64_val = getattr(settings, "COOKIES_B64", None) or os.getenv("COOKIES_B64")
+
+    if b64_val and b64_val.strip():
         try:
             import base64
-            decoded = base64.b64decode(b64_cookies.strip()).decode("utf-8")
-            cookie_path = str(TEMP_DOWNLOAD_DIR / "youtube_cookies.txt")
+            decoded = base64.b64decode(b64_val.strip()).decode("utf-8")
+            cookie_path = str(TEMP_DOWNLOAD_DIR / f"{platform}_cookies.txt")
             with open(cookie_path, "w", encoding="utf-8") as f:
                 f.write(decoded)
             return cookie_path
         except Exception as e:
-            logger.warning("failed_to_decode_b64_cookies", error=str(e))
+            logger.warning("failed_to_decode_b64_cookies", platform=platform, error=str(e))
 
-    # Check raw cookie text
-    raw_text = settings.YOUTUBE_COOKIES_TEXT or os.getenv("YOUTUBE_COOKIES_TEXT")
+    # 3. Platform-specific raw text
+    raw_text = None
+    if platform == "youtube":
+        raw_text = settings.YOUTUBE_COOKIES_TEXT or os.getenv("YOUTUBE_COOKIES_TEXT")
+    elif platform == "instagram":
+        raw_text = settings.INSTAGRAM_COOKIES_TEXT or os.getenv("INSTAGRAM_COOKIES_TEXT")
+    if not raw_text:
+        raw_text = settings.COOKIES_TEXT or os.getenv("COOKIES_TEXT")
+
     if raw_text and raw_text.strip():
-        cookie_path = str(TEMP_DOWNLOAD_DIR / "youtube_cookies.txt")
+        cookie_path = str(TEMP_DOWNLOAD_DIR / f"{platform}_cookies.txt")
         try:
-            # Handle literal \n or \t if escaped by environment variable loaders
             normalized = raw_text.strip()
             if "\\n" in normalized and "\n" not in normalized:
                 normalized = normalized.replace("\\n", "\n").replace("\\t", "\t")
@@ -88,9 +108,17 @@ def _get_youtube_cookiefile() -> str | None:
                 f.write(normalized)
             return cookie_path
         except OSError as e:
-            logger.warning("failed_to_write_cookies_file", error=str(e))
+            logger.warning("failed_to_write_cookies_file", platform=platform, error=str(e))
 
     return None
+
+
+def _get_youtube_cookiefile() -> str | None:
+    return _get_platform_cookiefile("youtube")
+
+
+def _get_instagram_cookiefile() -> str | None:
+    return _get_platform_cookiefile("instagram")
 
 
 def _sanitize_error_message(exc: Exception) -> str:
@@ -249,62 +277,35 @@ def _inspect_media_codecs(file_path: str) -> dict:
 
 def _ensure_mp4_video(input_path: str, target_mp4_path: str) -> str:
     """
-    Ensure any downloaded video is clean, standard MP4 (H.264 + AAC with yuv420p and faststart)
-    for universal Windows Media Player, macOS QuickTime, mobile, and web playback without 0xC00D36C4 errors.
+    Ensure any downloaded video is a valid MP4 file.
+    If the file is already an MP4, returns immediately without re-encoding.
+    If remuxing from another container is needed, performs fast stream copy.
     """
     if not input_path or not os.path.exists(input_path):
         return input_path
 
-    # Check codec compatibility with ffprobe
-    codecs = _inspect_media_codecs(input_path)
-    v_codec = codecs.get("v_codec")
-    a_codec = codecs.get("a_codec")
-    pix_fmt = codecs.get("pix_fmt")
-
-    is_standard_h264 = v_codec in ("h264", "avc1")
-    is_standard_pix_fmt = pix_fmt in ("yuv420p", None)
-    is_standard_aac = a_codec in ("aac", "mp4a", "mp3", None)
-
-    # If it is already H.264 + AAC + yuv420p and inside target mp4, it's valid
-    if is_standard_h264 and is_standard_pix_fmt and is_standard_aac:
-        if input_path == target_mp4_path and os.path.exists(target_mp4_path) and os.path.getsize(target_mp4_path) > 0:
+    # If it is already an MP4 file with valid content, use it directly
+    if input_path.lower().endswith(".mp4") and os.path.getsize(input_path) > 0:
+        if input_path == target_mp4_path:
             return target_mp4_path
+        try:
+            if os.path.exists(target_mp4_path):
+                os.remove(target_mp4_path)
+            os.replace(input_path, target_mp4_path)
+            return target_mp4_path
+        except OSError:
+            return input_path
 
+    # If it's a non-MP4 video container (e.g. webm/mkv/mov), remux quickly with ffmpeg stream copy
     transcode_temp = f"{target_mp4_path}.{uuid.uuid4().hex[:6]}.tmp.mp4"
-
     try:
-        if is_standard_h264 and is_standard_pix_fmt and is_standard_aac:
-            # 1. Fast stream copy (lossless & instant)
-            cmd_copy = [
-                "ffmpeg", "-y", "-i", input_path,
-                "-c:v", "copy", "-c:a", "copy",
-                "-movflags", "+faststart",
-                transcode_temp
-            ]
-            result = subprocess.run(cmd_copy, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, timeout=120)
-            if result.returncode == 0 and os.path.exists(transcode_temp) and os.path.getsize(transcode_temp) > 0:
-                if os.path.exists(input_path) and os.path.abspath(input_path) != os.path.abspath(target_mp4_path):
-                    try:
-                        os.remove(input_path)
-                    except OSError:
-                        pass
-                if os.path.exists(target_mp4_path):
-                    try:
-                        os.remove(target_mp4_path)
-                    except OSError:
-                        pass
-                os.replace(transcode_temp, target_mp4_path)
-                return target_mp4_path
-
-        # 2. Transcode video to universal H.264 (yuv420p) + AAC (handles VP9, AV1, HEVC, WebM, FLV, TS, etc.)
-        cmd_transcode = [
+        cmd_copy = [
             "ffmpeg", "-y", "-i", input_path,
-            "-c:v", "libx264", "-preset", "veryfast", "-crf", "18", "-pix_fmt", "yuv420p",
-            "-c:a", "aac", "-b:a", "192k",
+            "-c:v", "copy", "-c:a", "copy",
             "-movflags", "+faststart",
             transcode_temp
         ]
-        result = subprocess.run(cmd_transcode, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, timeout=300)
+        result = subprocess.run(cmd_copy, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, timeout=20)
         if result.returncode == 0 and os.path.exists(transcode_temp) and os.path.getsize(transcode_temp) > 0:
             if os.path.exists(input_path) and os.path.abspath(input_path) != os.path.abspath(target_mp4_path):
                 try:
@@ -318,9 +319,8 @@ def _ensure_mp4_video(input_path: str, target_mp4_path: str) -> str:
                     pass
             os.replace(transcode_temp, target_mp4_path)
             return target_mp4_path
-
     except Exception as err:
-        logger.warning("ffmpeg_conversion_failed", error=str(err))
+        logger.warning("ffmpeg_fast_remux_failed", error=str(err))
     finally:
         if os.path.exists(transcode_temp):
             try:
@@ -333,24 +333,30 @@ def _ensure_mp4_video(input_path: str, target_mp4_path: str) -> str:
 
 def _ensure_mp3_audio(input_path: str, target_mp3_path: str, quality_kbps: str = "320") -> str:
     """
-    Ensure any downloaded audio is clean, standard MP3.
+    Ensure any downloaded audio is a clean, standard MP3 file.
     """
     if not input_path or not os.path.exists(input_path):
         return input_path
 
-    codecs = _inspect_media_codecs(input_path)
-    if codecs.get("a_codec") == "mp3" and input_path == target_mp3_path and os.path.getsize(target_mp3_path) > 0:
-        return target_mp3_path
+    if input_path.lower().endswith(".mp3") and os.path.getsize(input_path) > 0:
+        if input_path == target_mp3_path:
+            return target_mp3_path
+        try:
+            if os.path.exists(target_mp3_path):
+                os.remove(target_mp3_path)
+            os.replace(input_path, target_mp3_path)
+            return target_mp3_path
+        except OSError:
+            return input_path
 
     transcode_temp = f"{target_mp3_path}.{uuid.uuid4().hex[:6]}.tmp.mp3"
-
     try:
         cmd = [
             "ffmpeg", "-y", "-i", input_path,
             "-vn", "-c:a", "libmp3lame", "-b:a", f"{quality_kbps}k",
             transcode_temp
         ]
-        res = subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, timeout=120)
+        res = subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, timeout=30)
         if res.returncode == 0 and os.path.exists(transcode_temp) and os.path.getsize(transcode_temp) > 0:
             if os.path.exists(input_path) and os.path.abspath(input_path) != os.path.abspath(target_mp3_path):
                 try:
@@ -738,6 +744,7 @@ def _download_sync(job_id: str, url: str, fmt: str, quality: str) -> str:
 
     start_time = time.time()
     is_youtube = "youtube.com" in url or "youtu.be" in url
+    is_instagram = "instagram.com" in url or "instagr.am" in url
 
     ydl_opts = {
         "outtmpl": output_path,
@@ -765,6 +772,10 @@ def _download_sync(job_id: str, url: str, fmt: str, quality: str) -> str:
         if cookie_file:
             ydl_opts["cookiefile"] = cookie_file
             ydl_opts["extractor_args"]["youtube"]["player_client"] = ["mweb", "web", "android", "ios"]
+    elif is_instagram:
+        ig_cookie_file = _get_instagram_cookiefile()
+        if ig_cookie_file:
+            ydl_opts["cookiefile"] = ig_cookie_file
 
     if is_audio:
         audio_quality = "320"
@@ -897,6 +908,20 @@ def _download_sync(job_id: str, url: str, fmt: str, quality: str) -> str:
                         return _download_video_direct_sync(job_id, th_data["video_url"], is_audio, audio_quality)
                     elif th_data.get("image_url") and is_image:
                         return _download_image_sync(job_id, th_data["image_url"], fmt)
+                except Exception:
+                    pass
+
+            # 3. Fallback for Instagram media
+            if "instagram.com" in url or "instagr.am" in url:
+                try:
+                    from app.platforms.universal_extractor import _scrape_instagram
+                    loop = asyncio.new_event_loop()
+                    ig_data = loop.run_until_complete(_scrape_instagram(url))
+                    loop.close()
+                    if ig_data.get("video_url") and ("cdninstagram.com" in ig_data["video_url"] or "fbcdn.net" in ig_data["video_url"]):
+                        return _download_video_direct_sync(job_id, ig_data["video_url"], is_audio, audio_quality)
+                    elif ig_data.get("image_url") and is_image:
+                        return _download_image_sync(job_id, ig_data["image_url"], fmt)
                 except Exception:
                     pass
 
