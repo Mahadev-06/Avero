@@ -5,6 +5,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from slowapi.errors import RateLimitExceeded
+import os
 import structlog
 from app.core.config import settings
 from app.core.redis import init_redis, close_redis
@@ -36,6 +37,34 @@ async def lifespan(app: FastAPI):
         logger.info("redis_connected")
     except Exception as e:
         logger.warning("redis_unavailable_fallback_to_local", error=str(e))
+
+    # Log cookie configuration status at startup
+    yt_has_file = bool(settings.YOUTUBE_COOKIES_FILE and os.path.exists(settings.YOUTUBE_COOKIES_FILE))
+    yt_has_b64 = bool((getattr(settings, "YOUTUBE_COOKIES_B64", None) or os.getenv("YOUTUBE_COOKIES_B64", "")).strip())
+    yt_has_text = bool((getattr(settings, "YOUTUBE_COOKIES_TEXT", None) or os.getenv("YOUTUBE_COOKIES_TEXT", "")).strip())
+    yt_cookies_found = yt_has_file or yt_has_b64 or yt_has_text
+    yt_source = "FILE" if yt_has_file else ("B64" if yt_has_b64 else ("TEXT" if yt_has_text else "NONE"))
+
+    ig_has_file = bool(settings.INSTAGRAM_COOKIES_FILE and os.path.exists(settings.INSTAGRAM_COOKIES_FILE))
+    ig_has_b64 = bool((getattr(settings, "INSTAGRAM_COOKIES_B64", None) or os.getenv("INSTAGRAM_COOKIES_B64", "")).strip())
+    ig_has_text = bool((getattr(settings, "INSTAGRAM_COOKIES_TEXT", None) or os.getenv("INSTAGRAM_COOKIES_TEXT", "")).strip())
+    ig_cookies_found = ig_has_file or ig_has_b64 or ig_has_text
+    ig_source = "FILE" if ig_has_file else ("B64" if ig_has_b64 else ("TEXT" if ig_has_text else "NONE"))
+
+    gen_cookies_found = bool(
+        (settings.COOKIES_FILE and os.path.exists(settings.COOKIES_FILE))
+        or (getattr(settings, "COOKIES_B64", None) or os.getenv("COOKIES_B64", "")).strip()
+        or (getattr(settings, "COOKIES_TEXT", None) or os.getenv("COOKIES_TEXT", "")).strip()
+    )
+
+    logger.info(
+        "platform_cookies_startup_status",
+        youtube_cookies_found=yt_cookies_found,
+        youtube_source=yt_source,
+        instagram_cookies_found=ig_cookies_found,
+        instagram_source=ig_source,
+        generic_cookies_found=gen_cookies_found,
+    )
 
     registry.register(DirectURLAdapter())
     registry.register(YouTubeAdapter())

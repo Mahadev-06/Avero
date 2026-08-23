@@ -754,8 +754,8 @@ def _download_sync(job_id: str, url: str, fmt: str, quality: str) -> str:
         "overwrites": True,
         "progress_hooks": [_make_progress_hook(job_id)],
         "socket_timeout": 30,
-        "retries": 1 if is_youtube else 5,
-        "fragment_retries": 1 if is_youtube else 5,
+        "retries": 3 if is_youtube else 5,
+        "fragment_retries": 3 if is_youtube else 5,
         "extractor_args": {
             "youtube": {
                 "player_client": ["mweb", "android", "ios"]
@@ -772,6 +772,8 @@ def _download_sync(job_id: str, url: str, fmt: str, quality: str) -> str:
         if cookie_file:
             ydl_opts["cookiefile"] = cookie_file
             ydl_opts["extractor_args"]["youtube"]["player_client"] = ["mweb", "web", "android", "ios"]
+        ydl_opts["sleep_interval"] = 1
+        ydl_opts["sleep_interval_requests"] = 1
     elif is_instagram:
         ig_cookie_file = _get_instagram_cookiefile()
         if ig_cookie_file:

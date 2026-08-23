@@ -741,6 +741,10 @@ async def extract_media_info(url: str, platform_name: str) -> MediaInfo:
         if cookie_file:
             ydl_opts['cookiefile'] = cookie_file
             ydl_opts['extractor_args']['youtube']['player_client'] = ['web', 'mweb', 'android', 'ios']
+        ydl_opts['retries'] = 3
+        ydl_opts['fragment_retries'] = 3
+        ydl_opts['sleep_interval'] = 1
+        ydl_opts['sleep_interval_requests'] = 1
     elif "instagram.com" in url or "instagr.am" in url:
         ig_cookie = _get_instagram_cookiefile()
         if ig_cookie:
