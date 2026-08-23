@@ -34,6 +34,7 @@ export interface MediaInfo {
   embed_html?: string;
   embed_supported: boolean;
   limitations?: string[];
+  muted?: boolean;
 }
 
 export interface JobResponse {

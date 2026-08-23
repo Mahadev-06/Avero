@@ -4,10 +4,9 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { apiClient, MediaInfo, DownloadProgress, SearchResult } from '@/lib/api-client';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { MediaPreview } from './media-preview';
 import { triggerFileDownload } from '@/lib/utils';
-import { Video, Music, Download, Clock, Search, Loader2, Copy, Check, Plus, Play, AlertCircle, Image as ImageIcon, Trash2, ArrowUpLeft, X } from 'lucide-react';
+import { Video, Music, Download, Clock, Search, Loader2, Copy, Check, Plus, Play, AlertCircle, Image as ImageIcon, Trash2, ArrowUpLeft, X, VolumeX } from 'lucide-react';
 import { TextShimmerWave } from '@/components/core/text-shimmer-wave';
 
 interface PlatformIcon {
@@ -419,8 +418,7 @@ export function UrlInput() {
     // If a direct media/stream URL was extracted (e.g. cdninstagram, fbcdn, v.redd.it, pinimg, or direct media extension), prefer it
     const isDirectStream = Boolean(
       item.info.download_url && (
-        item.info.download_url.includes('cdninstagram.com') ||
-        item.info.download_url.includes('fbcdn.net') ||
+        (item.info.muted && (item.info.download_url.includes('cdninstagram.com') || item.info.download_url.includes('fbcdn.net'))) ||
         item.info.download_url.includes('v.redd.it') ||
         item.info.download_url.includes('pinimg.com') ||
         item.info.download_url.includes('lovethreads.net') ||
@@ -1484,6 +1482,27 @@ export function UrlInput() {
                         </div>
                       </div>
                     ) : null}
+
+                    {item.info.muted && (
+                      <div
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '0.35rem',
+                          padding: '0.2rem 0.65rem',
+                          borderRadius: 'var(--radius-full)',
+                          backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                          border: '1px solid rgba(239, 68, 68, 0.3)',
+                          color: '#ef4444',
+                          fontSize: '0.75rem',
+                          fontWeight: 700,
+                          marginTop: '0.35rem',
+                        }}
+                      >
+                        <VolumeX className="w-3.5 h-3.5 text-red-500" />
+                        <span>Audio unavailable (no-login preview)</span>
+                      </div>
+                    )}
 
                     {/* Active Download Progress inside Card */}
                     {item.downloadState === 'downloading' && item.progress && (

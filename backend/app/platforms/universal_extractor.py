@@ -335,6 +335,7 @@ async def _scrape_instagram(url: str) -> dict:
             "title": "Instagram Video",
             "video_url": url,
             "is_image": False,
+            "muted": True,
         }
 
     if any(url.lower().endswith(ext) or f"{ext}?" in url.lower() for ext in (".jpg", ".jpeg", ".png", ".webp", ".gif")):
@@ -342,6 +343,7 @@ async def _scrape_instagram(url: str) -> dict:
             "title": "Instagram Photo",
             "image_url": url,
             "is_image": True,
+            "muted": False,
         }
 
     shortcode_match = re.search(r'(?:instagram\.com|instagr\.am)/(?:p|reel|tv)/([a-zA-Z0-9_\-]+)', url)
@@ -381,6 +383,7 @@ async def _scrape_instagram(url: str) -> dict:
                             "video_url": clean_url,
                             "thumbnail": thumbnail_img,
                             "is_image": False,
+                            "muted": True,
                         }
         except Exception:
             pass
@@ -410,6 +413,7 @@ async def _scrape_instagram(url: str) -> dict:
                     "video_url": og_vid.group(1).replace("&amp;", "&"),
                     "thumbnail": og_img.group(1).replace("&amp;", "&") if og_img else thumbnail_img,
                     "is_image": False,
+                    "muted": True,
                 }
             if og_img and not thumbnail_img:
                 thumbnail_img = og_img.group(1).replace("&amp;", "&")
@@ -421,6 +425,7 @@ async def _scrape_instagram(url: str) -> dict:
         "video_url": url,
         "thumbnail": thumbnail_img,
         "is_image": False,
+        "muted": True,
     }
 
 
@@ -681,43 +686,60 @@ async def extract_media_info(url: str, platform_name: str) -> MediaInfo:
         except Exception:
             pass
 
-    # 5. Instagram photo/video handler
+    # 5. Instagram handler: if cookies are NOT configured, use direct scraper fallback immediately
     if "instagram.com" in url or "instagr.am" in url:
-        try:
-            ig_data = await _scrape_instagram(url)
-            if ig_data.get("video_url") and ("cdninstagram.com" in ig_data["video_url"] or "fbcdn.net" in ig_data["video_url"]):
-                format_opts = build_format_options(30)
-                return MediaInfo(
-                    url=url,
-                    platform="instagram",
-                    title=ig_data.get("title", "Instagram Video"),
-                    thumbnail_url=ig_data.get("thumbnail"),
-                    duration=30,
-                    media_type="video",
-                    formats=[f"{opt.ext} {opt.quality} ({opt.file_size_formatted})" for opt in format_opts],
-                    format_options=format_opts,
-                    download_url=ig_data["video_url"],
-                    download_supported=True,
-                    embed_supported=True,
-                )
-            elif ig_data.get("is_image") and ig_data.get("image_url"):
-                format_opts = build_image_format_options(ig_data["image_url"])
-                return MediaInfo(
-                    url=url,
-                    platform="instagram",
-                    title=ig_data.get("title", "Instagram Photo"),
-                    thumbnail_url=ig_data["image_url"],
-                    media_type="image",
-                    formats=[f"{opt.ext} {opt.quality} ({opt.file_size_formatted})" for opt in format_opts],
-                    format_options=format_opts,
-                    download_url=ig_data["image_url"],
-                    download_supported=True,
-                    embed_supported=True,
-                )
-        except Exception:
-            pass
+        from app.services.media_service import _get_instagram_cookiefile
+        ig_cookie = _get_instagram_cookiefile()
+        if not ig_cookie:
+            try:
+                ig_data = await _scrape_instagram(url)
+                if ig_data.get("is_image") and ig_data.get("image_url"):
+                    format_opts = build_image_format_options(ig_data["image_url"])
+                    return MediaInfo(
+                        url=url,
+                        platform="instagram",
+                        title=ig_data.get("title", "Instagram Photo"),
+                        thumbnail_url=ig_data["image_url"],
+                        media_type="image",
+                        formats=[f"{opt.ext} {opt.quality} ({opt.file_size_formatted})" for opt in format_opts],
+                        format_options=format_opts,
+                        download_url=ig_data["image_url"],
+                        download_supported=True,
+                        embed_supported=True,
+                        muted=False,
+                    )
+                elif ig_data.get("video_url"):
+                    format_opts = build_format_options(30)
+                    return MediaInfo(
+                        url=url,
+                        platform="instagram",
+                        title=ig_data.get("title", "Instagram Video"),
+                        thumbnail_url=ig_data.get("thumbnail"),
+                        duration=30,
+                        media_type="video",
+                        formats=[f"{opt.ext} {opt.quality} ({opt.file_size_formatted})" for opt in format_opts],
+                        format_options=format_opts,
+                        download_url=ig_data["video_url"],
+                        download_supported=True,
+                        embed_supported=True,
+                        muted=True,
+                    )
+            except Exception:
+                pass
+        # If Instagram cookies ARE present, proceed to yt-dlp native extraction below
 
     # 6. Universal yt-dlp extraction for videos and rich media
+    from app.services.media_service import (
+        _get_youtube_cookiefile,
+        _get_instagram_cookiefile,
+        get_youtube_player_clients,
+    )
+    is_yt = "youtube.com" in url or "youtu.be" in url
+    is_ig = "instagram.com" in url or "instagr.am" in url
+
+    yt_cookie = _get_youtube_cookiefile() if is_yt else None
+    has_yt_cookies = bool(yt_cookie)
+
     ydl_opts = {
         'quiet': True,
         'no_warnings': True,
@@ -726,7 +748,7 @@ async def extract_media_info(url: str, platform_name: str) -> MediaInfo:
         'socket_timeout': 15,
         'extractor_args': {
             'youtube': {
-                'player_client': ['ios', 'android']
+                'player_client': get_youtube_player_clients(has_yt_cookies)
             }
         },
         'http_headers': {
@@ -735,17 +757,14 @@ async def extract_media_info(url: str, platform_name: str) -> MediaInfo:
         },
     }
 
-    from app.services.media_service import _get_youtube_cookiefile, _get_instagram_cookiefile
-    if "youtube.com" in url or "youtu.be" in url:
-        cookie_file = _get_youtube_cookiefile()
-        if cookie_file:
-            ydl_opts['cookiefile'] = cookie_file
-            ydl_opts['extractor_args']['youtube']['player_client'] = ['web', 'mweb', 'android', 'ios']
+    if is_yt:
+        if yt_cookie:
+            ydl_opts['cookiefile'] = yt_cookie
         ydl_opts['retries'] = 3
         ydl_opts['fragment_retries'] = 3
         ydl_opts['sleep_interval'] = 1
         ydl_opts['sleep_interval_requests'] = 1
-    elif "instagram.com" in url or "instagr.am" in url:
+    elif is_ig:
         ig_cookie = _get_instagram_cookiefile()
         if ig_cookie:
             ydl_opts['cookiefile'] = ig_cookie
@@ -812,6 +831,43 @@ async def extract_media_info(url: str, platform_name: str) -> MediaInfo:
             embed_supported=True,
         )
     except Exception:
+        if is_ig:
+            try:
+                ig_data = await _scrape_instagram(url)
+                if ig_data.get("is_image") and ig_data.get("image_url"):
+                    format_opts = build_image_format_options(ig_data["image_url"])
+                    return MediaInfo(
+                        url=url,
+                        platform="instagram",
+                        title=ig_data.get("title", "Instagram Photo"),
+                        thumbnail_url=ig_data["image_url"],
+                        media_type="image",
+                        formats=[f"{opt.ext} {opt.quality} ({opt.file_size_formatted})" for opt in format_opts],
+                        format_options=format_opts,
+                        download_url=ig_data["image_url"],
+                        download_supported=True,
+                        embed_supported=True,
+                        muted=False,
+                    )
+                elif ig_data.get("video_url"):
+                    format_opts = build_format_options(30)
+                    return MediaInfo(
+                        url=url,
+                        platform="instagram",
+                        title=ig_data.get("title", "Instagram Video"),
+                        thumbnail_url=ig_data.get("thumbnail"),
+                        duration=30,
+                        media_type="video",
+                        formats=[f"{opt.ext} {opt.quality} ({opt.file_size_formatted})" for opt in format_opts],
+                        format_options=format_opts,
+                        download_url=ig_data["video_url"],
+                        download_supported=True,
+                        embed_supported=True,
+                        muted=True,
+                    )
+            except Exception:
+                pass
+
         clean_platform_label = platform_name.replace('_', ' ').title()
         is_probable_image = (
             platform_name == "pinterest"

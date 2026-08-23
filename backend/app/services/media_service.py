@@ -121,6 +121,18 @@ def _get_instagram_cookiefile() -> str | None:
     return _get_platform_cookiefile("instagram")
 
 
+# Unified shared YouTube player client lists
+YOUTUBE_PLAYER_CLIENTS_DEFAULT: list[str] = ["ios", "android"]
+YOUTUBE_PLAYER_CLIENTS_WITH_COOKIES: list[str] = ["ios", "android", "mweb", "web"]
+
+
+def get_youtube_player_clients(has_cookies: bool = False) -> list[str]:
+    """Return unified YouTube player_client list for both analyze and download pipelines."""
+    if has_cookies:
+        return list(YOUTUBE_PLAYER_CLIENTS_WITH_COOKIES)
+    return list(YOUTUBE_PLAYER_CLIENTS_DEFAULT)
+
+
 def _sanitize_error_message(exc: Exception) -> str:
     """Sanitize internal errors to prevent leaking server paths, stack traces, or credentials."""
     if _is_youtube_bot_challenge(exc):
@@ -746,6 +758,9 @@ def _download_sync(job_id: str, url: str, fmt: str, quality: str) -> str:
     is_youtube = "youtube.com" in url or "youtu.be" in url
     is_instagram = "instagram.com" in url or "instagr.am" in url
 
+    yt_cookie_file = _get_youtube_cookiefile() if is_youtube else None
+    has_yt_cookies = bool(yt_cookie_file)
+
     ydl_opts = {
         "outtmpl": output_path,
         "format": format_string,
@@ -758,7 +773,7 @@ def _download_sync(job_id: str, url: str, fmt: str, quality: str) -> str:
         "fragment_retries": 3 if is_youtube else 5,
         "extractor_args": {
             "youtube": {
-                "player_client": ["mweb", "android", "ios"]
+                "player_client": get_youtube_player_clients(has_yt_cookies)
             }
         },
         "http_headers": {
@@ -768,10 +783,8 @@ def _download_sync(job_id: str, url: str, fmt: str, quality: str) -> str:
     }
 
     if is_youtube:
-        cookie_file = _get_youtube_cookiefile()
-        if cookie_file:
-            ydl_opts["cookiefile"] = cookie_file
-            ydl_opts["extractor_args"]["youtube"]["player_client"] = ["mweb", "web", "android", "ios"]
+        if yt_cookie_file:
+            ydl_opts["cookiefile"] = yt_cookie_file
         ydl_opts["sleep_interval"] = 1
         ydl_opts["sleep_interval_requests"] = 1
     elif is_instagram:
