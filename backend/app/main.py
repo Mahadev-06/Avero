@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from slowapi.errors import RateLimitExceeded
 import os
+import shutil
 import structlog
 from app.core.config import settings
 from app.core.redis import init_redis, close_redis
@@ -37,6 +38,18 @@ async def lifespan(app: FastAPI):
         logger.info("redis_connected")
     except Exception as e:
         logger.warning("redis_unavailable_fallback_to_local", error=str(e))
+
+    # Check runtime binaries in PATH (FFmpeg, Node.js)
+    ffmpeg_path = shutil.which("ffmpeg")
+    node_path = shutil.which("node")
+
+    logger.info(
+        "runtime_binary_check",
+        ffmpeg_found=bool(ffmpeg_path),
+        ffmpeg_path=ffmpeg_path or "",
+        node_found=bool(node_path),
+        node_path=node_path or "",
+    )
 
     # Log cookie configuration status at startup
     yt_has_file = bool(settings.YOUTUBE_COOKIES_FILE and os.path.exists(settings.YOUTUBE_COOKIES_FILE))
