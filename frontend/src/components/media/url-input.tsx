@@ -678,45 +678,32 @@ export function UrlInput() {
   return (
     <div style={{ maxWidth: '960px', margin: '0 auto', width: '100%' }}>
       
-      {/* 1. Smooth Rotating Loop Showcase of Pearl Buttons (Icon-Only, Clean) */}
-      <div className="platform-marquee-container" title="Click any platform to select">
+      {/* 1. Smooth Rotating Loop Showcase of Pearl Badges (Icon-Only, Clean, Purely Decorative) */}
+      <div className="platform-marquee-container" aria-hidden="true">
         <div className="platform-marquee-track">
           <div className="platform-marquee-group">
-            {PLATFORM_ICONS.map((platform, idx) => {
-              const isSelected = selectedPlatform?.type === platform.type;
-              return (
-                <button
-                  key={`platform-pearl-1-${platform.type}-${idx}`}
-                  type="button"
-                  onClick={() => setSelectedPlatform(isSelected ? null : platform)}
-                  className={`pearl-icon-btn ${isSelected ? 'selected' : ''}`}
-                  title={`Filter ${platform.name}`}
-                  aria-label={platform.name}
-                >
-                  <div style={{ position: 'relative', zIndex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    {platform.svg}
-                  </div>
-                </button>
-              );
-            })}
+            {PLATFORM_ICONS.map((platform, idx) => (
+              <div
+                key={`platform-pearl-1-${platform.type}-${idx}`}
+                className="pearl-icon-badge"
+              >
+                <div style={{ position: 'relative', zIndex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  {platform.svg}
+                </div>
+              </div>
+            ))}
           </div>
           <div className="platform-marquee-group" aria-hidden="true">
-            {PLATFORM_ICONS.map((platform, idx) => {
-              const isSelected = selectedPlatform?.type === platform.type;
-              return (
-                <button
-                  key={`platform-pearl-2-${platform.type}-${idx}`}
-                  type="button"
-                  onClick={() => setSelectedPlatform(isSelected ? null : platform)}
-                  className={`pearl-icon-btn ${isSelected ? 'selected' : ''}`}
-                  tabIndex={-1}
-                >
-                  <div style={{ position: 'relative', zIndex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    {platform.svg}
-                  </div>
-                </button>
-              );
-            })}
+            {PLATFORM_ICONS.map((platform, idx) => (
+              <div
+                key={`platform-pearl-2-${platform.type}-${idx}`}
+                className="pearl-icon-badge"
+              >
+                <div style={{ position: 'relative', zIndex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  {platform.svg}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>
@@ -896,7 +883,7 @@ export function UrlInput() {
                   if (isSearchMode && suggestions.length > 0) setShowSuggestions(true);
                 }}
                 onBlur={() => setIsInputFocused(false)}
-                placeholder={isSearchMode ? 'Type keywords (e.g. lofi hip hop, podcast)...' : (selectedPlatform ? selectedPlatform.placeholder : '')}
+                placeholder={isSearchMode ? 'Type keywords (e.g. lofi hip hop, podcast)...' : ''}
                 style={{
                   width: '100%',
                   backgroundColor: 'transparent',
@@ -912,7 +899,7 @@ export function UrlInput() {
               />
 
               {/* Auto-Rotating Placeholder Powered Purely by SlotText */}
-              {!inputValue && !isSearchMode && !selectedPlatform && !isMultiMode && (
+              {!inputValue && !isSearchMode && !isMultiMode && (
                 <div
                   aria-hidden="true"
                   style={{

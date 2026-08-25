@@ -487,6 +487,8 @@ button {
   background: transparent;
   border: none;
   box-shadow: none;
+  pointer-events: none;
+  user-select: none;
   mask-image: linear-gradient(to right, transparent 0%, black 15%, black 85%, transparent 100%);
   -webkit-mask-image: linear-gradient(to right, transparent 0%, black 15%, black 85%, transparent 100%);
 }
@@ -506,6 +508,7 @@ button {
   flex-shrink: 0;
 }
 
+.pearl-icon-badge,
 .pearl-icon-btn {
   --pearl-bg: #111111;
   width: 38px;
@@ -519,7 +522,8 @@ button {
   justify-content: center;
   background: radial-gradient(circle at 35% 35%, #222222, #0d0d0d);
   border: 1px solid rgba(255, 255, 255, 0.28);
-  cursor: pointer;
+  cursor: default;
+  pointer-events: none;
   position: relative;
   overflow: hidden;
   box-shadow:
@@ -529,22 +533,6 @@ button {
     -2px -3px 6px var(--neumorph-light);
   flex-shrink: 0;
   user-select: none;
-  transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1), border-color 0.2s ease, box-shadow 0.2s ease;
-}
-
-.pearl-icon-btn:hover {
-  transform: scale(1.14);
-  border-color: rgba(255, 255, 255, 0.6);
-}
-
-.pearl-icon-btn:active {
-  transform: scale(0.95);
-}
-
-.pearl-icon-btn.selected {
-  border: 2px solid var(--color-accent-500);
-  box-shadow: 0 0 10px rgba(245, 158, 11, 0.45), inset 0 1px 2px rgba(255, 255, 255, 0.6);
-  transform: scale(1.08);
 }
 
 /* --- Neumorphic Liquid Progress Bar --- */

@@ -97,7 +97,7 @@ export function Footer() {
               <ul style={{ listStyleType: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
                 <li>
                   <Link href="/" className="text-muted hover:text-foreground transition-colors" style={{ fontSize: '0.88rem', fontWeight: 600, whiteSpace: 'nowrap' }}>
-                    Home Downloader
+                    Home
                   </Link>
                 </li>
                 <li>
