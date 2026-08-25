@@ -1454,7 +1454,7 @@ export function UrlInput() {
                       {decodeHtmlEntities(item.info.title) || item.info.url}
                     </h3>
 
-                    {item.info.duration ? (
+                    {item.info.duration && !isImageMedia ? (
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
                         <div
                           className="tabular-nums"

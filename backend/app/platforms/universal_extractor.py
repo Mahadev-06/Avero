@@ -438,18 +438,19 @@ async def _scrape_threads(url: str) -> dict:
     if parsed.hostname:
         resolve_and_check(parsed.hostname)
 
-    if any(url.lower().endswith(ext) or f"{ext}?" in url.lower() for ext in (".mp4", ".m4v", ".mov", ".webm")) or "cdninstagram.com" in url or "fbcdn.net" in url:
+    if any(url.lower().endswith(ext) or f"{ext}?" in url.lower() for ext in (".jpg", ".jpeg", ".png", ".webp", ".gif", ".svg", ".avif")):
+        return {
+            "title": "Threads Photo",
+            "image_url": url,
+            "thumbnail": url,
+            "is_image": True,
+        }
+
+    if any(url.lower().endswith(ext) or f"{ext}?" in url.lower() for ext in (".mp4", ".m4v", ".mov", ".webm")):
         return {
             "title": "Threads Video",
             "video_url": url,
             "is_image": False,
-        }
-
-    if any(url.lower().endswith(ext) or f"{ext}?" in url.lower() for ext in (".jpg", ".jpeg", ".png", ".webp", ".gif")):
-        return {
-            "title": "Threads Photo",
-            "image_url": url,
-            "is_image": True,
         }
 
     crawler_headers = {
@@ -457,7 +458,7 @@ async def _scrape_threads(url: str) -> dict:
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
     }
     
-    title = "Threads Media"
+    title = "Threads Photo"
     thumbnail_img = None
 
     try:
@@ -471,13 +472,15 @@ async def _scrape_threads(url: str) -> dict:
             og_title = re.search(r'<meta\s+property=["\']og:title["\']\s+content=["\']([^"\']+)["\']', html)
             
             if og_title:
-                raw_title = og_title.group(1).replace("&amp;", "&")
-                if raw_title and not any(k in raw_title for k in ("Log in", "Threads •", "Threads &#x2022;")):
-                    title = raw_title
+                import html as html_module
+                raw_title = html_module.unescape(og_title.group(1).replace("&amp;", "&"))
+                cleaned_title = re.sub(r'[\s•·|]+Threads.*$', '', raw_title, flags=re.IGNORECASE).strip()
+                if cleaned_title and not any(k.lower() in cleaned_title.lower() for k in ("log in", "login")):
+                    title = f"{cleaned_title} on Threads" if not cleaned_title.endswith("on Threads") else cleaned_title
             
             if og_vid:
                 return {
-                    "title": title if title != "Threads Media" else "Threads Video",
+                    "title": title if title != "Threads Photo" else "Threads Video",
                     "video_url": og_vid.group(1).replace("&amp;", "&"),
                     "thumbnail": og_img.group(1).replace("&amp;", "&") if og_img else None,
                     "is_image": False,
@@ -488,7 +491,7 @@ async def _scrape_threads(url: str) -> dict:
             if mp4_matches:
                 clean_url = mp4_matches[0].replace(r"\u0026", "&").replace(r"\/", "/")
                 return {
-                    "title": title if title != "Threads Media" else "Threads Video",
+                    "title": title if title != "Threads Photo" else "Threads Video",
                     "video_url": clean_url,
                     "thumbnail": og_img.group(1).replace("&amp;", "&") if og_img else None,
                     "is_image": False,
@@ -496,10 +499,12 @@ async def _scrape_threads(url: str) -> dict:
 
             if og_img:
                 img_url = og_img.group(1).replace("&amp;", "&")
-                if not any(img_url.endswith(e) for e in ("favicon.ico", "threads_logo.png", "kHwIMM5b8PW.webp")):
+                base_img = img_url.split("?")[0].lower()
+                is_junk = any(e in base_img for e in ("favicon.ico", "threads_logo.png", "khwimm5b8pw"))
+                if not is_junk:
                     thumbnail_img = img_url
                     return {
-                        "title": title if title != "Threads Media" else "Threads Photo",
+                        "title": title or "Threads Photo",
                         "image_url": img_url,
                         "thumbnail": img_url,
                         "is_image": True,
@@ -523,6 +528,7 @@ async def _scrape_threads(url: str) -> dict:
                     data_html = res.get("data", "")
                     v_match = re.search(r'href=["\'](https?://[^"\']+)["\'][^>]*title=["\']Download Video["\']', data_html)
                     p_match = re.search(r'<img[^>]+src=["\'](https?://[^"\']+)["\']', data_html)
+                    photo_dl = re.search(r'href=["\'](https?://[^"\']+)["\'][^>]*title=["\']Download Photo["\']', data_html)
                     if v_match:
                         return {
                             "title": title or "Threads Video",
@@ -530,7 +536,14 @@ async def _scrape_threads(url: str) -> dict:
                             "thumbnail": p_match.group(1) if p_match else thumbnail_img,
                             "is_image": False,
                         }
-                    elif p_match and not any(k in data_html.lower() for k in ("download video", "video", ".mp4")):
+                    elif photo_dl:
+                        return {
+                            "title": title or "Threads Photo",
+                            "image_url": photo_dl.group(1),
+                            "thumbnail": p_match.group(1) if p_match else photo_dl.group(1),
+                            "is_image": True,
+                        }
+                    elif p_match:
                         return {
                             "title": title or "Threads Photo",
                             "image_url": p_match.group(1),
@@ -542,18 +555,18 @@ async def _scrape_threads(url: str) -> dict:
 
     if thumbnail_img:
         return {
-            "title": title if title != "Threads Media" else "Threads Photo",
+            "title": title or "Threads Photo",
             "image_url": thumbnail_img,
             "thumbnail": thumbnail_img,
             "is_image": True,
         }
 
-    # Default to Video only if no thumbnail/image was discovered
+    # If no video was detected, Threads is predominantly photo/image content
     return {
-        "title": title or "Threads Media",
-        "video_url": url,
+        "title": title or "Threads Photo",
+        "image_url": url,
         "thumbnail": None,
-        "is_image": False,
+        "is_image": True,
     }
 
 async def extract_media_info(url: str, platform_name: str) -> MediaInfo:
@@ -663,17 +676,19 @@ async def extract_media_info(url: str, platform_name: str) -> MediaInfo:
     if "threads.net" in url or "threads.com" in url:
         try:
             th_data = await _scrape_threads(url)
-            if th_data.get("is_image") and th_data.get("image_url"):
-                format_opts = build_image_format_options(th_data["image_url"])
+            if th_data.get("is_image") or not th_data.get("video_url") or th_data.get("image_url"):
+                target_img = th_data.get("image_url") or th_data.get("thumbnail") or url
+                format_opts = build_image_format_options(target_img)
                 return MediaInfo(
                     url=url,
                     platform="threads",
                     title=th_data.get("title", "Threads Photo"),
-                    thumbnail_url=th_data["image_url"],
+                    thumbnail_url=th_data.get("thumbnail") or th_data.get("image_url") or target_img,
                     media_type="image",
+                    duration=0,
                     formats=[f"{opt.ext} {opt.quality} ({opt.file_size_formatted})" for opt in format_opts],
                     format_options=format_opts,
-                    download_url=th_data["image_url"],
+                    download_url=target_img,
                     download_supported=True,
                     embed_supported=True,
                 )
