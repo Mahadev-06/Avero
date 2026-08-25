@@ -16,14 +16,14 @@ const STEPS: StepItem[] = [
   {
     step: 1,
     title: 'Copy Video Link',
-    desc: 'Find your video on YouTube, Instagram, TikTok, Facebook, or X and copy its link.',
+    desc: 'Find your video or photo on Instagram, TikTok, Facebook, Pinterest, or X and copy its link.',
     icon: <Link2 className="w-5 h-5 text-amber-600" />,
     svgMockup: (
       <svg width="100%" height="80" viewBox="0 0 180 80" fill="none" xmlns="http://www.w3.org/2000/svg">
         <rect x="8" y="14" width="164" height="52" rx="10" fill="var(--bg-color)" stroke="rgba(255,255,255,0.6)" strokeWidth="1" />
         <rect x="18" y="24" width="144" height="22" rx="6" fill="rgba(255,255,255,0.5)" stroke="#16a34a" strokeWidth="1.2" />
         <text x="26" y="38" fill="#16a34a" fontSize="8.5" fontStyle="italic" fontWeight="700" fontFamily="sans-serif">
-          youtube.com/watch?v=...
+          instagram.com/reel/...
         </text>
         <circle cx="150" cy="35" r="6" fill="#16a34a" />
         <path d="M147.5 35L149.5 37L152.5 33.5" stroke="white" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />

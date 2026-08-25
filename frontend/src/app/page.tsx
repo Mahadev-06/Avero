@@ -35,7 +35,7 @@ export default function Home() {
     {
       id: 'faq-2',
       q: 'Which video & image platforms are supported?',
-      a: 'AVERO supports YouTube, TikTok, Instagram Reels & Photos, Pinterest Pins, Reddit Posts & Videos, Threads, Facebook, X (Twitter), as well as direct MP4, WebM, MP3, JPG, and PNG media links.',
+      a: 'AVERO supports TikTok, Instagram Reels & Photos, Pinterest Pins, Reddit Posts & Videos, Threads, Facebook, X (Twitter), as well as direct MP4, WebM, MP3, JPG, and PNG media links.',
     },
     {
       id: 'faq-3',
@@ -50,17 +50,6 @@ export default function Home() {
   ];
 
   const toolsList = [
-    {
-      title: 'YouTube Downloader',
-      desc: 'Save YouTube videos & Shorts in 1080p, 720p, 480p MP4 or convert to MP3 audio.',
-      href: '/youtube-downloader',
-      icon: (
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
-          <path fill="#FF0000" d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814z"/>
-          <polygon fill="#FFFFFF" points="9.545,15.568 15.818,12 9.545,8.432"/>
-        </svg>
-      ),
-    },
     {
       title: 'Instagram Downloader',
       desc: 'Download Instagram Reels, video posts, carousel galleries, and story clips.',
@@ -238,7 +227,6 @@ export default function Home() {
                 },
               }}
             >
-              <span>YouTube</span>
               <span>TikTok</span>
               <span>Instagram</span>
               <span>Pinterest</span>
