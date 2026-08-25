@@ -279,12 +279,9 @@ export default function Home() {
 
       {/* 2. POPULAR MEDIA TOOLS DIRECTORY */}
       <section style={{ paddingTop: '2.5rem', paddingBottom: '3.5rem' }}>
-        <div className="container">
+        <div className="container" style={{ maxWidth: '1080px' }}>
           <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
-            <div style={{ display: 'inline-flex', padding: '0.35rem 0.85rem', borderRadius: 'var(--radius-full)', backgroundColor: 'var(--bg-color)', border: '1px solid rgba(255,255,255,0.6)', boxShadow: '3px 3px 6px var(--neumorph-dark), -3px -3px 6px var(--neumorph-light)', fontSize: '0.75rem', fontWeight: 800, letterSpacing: '0.08em', color: 'var(--color-accent-500)', marginBottom: '0.75rem' }}>
-              TOOLS ECOSYSTEM
-            </div>
-            <h2 className="text-3xl font-extrabold" style={{ letterSpacing: '-0.02em' }}>
+            <h2 className="text-3xl font-extrabold" style={{ letterSpacing: '-0.02em', color: 'var(--text-color)' }}>
               Explore Dedicated Downloader Tools
             </h2>
           </div>
@@ -292,13 +289,17 @@ export default function Home() {
           <div className="tools-grid">
             {toolsList.map((tool) => (
               <Link key={tool.title} href={tool.href} style={{ textDecoration: 'none' }}>
-                <Card className="card-editorial h-full transition-transform hover:-translate-y-1" style={{ cursor: 'pointer', borderRadius: '18px' }}>
-                  <CardHeader>
-                    <div style={{ marginBottom: '0.5rem' }}>{tool.icon}</div>
-                    <CardTitle className="text-lg">{tool.title}</CardTitle>
-                    <CardDescription>{tool.desc}</CardDescription>
-                  </CardHeader>
-                </Card>
+                <div className="nm-tool-card">
+                  <div style={{ marginBottom: '0.45rem', display: 'flex', alignItems: 'center' }}>
+                    {tool.icon}
+                  </div>
+                  <h3 style={{ fontSize: '1.18rem', fontWeight: 800, color: 'var(--text-color)', margin: 0, letterSpacing: '-0.01em' }}>
+                    {tool.title}
+                  </h3>
+                  <p style={{ fontSize: '0.88rem', color: 'var(--text-muted)', margin: 0, lineHeight: 1.55, fontWeight: 500 }}>
+                    {tool.desc}
+                  </p>
+                </div>
               </Link>
             ))}
           </div>

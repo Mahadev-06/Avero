@@ -187,25 +187,38 @@ button {
 .grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 
-/* Tools Ecosystem Responsive Grid */
+/* Tools Ecosystem Responsive Grid (2 columns on desktop matching original design) */
 .tools-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 1.5rem;
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 768px) {
   .tools-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1.25rem;
+    grid-template-columns: 1fr;
+    gap: 1.15rem;
   }
 }
 
-@media (max-width: 640px) {
-  .tools-grid {
-    grid-template-columns: 1fr;
-    gap: 0.95rem;
-  }
+.nm-tool-card {
+  background-color: var(--bg-color);
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  border-radius: 24px;
+  padding: 1.65rem 2rem;
+  box-shadow: 6px 6px 16px var(--neumorph-dark), -6px -6px 16px var(--neumorph-light);
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  height: 100%;
+  box-sizing: border-box;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  text-align: left;
+}
+
+.nm-tool-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 8px 8px 20px var(--neumorph-dark), -8px -8px 20px var(--neumorph-light);
 }
 
 @media (min-width: 640px) {
