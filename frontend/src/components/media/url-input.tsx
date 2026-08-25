@@ -408,10 +408,12 @@ export function UrlInput() {
 
   const handleSpecificDownload = useCallback(async (item: VideoResultItem, ext: string, quality: string) => {
     const isInstagram = item.info.platform === 'instagram' || item.info.url?.includes('instagram.com') || item.info.url?.includes('instagr.am');
+    const isImageFormat = ['jpg', 'jpeg', 'png', 'webp'].includes(ext.toLowerCase()) || item.info.media_type === 'image';
 
     // If a direct media/stream URL was extracted (e.g. cdninstagram, fbcdn, v.redd.it, pinimg, or direct media extension), prefer it
     const isDirectStream = Boolean(
       item.info.download_url && (
+        isImageFormat ||
         (item.info.muted && (item.info.download_url.includes('cdninstagram.com') || item.info.download_url.includes('fbcdn.net'))) ||
         (!isInstagram && (
           item.info.download_url.includes('v.redd.it') ||

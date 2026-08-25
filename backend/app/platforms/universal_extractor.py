@@ -457,7 +457,7 @@ async def _scrape_threads(url: str) -> dict:
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
     }
     
-    title = "Threads Video"
+    title = "Threads Media"
     thumbnail_img = None
 
     try:
@@ -477,7 +477,7 @@ async def _scrape_threads(url: str) -> dict:
             
             if og_vid:
                 return {
-                    "title": title,
+                    "title": title if title != "Threads Media" else "Threads Video",
                     "video_url": og_vid.group(1).replace("&amp;", "&"),
                     "thumbnail": og_img.group(1).replace("&amp;", "&") if og_img else None,
                     "is_image": False,
@@ -488,7 +488,7 @@ async def _scrape_threads(url: str) -> dict:
             if mp4_matches:
                 clean_url = mp4_matches[0].replace(r"\u0026", "&").replace(r"\/", "/")
                 return {
-                    "title": title,
+                    "title": title if title != "Threads Media" else "Threads Video",
                     "video_url": clean_url,
                     "thumbnail": og_img.group(1).replace("&amp;", "&") if og_img else None,
                     "is_image": False,
@@ -498,13 +498,12 @@ async def _scrape_threads(url: str) -> dict:
                 img_url = og_img.group(1).replace("&amp;", "&")
                 if not any(img_url.endswith(e) for e in ("favicon.ico", "threads_logo.png", "kHwIMM5b8PW.webp")):
                     thumbnail_img = img_url
-                    # Only treat as image if no video indicator exists
-                    if not any(k in html.lower() for k in ("video_versions", "playback_url", "videoobject", "playable")):
-                        return {
-                            "title": title if title != "Threads Video" else "Threads Photo",
-                            "image_url": img_url,
-                            "is_image": True,
-                        }
+                    return {
+                        "title": title if title != "Threads Media" else "Threads Photo",
+                        "image_url": img_url,
+                        "thumbnail": img_url,
+                        "is_image": True,
+                    }
 
         # 2. lovethreads.net API fallback
         async with httpx.AsyncClient(follow_redirects=True, timeout=8.0) as client:
@@ -535,16 +534,25 @@ async def _scrape_threads(url: str) -> dict:
                         return {
                             "title": title or "Threads Photo",
                             "image_url": p_match.group(1),
+                            "thumbnail": p_match.group(1),
                             "is_image": True,
                         }
     except Exception:
         pass
 
-    # Default to Video so that video format options are displayed and handled properly
+    if thumbnail_img:
+        return {
+            "title": title if title != "Threads Media" else "Threads Photo",
+            "image_url": thumbnail_img,
+            "thumbnail": thumbnail_img,
+            "is_image": True,
+        }
+
+    # Default to Video only if no thumbnail/image was discovered
     return {
-        "title": title,
+        "title": title or "Threads Media",
         "video_url": url,
-        "thumbnail": thumbnail_img,
+        "thumbnail": None,
         "is_image": False,
     }
 

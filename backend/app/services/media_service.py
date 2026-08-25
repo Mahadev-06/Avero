@@ -735,7 +735,7 @@ def _download_sync(job_id: str, url: str, fmt: str, quality: str) -> str:
         or "audio" in fmt.lower()
     )
 
-    if (is_image or "pinterest.com" in url or "pin.it" in url or "reddit.com" in url or "redd.it" in url) and not is_video_or_audio_fmt:
+    if (is_image or "pinterest.com" in url or "pin.it" in url or "reddit.com" in url or "redd.it" in url or "threads.net" in url or "threads.com" in url) and not is_video_or_audio_fmt:
         direct_img = _resolve_image_url(url)
         if direct_img:
             return _download_image_sync(job_id, direct_img, fmt)
@@ -963,7 +963,7 @@ def _download_sync(job_id: str, url: str, fmt: str, quality: str) -> str:
                     loop.close()
                     if th_data.get("video_url") and not is_image:
                         return _download_video_direct_sync(job_id, th_data["video_url"], is_audio, audio_quality)
-                    elif th_data.get("image_url") and is_image:
+                    elif th_data.get("image_url"):
                         return _download_image_sync(job_id, th_data["image_url"], fmt)
                 except Exception:
                     pass
