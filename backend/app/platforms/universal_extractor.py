@@ -4,8 +4,11 @@ import re
 from urllib.parse import urlparse
 import httpx
 import yt_dlp
+import structlog
 from app.core.security.ssrf import resolve_and_check, SSRFBlockedError
 from app.schemas.analyze import MediaInfo, FormatOption
+
+logger = structlog.get_logger()
 
 def format_bytes(size_bytes: float) -> str:
     """Format bytes into KB / MB human-readable strings."""
@@ -783,6 +786,34 @@ async def extract_media_info(url: str, platform_name: str) -> MediaInfo:
         
         # Check if media is purely an image/photo post
         has_video_formats = bool(info.get('formats') and any(f.get('vcodec') != 'none' for f in info['formats']))
+        has_audio_formats = bool(info.get('formats') and any(f.get('acodec') != 'none' for f in info['formats']))
+
+        if is_yt and not (has_video_formats or has_audio_formats):
+            video_id_match = re.search(r'(?:v=|\/|shorts\/)([0-9A-Za-z_-]{11})', url)
+            video_id = video_id_match.group(1) if video_id_match else None
+            logger.warning(
+                "youtube_universal_extract_unsupported_video",
+                platform="youtube",
+                video_id=video_id,
+                url=url,
+                player_clients=get_youtube_player_clients(has_yt_cookies),
+                reason="no_media_formats_returned",
+            )
+            return MediaInfo(
+                url=url,
+                platform="youtube",
+                title=title[:100],
+                thumbnail_url=thumbnail,
+                duration=duration,
+                media_type="video",
+                formats=[],
+                format_options=[],
+                download_url=url,
+                download_supported=False,
+                embed_supported=True,
+                error="unsupported_video",
+                error_message="This video can't be downloaded right now due to YouTube restrictions.",
+            )
         
         if not has_video_formats and thumbnail:
             format_opts = build_image_format_options(thumbnail)
@@ -830,7 +861,32 @@ async def extract_media_info(url: str, platform_name: str) -> MediaInfo:
             download_supported=True,
             embed_supported=True,
         )
-    except Exception:
+    except Exception as e:
+        if is_yt:
+            video_id_match = re.search(r'(?:v=|\/|shorts\/)([0-9A-Za-z_-]{11})', url)
+            video_id = video_id_match.group(1) if video_id_match else None
+            logger.warning(
+                "youtube_universal_extract_unsupported_video",
+                platform="youtube",
+                video_id=video_id,
+                url=url,
+                player_clients=get_youtube_player_clients(has_yt_cookies),
+                raw_error=str(e),
+            )
+            return MediaInfo(
+                url=url,
+                platform="youtube",
+                title="YouTube Video",
+                media_type="video",
+                formats=[],
+                format_options=[],
+                download_url=url,
+                download_supported=False,
+                embed_supported=True,
+                error="unsupported_video",
+                error_message="This video can't be downloaded right now due to YouTube restrictions.",
+            )
+
         if is_ig:
             try:
                 ig_data = await _scrape_instagram(url)

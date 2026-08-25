@@ -352,7 +352,12 @@ export function UrlInput() {
       }));
 
       setResults(items);
-      setStatusMsg('Ready to download');
+      const unsupportedItem = items.find((item) => item.info.error === 'unsupported_video' || (item.info.download_supported === false && item.info.platform === 'youtube'));
+      if (unsupportedItem && items.length === 1) {
+        setStatusMsg(unsupportedItem.info.error_message || "This video can't be downloaded right now due to YouTube restrictions.");
+      } else {
+        setStatusMsg('Ready to download');
+      }
     } catch (err: unknown) {
       console.error('Analysis error:', err);
       const fallbackItems: VideoResultItem[] = urlsToAnalyze.map((url, idx) => ({
@@ -500,7 +505,16 @@ export function UrlInput() {
           )
         );
         const errText = finalProgress.error || 'Download failed. Please retry.';
-        setStatusMsg(errText.startsWith('Unfortunately') || errText.startsWith('Unable') || errText.startsWith('Access') || errText.startsWith('This media') ? errText : `Download failed: ${errText}`);
+        setStatusMsg(
+          finalProgress.error_code === 'unsupported_video' ||
+          errText.startsWith('This video') ||
+          errText.startsWith('Unfortunately') ||
+          errText.startsWith('Unable') ||
+          errText.startsWith('Access') ||
+          errText.startsWith('This media')
+            ? errText
+            : `Download failed: ${errText}`
+        );
       }
     } catch (err) {
       console.error('Download error:', err);
@@ -1432,6 +1446,8 @@ export function UrlInput() {
               { format_id: 'mp3_128kbps', ext: 'MP3', quality: '128KBPS', file_size_formatted: 'Standard', media_category: 'audio' as const },
             ];
 
+            const isUnsupported = item.info.error === 'unsupported_video' || (item.info.download_supported === false && item.info.platform === 'youtube');
+
             return (
               <div
                 key={item.id}
@@ -1486,6 +1502,27 @@ export function UrlInput() {
                         </div>
                       </div>
                     ) : null}
+
+                    {isUnsupported && (
+                      <div
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '0.35rem',
+                          padding: '0.2rem 0.65rem',
+                          borderRadius: 'var(--radius-full)',
+                          backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                          border: '1px solid rgba(239, 68, 68, 0.3)',
+                          color: '#ef4444',
+                          fontSize: '0.75rem',
+                          fontWeight: 700,
+                          marginTop: '0.35rem',
+                        }}
+                      >
+                        <AlertCircle className="w-3.5 h-3.5 text-red-500" />
+                        <span>Restricted on YouTube</span>
+                      </div>
+                    )}
 
                     {item.info.muted && (
                       <div
@@ -1570,8 +1607,50 @@ export function UrlInput() {
                   <div style={{ width: '100%', minWidth: 0 }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', width: '100%' }}>
                       
-                      {/* SUB-COLUMN 1: IMAGE OR VIDEO OPTIONS */}
-                      {isImageMedia ? (
+                      {isUnsupported ? (
+                        <div
+                          style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            textAlign: 'center',
+                            padding: '2.5rem 1.5rem',
+                            borderRadius: '20px',
+                            backgroundColor: 'var(--bg-color)',
+                            border: '1px solid rgba(239, 68, 68, 0.3)',
+                            boxShadow: 'inset 2px 2px 6px var(--neumorph-dark), inset -2px -2px 6px var(--neumorph-light)',
+                            gap: '0.85rem',
+                            width: '100%',
+                            boxSizing: 'border-box',
+                          }}
+                        >
+                          <div
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              width: '48px',
+                              height: '48px',
+                              borderRadius: '50%',
+                              backgroundColor: 'rgba(239, 68, 68, 0.12)',
+                              color: '#ef4444',
+                              boxShadow: '2px 2px 5px var(--neumorph-dark), -2px -2px 5px var(--neumorph-light)',
+                            }}
+                          >
+                            <AlertCircle className="w-6 h-6" />
+                          </div>
+
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                            <span style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-color)' }}>
+                              Unavailable for Download
+                            </span>
+                            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', maxWidth: '420px', margin: 0, lineHeight: 1.45 }}>
+                              {item.info.error_message || "This video can't be downloaded right now due to YouTube restrictions."}
+                            </p>
+                          </div>
+                        </div>
+                      ) : isImageMedia ? (
                         <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', fontSize: '0.98rem', fontWeight: 800, color: 'var(--text-color)', marginBottom: '0.75rem' }}>
                             <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '26px', height: '26px', borderRadius: '7px', backgroundColor: 'var(--bg-color)', border: '1px solid rgba(255, 255, 255, 0.6)', boxShadow: '2px 2px 4px var(--neumorph-dark), -2px -2px 4px var(--neumorph-light)' }}>

@@ -92,6 +92,7 @@ class DownloadProgress(BaseModel):
     file_size: Optional[int | float] = None
     filename: Optional[str] = None
     error: Optional[str] = None
+    error_code: Optional[str] = None
 
 class DownloadStartResponse(BaseModel):
     job_id: str

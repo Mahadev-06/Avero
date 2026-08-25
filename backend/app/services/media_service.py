@@ -133,8 +133,28 @@ def get_youtube_player_clients(has_cookies: bool = False) -> list[str]:
     return list(YOUTUBE_PLAYER_CLIENTS_DEFAULT)
 
 
+def _is_youtube_unsupported_video(exc: Exception | str) -> bool:
+    """Check if YouTube video format is not available or locked by restrictions/SABR."""
+    msg = str(exc).lower()
+    return any(
+        phrase in msg
+        for phrase in (
+            "requested format is not available",
+            "only images are available",
+            "no video formats",
+            "the page needs to be reloaded",
+            "sabr",
+            "unsupported_video",
+            "no formats found",
+            "format is not available",
+        )
+    )
+
+
 def _sanitize_error_message(exc: Exception) -> str:
     """Sanitize internal errors to prevent leaking server paths, stack traces, or credentials."""
+    if _is_youtube_unsupported_video(exc):
+        return "This video can't be downloaded right now due to YouTube restrictions."
     if _is_youtube_bot_challenge(exc):
         return "Unfortunately, YouTube downloads are currently unavailable from our server. Please try again later."
     msg = str(exc).lower()
@@ -859,21 +879,43 @@ def _download_sync(job_id: str, url: str, fmt: str, quality: str) -> str:
 
     except Exception as e:
         duration = round(time.time() - start_time, 3)
-        if is_youtube and _is_youtube_bot_challenge(e):
+        video_id_match = re.search(r'(?:v=|\/|shorts\/)([0-9A-Za-z_-]{11})', url)
+        video_id = video_id_match.group(1) if video_id_match else None
+        clients_tried = get_youtube_player_clients(has_yt_cookies) if is_youtube else []
+
+        if is_youtube and _is_youtube_unsupported_video(e):
+            logger.warning(
+                "youtube_video_unsupported",
+                job_id=job_id,
+                platform="youtube",
+                video_id=video_id,
+                url=url,
+                player_clients=clients_tried,
+                processing_duration=duration,
+                raw_error=str(e),
+            )
+        elif is_youtube and _is_youtube_bot_challenge(e):
             logger.warning(
                 "media_download_failed",
                 platform="youtube",
                 error_category="bot_challenge",
+                video_id=video_id,
+                url=url,
+                player_clients=clients_tried,
                 job_id=job_id,
                 timestamp=time.time(),
                 processing_duration=duration,
+                raw_error=str(e),
             )
         else:
             logger.error(
                 "download_failed",
                 job_id=job_id,
                 platform="youtube" if is_youtube else "other",
+                video_id=video_id if is_youtube else None,
+                player_clients=clients_tried if is_youtube else None,
                 processing_duration=duration,
+                raw_error=str(e),
             )
 
         # Non-YouTube fallbacks
@@ -956,11 +998,13 @@ def _download_sync(job_id: str, url: str, fmt: str, quality: str) -> str:
                 pass
 
         clean_error = _sanitize_error_message(e)
+        error_code = "unsupported_video" if (is_youtube and _is_youtube_unsupported_video(e)) else "download_failed"
         _progress_store[job_id] = DownloadProgress(
             job_id=job_id,
             status=JobStatus.FAILED,
             percent=0.0,
             error=clean_error,
+            error_code=error_code,
         )
         raise
 

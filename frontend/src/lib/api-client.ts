@@ -35,6 +35,8 @@ export interface MediaInfo {
   embed_supported: boolean;
   limitations?: string[];
   muted?: boolean;
+  error?: string;
+  error_message?: string;
 }
 
 export interface JobResponse {
@@ -93,6 +95,7 @@ export interface DownloadProgress {
   file_size: number | null;
   filename: string | null;
   error: string | null;
+  error_code?: string | null;
 }
 
 class ApiClient {

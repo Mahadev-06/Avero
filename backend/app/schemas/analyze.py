@@ -28,6 +28,8 @@ class MediaInfo(BaseModel):
     embed_supported: bool
     limitations: List[str] = []
     muted: Optional[bool] = False
+    error: Optional[str] = None
+    error_message: Optional[str] = None
 
 class AnalyzeResponse(BaseModel):
     results: List[MediaInfo]
