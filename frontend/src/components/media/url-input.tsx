@@ -212,7 +212,7 @@ export interface RecentDownloadItem {
 }
 
 const RECENT_DOWNLOADS_KEY = 'avero_recent_downloads';
-const MAX_RECENT_DOWNLOADS = 10;
+const MAX_RECENT_DOWNLOADS = 25;
 
 export function getRecentDownloadsFromStorage(): RecentDownloadItem[] {
   if (typeof window === 'undefined') return [];
@@ -230,7 +230,15 @@ export function saveRecentDownloadToStorage(item: Omit<RecentDownloadItem, 'id' 
   if (typeof window === 'undefined') return [];
   try {
     const current = getRecentDownloadsFromStorage();
-    const filtered = current.filter((x) => x.url !== item.url);
+    // Keep different qualities/formats or posts; only replace exact duplicate (same url + same quality + same format)
+    const filtered = current.filter(
+      (x) =>
+        !(
+          x.url === item.url &&
+          (x.quality || '') === (item.quality || '') &&
+          (x.format || '') === (item.format || '')
+        )
+    );
     const newItem: RecentDownloadItem = {
       ...item,
       id: `recent-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
