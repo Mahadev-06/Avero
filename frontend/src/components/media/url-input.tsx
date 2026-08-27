@@ -150,7 +150,57 @@ const PLATFORM_ICONS: PlatformIcon[] = [
       />
     ),
   },
+  {
+    name: 'YouTube',
+    type: 'youtube',
+    color: '#FF0000',
+    placeholder: 'Paste YouTube link...',
+    svg: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+        <path
+          fill="#FF0000"
+          d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"
+        />
+        <path fill="#FFFFFF" d="M9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
+      </svg>
+    ),
+  },
 ];
+
+export function getSocialMediaPlatform(url: string): PlatformIcon | null {
+  if (!url || typeof url !== 'string') return null;
+  const lower = url.trim().toLowerCase();
+
+  if (lower.includes('instagram.com') || lower.includes('instagr.am')) {
+    return PLATFORM_ICONS.find((p) => p.type === 'instagram') || null;
+  }
+  if (lower.includes('tiktok.com')) {
+    return PLATFORM_ICONS.find((p) => p.type === 'tiktok') || null;
+  }
+  if (lower.includes('youtube.com') || lower.includes('youtu.be')) {
+    return PLATFORM_ICONS.find((p) => p.type === 'youtube') || null;
+  }
+  if (lower.includes('pinterest.com') || lower.includes('pin.it') || lower.includes('pinimg.com')) {
+    return PLATFORM_ICONS.find((p) => p.type === 'pinterest') || null;
+  }
+  if (lower.includes('reddit.com') || lower.includes('redd.it') || lower.includes('v.redd.it') || lower.includes('i.redd.it')) {
+    return PLATFORM_ICONS.find((p) => p.type === 'reddit') || null;
+  }
+  if (lower.includes('threads.net') || lower.includes('threads.com')) {
+    return PLATFORM_ICONS.find((p) => p.type === 'threads') || null;
+  }
+  if (lower.includes('facebook.com') || lower.includes('fb.watch') || lower.includes('fb.com')) {
+    return PLATFORM_ICONS.find((p) => p.type === 'facebook') || null;
+  }
+  if (lower.includes('x.com') || lower.includes('twitter.com') || lower.includes('t.co')) {
+    return PLATFORM_ICONS.find((p) => p.type === 'x_twitter') || null;
+  }
+  return null;
+}
+
+export function isSocialMediaUrl(url: string): boolean {
+  return getSocialMediaPlatform(url) !== null;
+}
 
 interface VideoResultItem {
   id: string;
@@ -216,6 +266,22 @@ export function UrlInput() {
   // Auto-Rotating Placeholder Index for SlotText
   const [placeholderIndex, setPlaceholderIndex] = useState(0);
   const [isInputFocused, setIsInputFocused] = useState(false);
+
+  // Live Detected Social Media Platform Icon (Favicon detector)
+  const detectedPlatformIcon = isSearchMode ? null : getSocialMediaPlatform(inputValue.trim().split('\n')[0]);
+  const detectedSocialIconsInMulti = isMultiMode
+    ? (Array.from(
+        new Map(
+          inputValue
+            .split('\n')
+            .map((u) => {
+              const p = getSocialMediaPlatform(u);
+              return p ? [p.type, p] : null;
+            })
+            .filter(Boolean) as [string, PlatformIcon][]
+        ).values()
+      ) as PlatformIcon[])
+    : [];
 
   // Close suggestions on click outside
   useEffect(() => {
@@ -314,7 +380,33 @@ export function UrlInput() {
 
   const handlePaste = async () => {
     try {
-      const clipboard = await navigator.clipboard.readText();
+      const clipboard = (await navigator.clipboard.readText()).trim();
+      if (!clipboard) return;
+
+      const isHttpOrDomain =
+        clipboard.startsWith('http://') ||
+        clipboard.startsWith('https://') ||
+        clipboard.includes('http://') ||
+        clipboard.includes('https://') ||
+        ['.com', '.net', '.org', '.it', '.app', '.co'].some((ext) => clipboard.includes(ext));
+
+      if (isHttpOrDomain && !isSearchMode) {
+        const extracted = clipboard.match(/(https?:\/\/[^\s]+)/g) || [clipboard];
+        const validSocials = extracted.filter((u) => isSocialMediaUrl(u));
+
+        if (validSocials.length === 0) {
+          setStatusMsg('Only social media links (Instagram, TikTok, YouTube, X, Reddit, Threads, Pinterest, Facebook) are supported.');
+          return;
+        }
+
+        if (isMultiMode) {
+          setInputValue((prev) => (prev ? `${prev}\n${validSocials.join('\n')}` : validSocials.join('\n')));
+        } else {
+          setInputValue(validSocials[0]);
+        }
+        return;
+      }
+
       setInputValue((prev) => (prev ? `${prev}\n${clipboard}` : clipboard));
     } catch (err) {
       console.error('Clipboard error', err);
@@ -428,11 +520,42 @@ export function UrlInput() {
     setShowSuggestions(false);
     if (!inputValue.trim()) return;
 
-    if (isSearchMode || (!inputValue.startsWith('http://') && !inputValue.startsWith('https://') && detectedUrls.length === 0)) {
+    if (isSearchMode) {
       await handleExecuteSearch(inputValue.trim());
-    } else {
-      await handleAnalyzeUrls(detectedUrls);
+      return;
     }
+
+    const trimmed = inputValue.trim();
+    const isHttp = trimmed.startsWith('http://') || trimmed.startsWith('https://') || detectedUrls.length > 0;
+
+    if (!isHttp) {
+      // Check if user typed a social domain like instagram.com/... without protocol
+      if (isSocialMediaUrl(`https://${trimmed}`)) {
+        await handleAnalyzeUrls([`https://${trimmed}`]);
+        return;
+      }
+      // If it looks like a generic non-social domain or search query
+      if (trimmed.includes('.') && !trimmed.includes(' ')) {
+        setStatusMsg('Only social media links (Instagram, TikTok, YouTube, X, Reddit, Threads, Pinterest, Facebook) are supported.');
+        return;
+      }
+      await handleExecuteSearch(trimmed);
+      return;
+    }
+
+    // Filter strictly for supported social media platforms
+    const validSocialUrls = detectedUrls.filter((u) => isSocialMediaUrl(u));
+
+    if (validSocialUrls.length === 0) {
+      setStatusMsg('Only social media links (Instagram, TikTok, YouTube, X, Reddit, Threads, Pinterest, Facebook) are supported.');
+      return;
+    }
+
+    if (validSocialUrls.length < detectedUrls.length) {
+      setStatusMsg(`Skipped ${detectedUrls.length - validSocialUrls.length} unsupported non-social link(s).`);
+    }
+
+    await handleAnalyzeUrls(validSocialUrls);
   };
 
   const handleSpecificDownload = useCallback(async (item: VideoResultItem, ext: string, quality: string) => {
@@ -796,10 +919,34 @@ export function UrlInput() {
                 flexWrap: 'wrap',
               }}
             >
-              <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)' }}>
-                {inputValue.trim()
-                  ? `${inputValue.trim().split('\n').filter(Boolean).length} URL(s) detected`
-                  : 'Batch Download Mode'}
+              <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                {detectedSocialIconsInMulti.length > 0 && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', marginRight: '0.35rem' }}>
+                    {detectedSocialIconsInMulti.map((icon) => (
+                      <span
+                        key={icon.type}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          width: '22px',
+                          height: '22px',
+                          borderRadius: '50%',
+                          backgroundColor: 'var(--bg-color)',
+                          boxShadow: '1px 1px 3px var(--neumorph-dark), -1px -1px 3px var(--neumorph-light)',
+                        }}
+                        title={`Detected: ${icon.name}`}
+                      >
+                        {icon.svg}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <span>
+                  {inputValue.trim()
+                    ? `${inputValue.trim().split('\n').filter(Boolean).length} URL(s) detected`
+                    : 'Batch Download Mode'}
+                </span>
               </div>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
@@ -904,16 +1051,43 @@ export function UrlInput() {
               backgroundColor: 'var(--bg-color)',
               border: '1px solid rgba(255, 255, 255, 0.45)',
               borderRadius: 'var(--radius-full)',
-              padding: '0.6rem 0.75rem 0.6rem 1.85rem',
+              padding: detectedPlatformIcon ? '0.6rem 0.75rem 0.6rem 1.15rem' : '0.6rem 0.75rem 0.6rem 1.85rem',
               boxShadow: 'var(--nm-inset-md)',
-              transition: 'border-radius 0.2s ease, box-shadow 0.2s ease',
+              transition: 'border-radius 0.2s ease, box-shadow 0.2s ease, padding 0.2s ease',
             }}
           >
+            {/* Live Social Media URL Detector Favicon */}
+            {detectedPlatformIcon && (
+              <div
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: '28px',
+                  height: '28px',
+                  borderRadius: '50%',
+                  backgroundColor: 'var(--bg-color)',
+                  boxShadow: '2px 2px 5px var(--neumorph-dark), -2px -2px 5px var(--neumorph-light)',
+                  border: '1px solid rgba(255, 255, 255, 0.6)',
+                  marginRight: '0.65rem',
+                  flexShrink: 0,
+                  animation: 'fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+                  zIndex: 3,
+                }}
+                title={`Detected: ${detectedPlatformIcon.name}`}
+              >
+                {detectedPlatformIcon.svg}
+              </div>
+            )}
+
             <div style={{ position: 'relative', flex: 1, display: 'flex', alignItems: 'center', minWidth: 0, textAlign: 'left' }}>
               <input
                 type="text"
                 value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
+                onChange={(e) => {
+                  setInputValue(e.target.value);
+                  if (statusMsg && !analyzing && !searching) setStatusMsg(null);
+                }}
                 onKeyDown={handleInputKeyDown}
                 onFocus={() => {
                   setIsInputFocused(true);
