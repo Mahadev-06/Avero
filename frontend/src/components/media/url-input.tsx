@@ -199,6 +199,71 @@ export function getCleanSocialDisplayLabel(url: string): string | null {
   return `${platform.name} Link`;
 }
 
+export interface RecentDownloadItem {
+  id: string;
+  title: string;
+  url: string;
+  platform: string;
+  thumbnail_url?: string;
+  media_type?: string;
+  format?: string;
+  quality?: string;
+  timestamp: number;
+}
+
+const RECENT_DOWNLOADS_KEY = 'avero_recent_downloads';
+const MAX_RECENT_DOWNLOADS = 10;
+
+export function getRecentDownloadsFromStorage(): RecentDownloadItem[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = localStorage.getItem(RECENT_DOWNLOADS_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveRecentDownloadToStorage(item: Omit<RecentDownloadItem, 'id' | 'timestamp'>): RecentDownloadItem[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const current = getRecentDownloadsFromStorage();
+    const filtered = current.filter((x) => x.url !== item.url);
+    const newItem: RecentDownloadItem = {
+      ...item,
+      id: `recent-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      timestamp: Date.now(),
+    };
+    const updated = [newItem, ...filtered].slice(0, MAX_RECENT_DOWNLOADS);
+    localStorage.setItem(RECENT_DOWNLOADS_KEY, JSON.stringify(updated));
+    return updated;
+  } catch (err) {
+    console.error('Failed to save recent download to storage:', err);
+    return [];
+  }
+}
+
+export function removeRecentDownloadFromStorage(id: string): RecentDownloadItem[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const current = getRecentDownloadsFromStorage();
+    const updated = current.filter((x) => x.id !== id);
+    localStorage.setItem(RECENT_DOWNLOADS_KEY, JSON.stringify(updated));
+    return updated;
+  } catch {
+    return [];
+  }
+}
+
+export function clearRecentDownloadsFromStorage(): void {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.removeItem(RECENT_DOWNLOADS_KEY);
+  } catch {}
+}
+
 interface VideoResultItem {
   id: string;
   info: MediaInfo;
@@ -250,6 +315,13 @@ export function UrlInput() {
   const [results, setResults] = useState<VideoResultItem[]>([]);
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  // Recent Downloads State (persisted via localStorage)
+  const [recentDownloads, setRecentDownloads] = useState<RecentDownloadItem[]>([]);
+
+  useEffect(() => {
+    setRecentDownloads(getRecentDownloadsFromStorage());
+  }, []);
 
   // Batch Download State
   const [isBatchDownloading, setIsBatchDownloading] = useState(false);
@@ -540,6 +612,13 @@ export function UrlInput() {
     setClipboardPrompt(null);
   };
 
+  const handleDownloadAgain = async (recentItem: RecentDownloadItem) => {
+    setInputValue(recentItem.url);
+    const label = getCleanSocialDisplayLabel(recentItem.url);
+    setDisplayValue(label || recentItem.url);
+    await handleAnalyzeUrls([recentItem.url]);
+  };
+
   const handleSelectSuggestion = (suggestion: string) => {
     setInputValue(suggestion);
     setDisplayValue(suggestion);
@@ -749,6 +828,18 @@ export function UrlInput() {
         // Reliable universal file download via Blob / triggerFileDownload
         await triggerFileDownload(fileUrl, filename);
 
+        // Save to recent downloads storage locally in the browser
+        const updatedRecents = saveRecentDownloadToStorage({
+          title: item.info.title || 'Media Download',
+          url: item.info.url || targetUrl,
+          platform: item.info.platform || 'direct',
+          thumbnail_url: item.info.thumbnail_url,
+          media_type: item.info.media_type,
+          format: ext,
+          quality: quality,
+        });
+        setRecentDownloads(updatedRecents);
+
         setResults((prev) =>
           prev.map((r) =>
             r.id === item.id ? { ...r, downloadState: 'completed' as const } : r
@@ -797,6 +888,18 @@ export function UrlInput() {
             .replace(/\s+/g, '_');
           const filename = `${cleanTitle}_${quality}.${ext.toLowerCase()}`;
           await triggerFileDownload(targetUrl, filename);
+
+          // Save to recent downloads storage locally in the browser
+          const updatedRecents = saveRecentDownloadToStorage({
+            title: item.info.title || 'Media Download',
+            url: item.info.url || targetUrl,
+            platform: item.info.platform || 'direct',
+            thumbnail_url: item.info.thumbnail_url,
+            media_type: item.info.media_type,
+            format: ext,
+            quality: quality,
+          });
+          setRecentDownloads(updatedRecents);
 
           setResults((prev) =>
             prev.map((r) =>
@@ -2328,6 +2431,191 @@ export function UrlInput() {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* 5. Recent Downloads Section (Stored locally in Browser via localStorage) */}
+      {recentDownloads.length > 0 && results.length === 0 && searchResults.length === 0 && !analyzing && !searching && (
+        <div
+          style={{
+            padding: '1.25rem 1.45rem',
+            backgroundColor: 'var(--bg-color)',
+            borderRadius: '20px',
+            boxShadow: 'var(--nm-raised-md)',
+            border: '1px solid rgba(255, 255, 255, 0.55)',
+            textAlign: 'left',
+            animation: 'fadeIn 0.3s ease-out',
+            width: '100%',
+            maxWidth: '680px',
+            margin: '2.5rem auto 0 auto',
+            boxSizing: 'border-box',
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              marginBottom: '0.65rem',
+            }}
+          >
+            <h3
+              style={{
+                fontSize: '1rem',
+                fontWeight: 750,
+                color: 'var(--text-color)',
+                margin: 0,
+                letterSpacing: '-0.01em',
+              }}
+            >
+              Recent downloads
+            </h3>
+            <button
+              type="button"
+              onClick={() => {
+                clearRecentDownloadsFromStorage();
+                setRecentDownloads([]);
+              }}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: 'var(--text-muted)',
+                fontSize: '0.76rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+                padding: '0.2rem 0.4rem',
+              }}
+            >
+              Clear all
+            </button>
+          </div>
+
+          <div
+            style={{
+              height: '1px',
+              backgroundColor: 'rgba(0, 0, 0, 0.07)',
+              marginBottom: '0.85rem',
+            }}
+          />
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+            {recentDownloads.map((item) => {
+              const dotColor =
+                item.platform === 'youtube'
+                  ? '🔴'
+                  : item.platform === 'instagram'
+                  ? '🟣'
+                  : item.platform === 'reddit'
+                  ? '🟠'
+                  : item.platform === 'pinterest'
+                  ? '🔴'
+                  : item.platform === 'facebook'
+                  ? '🔵'
+                  : '⚫';
+
+              return (
+                <div
+                  key={item.id}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '0.55rem 0.85rem',
+                    backgroundColor: 'var(--bg-color)',
+                    borderRadius: '12px',
+                    boxShadow: 'var(--nm-inset-sm)',
+                    border: '1px solid rgba(255, 255, 255, 0.45)',
+                    gap: '0.65rem',
+                    flexWrap: 'wrap',
+                  }}
+                >
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.45rem',
+                      minWidth: 0,
+                      flex: 1,
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontSize: '0.88rem',
+                        fontWeight: 600,
+                        color: 'var(--text-color)',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                      }}
+                      title={item.title}
+                    >
+                      {item.title}
+                    </span>
+                    <span style={{ fontSize: '0.82rem', flexShrink: 0 }}>{dotColor}</span>
+                    {item.quality && (
+                      <span
+                        style={{
+                          fontSize: '0.7rem',
+                          fontWeight: 700,
+                          color: 'var(--text-muted)',
+                          backgroundColor: 'rgba(0, 0, 0, 0.05)',
+                          padding: '0.12rem 0.4rem',
+                          borderRadius: '6px',
+                          flexShrink: 0,
+                        }}
+                      >
+                        {item.quality}
+                      </span>
+                    )}
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', flexShrink: 0 }}>
+                    <button
+                      type="button"
+                      onClick={() => handleDownloadAgain(item)}
+                      className="pill-btn-black"
+                      style={{
+                        height: '28px',
+                        minHeight: '28px',
+                        padding: '0 0.75rem',
+                        borderRadius: 'var(--radius-full)',
+                        fontSize: '0.74rem',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      Download again
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const updated = removeRecentDownloadFromStorage(item.id);
+                        setRecentDownloads(updated);
+                      }}
+                      title="Remove from history"
+                      aria-label="Remove item"
+                      style={{
+                        width: '26px',
+                        height: '26px',
+                        borderRadius: '50%',
+                        backgroundColor: 'transparent',
+                        border: 'none',
+                        color: 'var(--text-muted)',
+                        cursor: 'pointer',
+                        fontSize: '1rem',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        lineHeight: 1,
+                      }}
+                    >
+                      ×
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
     </div>
