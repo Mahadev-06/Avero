@@ -202,6 +202,12 @@ export function isSocialMediaUrl(url: string): boolean {
   return getSocialMediaPlatform(url) !== null;
 }
 
+export function getCleanSocialDisplayLabel(url: string): string | null {
+  const platform = getSocialMediaPlatform(url);
+  if (!platform) return null;
+  return `${platform.name} Link`;
+}
+
 interface VideoResultItem {
   id: string;
   info: MediaInfo;
@@ -242,6 +248,7 @@ function decodeHtmlEntities(str?: string): string {
 
 export function UrlInput() {
   const [inputValue, setInputValue] = useState('');
+  const [displayValue, setDisplayValue] = useState('');
   const [selectedPlatform, setSelectedPlatform] = useState<PlatformIcon | null>(null);
   const [showAllPlatforms, setShowAllPlatforms] = useState(false);
   const [isMultiMode, setIsMultiMode] = useState(false);
@@ -376,7 +383,7 @@ export function UrlInput() {
   }, [statusMsg, analyzing, searching, isBatchDownloading]);
 
   const activeSubscriptions = useRef<Map<string, { cancel: () => void }>>(new Map());
-  const detectedUrls = inputValue.match(/(https?:\/\/[^\s]+)/g) || [];
+  const detectedUrls = inputValue.match(/(https?:\/\/[^\s]+)/g) || (inputValue.startsWith('http') ? [inputValue] : []);
 
   const handlePaste = async () => {
     try {
@@ -401,20 +408,69 @@ export function UrlInput() {
 
         if (isMultiMode) {
           setInputValue((prev) => (prev ? `${prev}\n${validSocials.join('\n')}` : validSocials.join('\n')));
+          setDisplayValue('');
         } else {
-          setInputValue(validSocials[0]);
+          const firstUrl = validSocials[0];
+          setInputValue(firstUrl);
+          const label = getCleanSocialDisplayLabel(firstUrl);
+          setDisplayValue(label || firstUrl);
         }
         return;
       }
 
       setInputValue((prev) => (prev ? `${prev}\n${clipboard}` : clipboard));
+      setDisplayValue((prev) => (prev ? `${prev}\n${clipboard}` : clipboard));
     } catch (err) {
       console.error('Clipboard error', err);
     }
   };
 
+  const handleInputPaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    if (isSearchMode) return;
+    const pastedText = e.clipboardData.getData('text').trim();
+    if (!pastedText) return;
+
+    if (isSocialMediaUrl(pastedText)) {
+      e.preventDefault();
+      setInputValue(pastedText);
+      const label = getCleanSocialDisplayLabel(pastedText);
+      setDisplayValue(label || pastedText);
+      if (statusMsg && !analyzing && !searching) setStatusMsg(null);
+    } else if (
+      pastedText.startsWith('http://') ||
+      pastedText.startsWith('https://') ||
+      pastedText.includes('.com') ||
+      pastedText.includes('.net') ||
+      pastedText.includes('.org')
+    ) {
+      e.preventDefault();
+      setStatusMsg('Only social media links (Instagram, TikTok, YouTube, X, Reddit, Threads, Pinterest, Facebook) are supported.');
+    }
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    if (statusMsg && !analyzing && !searching) setStatusMsg(null);
+
+    if (!val.trim()) {
+      setInputValue('');
+      setDisplayValue('');
+      return;
+    }
+
+    if (isSocialMediaUrl(val.trim())) {
+      setInputValue(val.trim());
+      const label = getCleanSocialDisplayLabel(val.trim());
+      setDisplayValue(label || val.trim());
+    } else {
+      setInputValue(val);
+      setDisplayValue(val);
+    }
+  };
+
   const handleClearInput = () => {
     setInputValue('');
+    setDisplayValue('');
     setStatusMsg(null);
     setSuggestions([]);
     setShowSuggestions(false);
@@ -422,6 +478,7 @@ export function UrlInput() {
 
   const handleSelectSuggestion = (suggestion: string) => {
     setInputValue(suggestion);
+    setDisplayValue(suggestion);
     setShowSuggestions(false);
     handleExecuteSearch(suggestion);
   };
@@ -1083,11 +1140,9 @@ export function UrlInput() {
             <div style={{ position: 'relative', flex: 1, display: 'flex', alignItems: 'center', minWidth: 0, textAlign: 'left' }}>
               <input
                 type="text"
-                value={inputValue}
-                onChange={(e) => {
-                  setInputValue(e.target.value);
-                  if (statusMsg && !analyzing && !searching) setStatusMsg(null);
-                }}
+                value={displayValue || inputValue}
+                onChange={handleInputChange}
+                onPaste={handleInputPaste}
                 onKeyDown={handleInputKeyDown}
                 onFocus={() => {
                   setIsInputFocused(true);
