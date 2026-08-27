@@ -243,19 +243,31 @@ async def _scrape_reddit(url: str) -> dict:
         if "i.redd.it" in url or "preview.redd.it" in url or any(url.lower().endswith(ext) for ext in (".jpg", ".jpeg", ".png", ".webp", ".gif")):
             return {
                 "title": "Reddit Image Post",
-                "image_url": url,
+                "image_url": url.replace("&amp;", "&"),
                 "is_image": True,
             }
 
-        crawler_headers = {
-            "User-Agent": "facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)",
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-        }
+        from app.services.media_service import _get_reddit_cookiefile, _load_cookiejar
+        reddit_cookie = _get_reddit_cookiefile()
+        reddit_jar = _load_cookiejar(reddit_cookie) if reddit_cookie else None
+
+        if reddit_jar:
+            headers = {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/124.0.0.0",
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+                "Accept-Language": "en-US,en;q=0.9",
+            }
+        else:
+            headers = {
+                "User-Agent": "facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)",
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            }
+
         title = "Reddit Post"
         thumb_img = None
 
-        # 1. Social Crawler OpenGraph Fetch (Bypasses JS Challenge)
-        async with httpx.AsyncClient(follow_redirects=True, timeout=10.0, headers=crawler_headers) as client:
+        # 1. Social Crawler / Logged-in Fetch
+        async with httpx.AsyncClient(follow_redirects=True, timeout=10.0, headers=headers, cookies=reddit_jar) as client:
             resp = await client.get(url)
             html = resp.text
             
@@ -293,7 +305,7 @@ async def _scrape_reddit(url: str) -> dict:
                 if img_match:
                     return {
                         "title": title or "Reddit Image",
-                        "image_url": img_match.group(1),
+                        "image_url": img_match.group(1).replace("&amp;", "&"),
                         "is_image": True,
                     }
                 btn_match = re.search(r'class=["\'][^"\']*downloadbutton[^"\']*["\'][^>]*href=["\']([^"\']+)["\']', r.text)
@@ -318,7 +330,7 @@ async def _scrape_reddit(url: str) -> dict:
                 if thumb_img and any(thumb_img.endswith(e) for e in (".jpg", ".jpeg", ".png", ".webp", ".gif")):
                     return {
                         "title": title,
-                        "image_url": thumb_img,
+                        "image_url": thumb_img.replace("&amp;", "&"),
                         "is_image": True,
                     }
     except Exception:
@@ -360,7 +372,7 @@ async def _scrape_instagram(url: str) -> dict:
         try:
             embed_url = f"https://www.instagram.com/p/{shortcode}/embed/captioned/"
             headers = {
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/124.0.0.0",
                 "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
                 "Accept-Language": "en-US,en;q=0.9",
             }
@@ -474,17 +486,28 @@ async def _scrape_threads(url: str) -> dict:
             "is_image": False,
         }
 
-    crawler_headers = {
-        "User-Agent": "facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)",
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-    }
+    from app.services.media_service import _get_threads_cookiefile, _load_cookiejar
+    threads_cookie = _get_threads_cookiefile()
+    threads_jar = _load_cookiejar(threads_cookie) if threads_cookie else None
+
+    if threads_jar:
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/124.0.0.0",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+            "Accept-Language": "en-US,en;q=0.9",
+        }
+    else:
+        headers = {
+            "User-Agent": "facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        }
     
     title = "Threads Photo"
     thumbnail_img = None
 
     try:
-        # 1. Social Crawler OpenGraph & Embedded Script Scraping
-        async with httpx.AsyncClient(follow_redirects=True, timeout=10.0, headers=crawler_headers) as client:
+        # 1. Social Crawler / Logged-in OpenGraph & Embedded Script Scraping
+        async with httpx.AsyncClient(follow_redirects=True, timeout=10.0, headers=headers, cookies=threads_jar) as client:
             resp = await client.get(url)
             html = resp.text
             
@@ -630,15 +653,27 @@ async def _scrape_x(url: str) -> dict:
     tweet_id_match = re.search(r'status/(\d+)', url)
     tweet_id = tweet_id_match.group(1) if tweet_id_match else None
 
+    from app.services.media_service import _get_x_cookiefile, _load_cookiejar
+    x_cookie = _get_x_cookiefile()
+    x_jar = _load_cookiejar(x_cookie) if x_cookie else None
+
+    if x_jar:
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/124.0.0.0",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+            "Accept-Language": "en-US,en;q=0.9",
+        }
+    else:
+        headers = {
+            "User-Agent": "facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        }
+
     title = "X Post"
-    crawler_headers = {
-        "User-Agent": "facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)",
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-    }
 
     try:
-        # 1. Social Crawler OpenGraph Fetch
-        async with httpx.AsyncClient(follow_redirects=True, timeout=10.0, headers=crawler_headers) as client:
+        # 1. Social Crawler / Logged-in OpenGraph Fetch
+        async with httpx.AsyncClient(follow_redirects=True, timeout=10.0, headers=headers, cookies=x_jar) as client:
             resp = await client.get(url)
             html = resp.text
 
@@ -684,39 +719,39 @@ async def _scrape_x(url: str) -> dict:
                     "thumbnail": clean_img,
                     "is_image": True,
                 }
+        
+        # 2. Public API Fallback (fxtwitter)
+        if tweet_id:
+            try:
+                async with httpx.AsyncClient(follow_redirects=True, timeout=6.0) as client:
+                    r_fx = await client.get(f"https://api.fxtwitter.com/status/{tweet_id}", headers={"User-Agent": "Mozilla/5.0"})
+                    if r_fx.status_code == 200:
+                        data = r_fx.json()
+                        tweet = data.get("tweet", {})
+                        t_text = tweet.get("text")
+                        if t_text:
+                            title = t_text[:100]
+                        media = tweet.get("media", {})
+                        photos = media.get("photos", [])
+                        videos = media.get("videos", [])
+                        if videos:
+                            return {
+                                "title": title or "X Video",
+                                "video_url": videos[0].get("url"),
+                                "thumbnail": videos[0].get("thumbnail_url"),
+                                "is_image": False,
+                            }
+                        if photos:
+                            return {
+                                "title": title or "X Photo",
+                                "image_url": photos[0].get("url"),
+                                "thumbnail": photos[0].get("url"),
+                                "is_image": True,
+                            }
+            except Exception:
+                pass
     except Exception:
         pass
-
-    # 2. Public API Fallback (fxtwitter)
-    if tweet_id:
-        try:
-            async with httpx.AsyncClient(follow_redirects=True, timeout=6.0) as client:
-                r_fx = await client.get(f"https://api.fxtwitter.com/status/{tweet_id}", headers={"User-Agent": "Mozilla/5.0"})
-                if r_fx.status_code == 200:
-                    data = r_fx.json()
-                    tweet = data.get("tweet", {})
-                    t_text = tweet.get("text")
-                    if t_text:
-                        title = t_text[:100]
-                    media = tweet.get("media", {})
-                    photos = media.get("photos", [])
-                    videos = media.get("videos", [])
-                    if videos:
-                        return {
-                            "title": title or "X Video",
-                            "video_url": videos[0].get("url"),
-                            "thumbnail": videos[0].get("thumbnail_url"),
-                            "is_image": False,
-                        }
-                    if photos:
-                        return {
-                            "title": title or "X Photo",
-                            "image_url": photos[0].get("url"),
-                            "thumbnail": photos[0].get("url"),
-                            "is_image": True,
-                        }
-        except Exception:
-            pass
 
     return {}
 
@@ -1005,10 +1040,16 @@ async def extract_media_info(url: str, platform_name: str) -> MediaInfo:
     from app.services.media_service import (
         _get_youtube_cookiefile,
         _get_instagram_cookiefile,
+        _get_threads_cookiefile,
+        _get_x_cookiefile,
+        _get_reddit_cookiefile,
         get_youtube_player_clients,
     )
     is_yt = "youtube.com" in url or "youtu.be" in url
     is_ig = "instagram.com" in url or "instagr.am" in url
+    is_threads = "threads.net" in url or "threads.com" in url
+    is_x = "x.com" in url or "twitter.com" in url or "t.co" in url
+    is_reddit = "reddit.com" in url or "redd.it" in url
 
     yt_cookie = _get_youtube_cookiefile() if is_yt else None
     has_yt_cookies = bool(yt_cookie)
@@ -1041,6 +1082,18 @@ async def extract_media_info(url: str, platform_name: str) -> MediaInfo:
         ig_cookie = _get_instagram_cookiefile()
         if ig_cookie:
             ydl_opts['cookiefile'] = ig_cookie
+    elif is_threads:
+        th_cookie = _get_threads_cookiefile()
+        if th_cookie:
+            ydl_opts['cookiefile'] = th_cookie
+    elif is_x:
+        x_cookie = _get_x_cookiefile()
+        if x_cookie:
+            ydl_opts['cookiefile'] = x_cookie
+    elif is_reddit:
+        rd_cookie = _get_reddit_cookiefile()
+        if rd_cookie:
+            ydl_opts['cookiefile'] = rd_cookie
 
     def _extract():
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:

@@ -28,6 +28,15 @@ class Settings(BaseSettings):
     INSTAGRAM_COOKIES_TEXT: str | None = None
     INSTAGRAM_COOKIES_B64: str | None = None
     INSTAGRAM_COOKIES_FILE: str | None = None
+    THREADS_COOKIES_TEXT: str | None = None
+    THREADS_COOKIES_B64: str | None = None
+    THREADS_COOKIES_FILE: str | None = None
+    X_COOKIES_TEXT: str | None = None
+    X_COOKIES_B64: str | None = None
+    X_COOKIES_FILE: str | None = None
+    REDDIT_COOKIES_TEXT: str | None = None
+    REDDIT_COOKIES_B64: str | None = None
+    REDDIT_COOKIES_FILE: str | None = None
     COOKIES_TEXT: str | None = None
     COOKIES_B64: str | None = None
     COOKIES_FILE: str | None = None

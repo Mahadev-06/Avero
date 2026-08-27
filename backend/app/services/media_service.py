@@ -66,6 +66,12 @@ def _get_platform_cookiefile(platform: str = "general") -> str | None:
         return settings.YOUTUBE_COOKIES_FILE
     if platform == "instagram" and settings.INSTAGRAM_COOKIES_FILE and os.path.exists(settings.INSTAGRAM_COOKIES_FILE):
         return settings.INSTAGRAM_COOKIES_FILE
+    if platform == "threads" and getattr(settings, "THREADS_COOKIES_FILE", None) and os.path.exists(settings.THREADS_COOKIES_FILE):
+        return settings.THREADS_COOKIES_FILE
+    if platform in ("x", "x_twitter", "twitter") and getattr(settings, "X_COOKIES_FILE", None) and os.path.exists(settings.X_COOKIES_FILE):
+        return settings.X_COOKIES_FILE
+    if platform == "reddit" and getattr(settings, "REDDIT_COOKIES_FILE", None) and os.path.exists(settings.REDDIT_COOKIES_FILE):
+        return settings.REDDIT_COOKIES_FILE
     if settings.COOKIES_FILE and os.path.exists(settings.COOKIES_FILE):
         return settings.COOKIES_FILE
 
@@ -75,6 +81,12 @@ def _get_platform_cookiefile(platform: str = "general") -> str | None:
         b64_val = getattr(settings, "YOUTUBE_COOKIES_B64", None) or os.getenv("YOUTUBE_COOKIES_B64")
     elif platform == "instagram":
         b64_val = getattr(settings, "INSTAGRAM_COOKIES_B64", None) or os.getenv("INSTAGRAM_COOKIES_B64")
+    elif platform == "threads":
+        b64_val = getattr(settings, "THREADS_COOKIES_B64", None) or os.getenv("THREADS_COOKIES_B64")
+    elif platform in ("x", "x_twitter", "twitter"):
+        b64_val = getattr(settings, "X_COOKIES_B64", None) or os.getenv("X_COOKIES_B64")
+    elif platform == "reddit":
+        b64_val = getattr(settings, "REDDIT_COOKIES_B64", None) or os.getenv("REDDIT_COOKIES_B64")
     if not b64_val:
         b64_val = getattr(settings, "COOKIES_B64", None) or os.getenv("COOKIES_B64")
 
@@ -95,6 +107,12 @@ def _get_platform_cookiefile(platform: str = "general") -> str | None:
         raw_text = settings.YOUTUBE_COOKIES_TEXT or os.getenv("YOUTUBE_COOKIES_TEXT")
     elif platform == "instagram":
         raw_text = settings.INSTAGRAM_COOKIES_TEXT or os.getenv("INSTAGRAM_COOKIES_TEXT")
+    elif platform == "threads":
+        raw_text = getattr(settings, "THREADS_COOKIES_TEXT", None) or os.getenv("THREADS_COOKIES_TEXT")
+    elif platform in ("x", "x_twitter", "twitter"):
+        raw_text = getattr(settings, "X_COOKIES_TEXT", None) or os.getenv("X_COOKIES_TEXT")
+    elif platform == "reddit":
+        raw_text = getattr(settings, "REDDIT_COOKIES_TEXT", None) or os.getenv("REDDIT_COOKIES_TEXT")
     if not raw_text:
         raw_text = settings.COOKIES_TEXT or os.getenv("COOKIES_TEXT")
 
@@ -119,6 +137,33 @@ def _get_youtube_cookiefile() -> str | None:
 
 def _get_instagram_cookiefile() -> str | None:
     return _get_platform_cookiefile("instagram")
+
+
+def _get_threads_cookiefile() -> str | None:
+    """Return Threads cookiefile; falls back to Instagram cookiefile since Threads shares Meta login."""
+    return _get_platform_cookiefile("threads") or _get_instagram_cookiefile()
+
+
+def _get_x_cookiefile() -> str | None:
+    return _get_platform_cookiefile("x")
+
+
+def _get_reddit_cookiefile() -> str | None:
+    return _get_platform_cookiefile("reddit")
+
+
+def _load_cookiejar(cookiefile: str | None):
+    """Load Mozilla/Netscape cookie file into an http.cookiejar.MozillaCookieJar."""
+    if not cookiefile or not os.path.exists(cookiefile):
+        return None
+    try:
+        import http.cookiejar
+        jar = http.cookiejar.MozillaCookieJar(cookiefile)
+        jar.load(ignore_discard=True, ignore_expires=True)
+        return jar
+    except Exception as e:
+        logger.warning("failed_to_load_cookiejar", cookiefile=cookiefile, error=str(e))
+        return None
 
 
 # Unified shared YouTube player client lists

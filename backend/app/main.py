@@ -64,6 +64,24 @@ async def lifespan(app: FastAPI):
     ig_cookies_found = ig_has_file or ig_has_b64 or ig_has_text
     ig_source = "FILE" if ig_has_file else ("B64" if ig_has_b64 else ("TEXT" if ig_has_text else "NONE"))
 
+    th_has_file = bool(getattr(settings, "THREADS_COOKIES_FILE", None) and os.path.exists(settings.THREADS_COOKIES_FILE))
+    th_has_b64 = bool((getattr(settings, "THREADS_COOKIES_B64", None) or os.getenv("THREADS_COOKIES_B64", "")).strip())
+    th_has_text = bool((getattr(settings, "THREADS_COOKIES_TEXT", None) or os.getenv("THREADS_COOKIES_TEXT", "")).strip())
+    th_cookies_found = th_has_file or th_has_b64 or th_has_text or ig_cookies_found
+    th_source = "FILE" if th_has_file else ("B64" if th_has_b64 else ("TEXT" if th_has_text else ("INHERITED_FROM_INSTAGRAM" if ig_cookies_found else "NONE")))
+
+    x_has_file = bool(getattr(settings, "X_COOKIES_FILE", None) and os.path.exists(settings.X_COOKIES_FILE))
+    x_has_b64 = bool((getattr(settings, "X_COOKIES_B64", None) or os.getenv("X_COOKIES_B64", "")).strip())
+    x_has_text = bool((getattr(settings, "X_COOKIES_TEXT", None) or os.getenv("X_COOKIES_TEXT", "")).strip())
+    x_cookies_found = x_has_file or x_has_b64 or x_has_text
+    x_source = "FILE" if x_has_file else ("B64" if x_has_b64 else ("TEXT" if x_has_text else "NONE"))
+
+    rd_has_file = bool(getattr(settings, "REDDIT_COOKIES_FILE", None) and os.path.exists(settings.REDDIT_COOKIES_FILE))
+    rd_has_b64 = bool((getattr(settings, "REDDIT_COOKIES_B64", None) or os.getenv("REDDIT_COOKIES_B64", "")).strip())
+    rd_has_text = bool((getattr(settings, "REDDIT_COOKIES_TEXT", None) or os.getenv("REDDIT_COOKIES_TEXT", "")).strip())
+    rd_cookies_found = rd_has_file or rd_has_b64 or rd_has_text
+    rd_source = "FILE" if rd_has_file else ("B64" if rd_has_b64 else ("TEXT" if rd_has_text else "NONE"))
+
     gen_cookies_found = bool(
         (settings.COOKIES_FILE and os.path.exists(settings.COOKIES_FILE))
         or (getattr(settings, "COOKIES_B64", None) or os.getenv("COOKIES_B64", "")).strip()
@@ -76,6 +94,12 @@ async def lifespan(app: FastAPI):
         youtube_source=yt_source,
         instagram_cookies_found=ig_cookies_found,
         instagram_source=ig_source,
+        threads_cookies_found=th_cookies_found,
+        threads_source=th_source,
+        x_cookies_found=x_cookies_found,
+        x_source=x_source,
+        reddit_cookies_found=rd_cookies_found,
+        reddit_source=rd_source,
         generic_cookies_found=gen_cookies_found,
     )
 
