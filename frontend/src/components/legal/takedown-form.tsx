@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { apiClient } from '@/lib/api-client';
 
 export const TakedownForm: React.FC = () => {
@@ -15,6 +15,17 @@ export const TakedownForm: React.FC = () => {
 
   const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
+
+  useEffect(() => {
+    if (!errorMessage) return;
+    const timer = setTimeout(() => {
+      setErrorMessage('');
+      if (status === 'error') {
+        setStatus('idle');
+      }
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, [errorMessage, status]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

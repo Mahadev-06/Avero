@@ -270,6 +270,45 @@ export function UrlInput() {
     return () => clearInterval(interval);
   }, [inputValue, isSearchMode, selectedPlatform, isMultiMode]);
 
+  // Auto-dismiss status, warning, and error messages after 5 seconds
+  const statusTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    if (!statusMsg) return;
+
+    // Do NOT auto-dismiss ongoing operational messages while actively running
+    const isOngoingAction =
+      analyzing ||
+      searching ||
+      isBatchDownloading ||
+      statusMsg.startsWith('Analyzing') ||
+      statusMsg.startsWith('Searching') ||
+      statusMsg.startsWith('Starting batch download') ||
+      statusMsg.includes('Downloading "');
+
+    if (isOngoingAction) {
+      if (statusTimerRef.current) {
+        clearTimeout(statusTimerRef.current);
+        statusTimerRef.current = null;
+      }
+      return;
+    }
+
+    if (statusTimerRef.current) {
+      clearTimeout(statusTimerRef.current);
+    }
+
+    statusTimerRef.current = setTimeout(() => {
+      setStatusMsg(null);
+    }, 5000);
+
+    return () => {
+      if (statusTimerRef.current) {
+        clearTimeout(statusTimerRef.current);
+      }
+    };
+  }, [statusMsg, analyzing, searching, isBatchDownloading]);
+
   const activeSubscriptions = useRef<Map<string, { cancel: () => void }>>(new Map());
   const detectedUrls = inputValue.match(/(https?:\/\/[^\s]+)/g) || [];
 
@@ -471,18 +510,25 @@ export function UrlInput() {
             r.id === item.id ? { ...r, downloadState: 'completed' as const } : r
           )
         );
+        setTimeout(() => {
+          setResults((prev) =>
+            prev.map((r) => (r.id === item.id && r.downloadState === 'completed' ? { ...r, downloadState: 'idle' as const } : r))
+          );
+        }, 5000);
         const displayTitle = (item.info.title || 'media').trim();
         const shortTitle = displayTitle.length > 35 ? `${displayTitle.slice(0, 35)}...` : displayTitle;
         setStatusMsg(`Downloaded and saved: "${shortTitle}" (${quality})`);
-        setTimeout(() => {
-          setStatusMsg((current) => (current?.includes(shortTitle) ? null : current));
-        }, 5000);
       } else {
         setResults((prev) =>
           prev.map((r) =>
             r.id === item.id ? { ...r, downloadState: 'failed' as const, progress: finalProgress } : r
           )
         );
+        setTimeout(() => {
+          setResults((prev) =>
+            prev.map((r) => (r.id === item.id && r.downloadState === 'failed' ? { ...r, downloadState: 'idle' as const } : r))
+          );
+        }, 5000);
         const errText = finalProgress.error || 'Download failed. Please retry.';
         setStatusMsg(
           finalProgress.error_code === 'unsupported_video' ||
@@ -513,18 +559,25 @@ export function UrlInput() {
               r.id === item.id ? { ...r, downloadState: 'completed' as const } : r
             )
           );
+          setTimeout(() => {
+            setResults((prev) =>
+              prev.map((r) => (r.id === item.id && r.downloadState === 'completed' ? { ...r, downloadState: 'idle' as const } : r))
+            );
+          }, 5000);
           const displayTitle = (item.info.title || 'media').trim();
           const shortTitle = displayTitle.length > 35 ? `${displayTitle.slice(0, 35)}...` : displayTitle;
           setStatusMsg(`Downloaded and saved: "${shortTitle}" (${quality})`);
-          setTimeout(() => {
-            setStatusMsg((current) => (current?.includes(shortTitle) ? null : current));
-          }, 5000);
         } catch {
           setResults((prev) =>
             prev.map((r) =>
               r.id === item.id ? { ...r, downloadState: 'failed' as const } : r
             )
           );
+          setTimeout(() => {
+            setResults((prev) =>
+              prev.map((r) => (r.id === item.id && r.downloadState === 'failed' ? { ...r, downloadState: 'idle' as const } : r))
+            );
+          }, 5000);
           setStatusMsg('Download failed. Please check link and try again.');
         }
       } else {
@@ -533,6 +586,11 @@ export function UrlInput() {
             r.id === item.id ? { ...r, downloadState: 'failed' as const } : r
           )
         );
+        setTimeout(() => {
+          setResults((prev) =>
+            prev.map((r) => (r.id === item.id && r.downloadState === 'failed' ? { ...r, downloadState: 'idle' as const } : r))
+          );
+        }, 5000);
         setStatusMsg('Download error. Please retry or choose another format.');
       }
     }
@@ -1116,15 +1174,15 @@ export function UrlInput() {
         </button>
       </div>
 
-      {/* Initial Input Error Message (when no cards are displayed yet) */}
+      {/* Initial Input Error / Status Message Pill */}
       {statusMsg && !analyzing && !searching && results.length === 0 && searchResults.length === 0 && (
-        <div style={{ display: 'flex', justifyContent: 'center', marginTop: '1.15rem', marginBottom: '0.25rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'center', marginTop: '1.15rem', marginBottom: '0.25rem', transition: 'all 0.25s ease' }}>
           <div
             style={{
               display: 'inline-flex',
               alignItems: 'center',
-              gap: '0.55rem',
-              padding: '0.45rem 1.15rem',
+              gap: '0.65rem',
+              padding: '0.45rem 0.85rem 0.45rem 1.15rem',
               borderRadius: 'var(--radius-full)',
               backgroundColor: 'var(--bg-color)',
               border: '1px solid rgba(255, 255, 255, 0.75)',
@@ -1133,16 +1191,35 @@ export function UrlInput() {
               fontWeight: 700,
               color: 'var(--text-color)',
               letterSpacing: '-0.01em',
+              maxWidth: '90vw',
             }}
           >
             {statusMsg.toLowerCase().includes('failed') || statusMsg.toLowerCase().includes('error') ? (
-              <AlertCircle className="w-4 h-4 text-rose-500" />
+              <AlertCircle className="w-4 h-4 text-rose-500 shrink-0" />
             ) : (
-              <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '18px', height: '18px', borderRadius: '50%', backgroundColor: '#22c55e25', color: '#16a34a' }}>
+              <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '18px', height: '18px', borderRadius: '50%', backgroundColor: '#22c55e25', color: '#16a34a', flexShrink: 0 }}>
                 <Check className="w-3 h-3 text-emerald-600" />
               </span>
             )}
-            <span>{statusMsg}</span>
+            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{statusMsg}</span>
+            <button
+              type="button"
+              onClick={() => setStatusMsg(null)}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: 'var(--text-muted)',
+                cursor: 'pointer',
+                padding: '2px',
+                display: 'inline-flex',
+                alignItems: 'center',
+                flexShrink: 0,
+                marginLeft: '0.25rem',
+              }}
+              title="Dismiss"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
           </div>
         </div>
       )}

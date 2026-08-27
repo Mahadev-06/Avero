@@ -1,9 +1,11 @@
 "use client";
 
+import { useState } from 'react';
 import { SearchResult } from '@/lib/api-client';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Check, Copy } from 'lucide-react';
 
 interface SearchCardProps {
   result: SearchResult;
@@ -11,10 +13,17 @@ interface SearchCardProps {
 }
 
 export function SearchCard({ result, onSelectMedia }: SearchCardProps) {
+  const [copied, setCopied] = useState(false);
   const handleSelect = onSelectMedia || (() => {});
   const formattedDuration = result.duration
     ? `${Math.floor(result.duration / 60)}:${result.duration % 60 < 10 ? '0' : ''}${result.duration % 60}`
     : '0:00';
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(result.url);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2500);
+  };
 
   return (
     <Card className="card-editorial overflow-hidden flex flex-col h-full group p-0">
@@ -55,13 +64,20 @@ export function SearchCard({ result, onSelectMedia }: SearchCardProps) {
             <Button
               variant="outline"
               size="sm"
-              className="flex-1 text-xs"
-              onClick={() => {
-                navigator.clipboard.writeText(result.url);
-                alert('Link copied to clipboard!');
-              }}
+              className="flex-1 text-xs inline-flex items-center justify-center gap-1"
+              onClick={handleCopy}
             >
-              Copy Link
+              {copied ? (
+                <>
+                  <Check className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Copied!</span>
+                </>
+              ) : (
+                <>
+                  <Copy className="w-3.5 h-3.5 text-muted-foreground" />
+                  <span>Copy Link</span>
+                </>
+              )}
             </Button>
           </div>
         </div>
