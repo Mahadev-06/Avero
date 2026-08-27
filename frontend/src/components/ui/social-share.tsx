@@ -22,7 +22,7 @@ export function SocialShareButton({
 }) {
   const [hovered, setHovered] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [currentUrl, setCurrentUrl] = useState("https://avero.vercel.app");
+  const [currentUrl, setCurrentUrl] = useState("https://avero-indol.vercel.app");
 
   useEffect(() => {
     if (typeof window !== "undefined") {

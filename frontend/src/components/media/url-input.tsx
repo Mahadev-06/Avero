@@ -9,6 +9,8 @@ import { triggerFileDownload } from '@/lib/utils';
 import { Video, Music, Download, Clock, Search, Loader2, Copy, Check, Plus, Play, AlertCircle, Image as ImageIcon, Trash2, ArrowUpLeft, X, VolumeX } from 'lucide-react';
 import { TextShimmerWave } from '@/components/core/text-shimmer-wave';
 
+import { detectPlatform } from '@/lib/url-parser';
+
 interface PlatformIcon {
   name: string;
   type: string;
@@ -51,38 +53,6 @@ const PLATFORM_ICONS: PlatformIcon[] = [
         <path fill="#FE2C55" d="M11.5 1.5c1.2 0 2.4 0 3.6 0 .07 1.4.58 2.8 1.6 3.8 1 1 2.4 1.5 3.8 1.6v3.6c-1.3-.05-2.6-.32-3.8-.88-.5-.23-1-.53-1.4-.84-.01 2.6.01 5.2-.02 7.8-.07 1.2-.48 2.5-1.2 3.5-1.2 1.7-3.2 2.8-5.3 2.9-1.3.07-2.5-.28-3.6-.92-1.8-1-3.1-3-3.3-5.1-.02-.4-.03-.9-.01-1.3.16-1.7 1-3.3 2.3-4.4 1.5-1.3 3.6-1.9 5.5-1.5.02 1.3-.04 2.6-.04 4-.9-.28-1.9-.2-2.7.33-.7.5-1.2 1.4-1.1 2.3.04.8.5 1.5 1.2 1.9.7.4 1.7.38 2.4-.05.7-.4 1.1-1.1 1.2-1.9.04-3.2.02-6.4.02-9.6z" opacity="0.85" />
         <path fill="#FFFFFF" d="M12 1c1.2 0 2.4 0 3.6 0 .07 1.4.58 2.8 1.6 3.8 1 1 2.4 1.5 3.8 1.6v3.6c-1.3-.05-2.6-.32-3.8-.88-.5-.23-1-.53-1.4-.84-.01 2.6.01 5.2-.02 7.8-.07 1.2-.48 2.5-1.2 3.5-1.2 1.7-3.2 2.8-5.3 2.9-1.3.07-2.5-.28-3.6-.92-1.8-1-3.1-3-3.3-5.1-.02-.4-.03-.9-.01-1.3.16-1.7 1-3.3 2.3-4.4 1.5-1.3 3.6-1.9 5.5-1.5.02 1.3-.04 2.6-.04 4-.9-.28-1.9-.2-2.7.33-.7.5-1.2 1.4-1.1 2.3.04.8.5 1.5 1.2 1.9.7.4 1.7.38 2.4-.05.7-.4 1.1-1.1 1.2-1.9.04-3.2.02-6.4.02-9.6z"/>
       </svg>
-    ),
-  },
-  {
-    name: 'Facebook',
-    type: 'facebook',
-    color: '#1877F2',
-    placeholder: 'Paste Facebook link...',
-    svg: (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-        <circle cx="12" cy="12" r="12" fill="#1877F2" />
-        <path fill="#FFFFFF" d="M15.5 12h-2.5v8h-3v-8h-2v-2.8h2v-1.8c0-2.3 1.4-3.6 3.5-3.6 1 0 1.9.08 2.1.1v2.5h-1.5c-1.1 0-1.4.5-1.4 1.3v1.5h2.8l-.5 2.8z"/>
-      </svg>
-    ),
-  },
-  {
-    name: 'X / Twitter',
-    type: 'x_twitter',
-    color: '#FFFFFF',
-    placeholder: 'Paste X (Twitter) link...',
-    svg: (
-      <img
-        src="/x-logo.png"
-        alt="X"
-        width={20}
-        height={20}
-        style={{
-          width: '20px',
-          height: '20px',
-          objectFit: 'contain',
-          display: 'block',
-        }}
-      />
     ),
   },
   {
@@ -130,7 +100,7 @@ const PLATFORM_ICONS: PlatformIcon[] = [
   {
     name: 'Threads',
     type: 'threads',
-    color: '#FFFFFF',
+    color: '#000000',
     placeholder: 'Paste Threads link...',
     svg: (
       <img
@@ -149,15 +119,35 @@ const PLATFORM_ICONS: PlatformIcon[] = [
     ),
   },
   {
-    name: 'Direct Media',
-    type: 'direct',
-    color: '#10B981',
-    placeholder: 'Paste direct media link (MP4, JPG)...',
+    name: 'Facebook',
+    type: 'facebook',
+    color: '#1877F2',
+    placeholder: 'Paste Facebook link...',
     svg: (
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-        <circle cx="12" cy="12" r="12" fill="#10B981" />
-        <path fill="#FFFFFF" d="M12 16.5l4.5-4.5h-3V7.5h-3v4.5h-3l4.5 4.5zm-6 2h12v1.8H6v-1.8z"/>
+        <circle cx="12" cy="12" r="12" fill="#1877F2" />
+        <path fill="#FFFFFF" d="M15.5 12h-2.5v8h-3v-8h-2v-2.8h2v-1.8c0-2.3 1.4-3.6 3.5-3.6 1 0 1.9.08 2.1.1v2.5h-1.5c-1.1 0-1.4.5-1.4 1.3v1.5h2.8l-.5 2.8z"/>
       </svg>
+    ),
+  },
+  {
+    name: 'X (Twitter)',
+    type: 'x_twitter',
+    color: '#000000',
+    placeholder: 'Paste X (Twitter) link...',
+    svg: (
+      <img
+        src="/x-logo.png"
+        alt="X"
+        width={20}
+        height={20}
+        style={{
+          width: '20px',
+          height: '20px',
+          objectFit: 'contain',
+          display: 'block',
+        }}
+      />
     ),
   },
 ];

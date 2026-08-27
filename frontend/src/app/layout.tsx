@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 
 const geist = Geist({ subsets: ['latin'], variable: '--font-sans' });
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://avero-indol.vercel.app';
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -15,15 +15,17 @@ export const metadata: Metadata = {
     default: 'AVERO | Free All-in-One Video & Image Downloader',
     template: '%s | AVERO',
   },
-  description: 'Fast, secure, and free media downloader for YouTube, TikTok, Instagram Reels, Pinterest, Reddit, Threads, Facebook, X (Twitter), and direct media links.',
+  description: 'Fast, secure, and free media downloader for TikTok, Instagram Reels, Pinterest, Reddit, Threads, Facebook, X (Twitter), and direct media links.',
   keywords: [
     'video downloader',
-    'youtube downloader',
+    'social media downloader',
     'instagram reels download',
     'tiktok downloader',
     'pinterest image download',
     'reddit video download',
     'threads downloader',
+    'facebook video download',
+    'twitter x video downloader',
     'mp4 converter',
     'mp3 audio converter',
     'free media utility'
@@ -89,6 +91,7 @@ const jsonLd = {
 };
 
 import { SmoothScroll } from '@/components/layout/smooth-scroll';
+import MagicCursor from '@/components/ui/magic-cursor';
 
 export default function RootLayout({
   children,
@@ -104,6 +107,7 @@ export default function RootLayout({
         />
       </head>
       <body>
+        <MagicCursor />
         <SmoothScroll>
           <div className="flex flex-col" style={{ minHeight: '100vh' }}>
             <Header />
