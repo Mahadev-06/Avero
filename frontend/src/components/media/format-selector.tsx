@@ -1,6 +1,7 @@
 "use client";
 
 import { ShopifyDropdown, DropdownItem } from '../ui/shopify-dropdown';
+import { Music, Video } from 'lucide-react';
 
 interface FormatSelectorProps {
   value?: string;
@@ -18,7 +19,7 @@ export function FormatSelector({ value, availableFormats, onChange, disabled }: 
     return {
       id: fmt,
       label: fmt,
-      icon: isAudio ? '🎵' : '🎬',
+      icon: isAudio ? <Music className="w-3.5 h-3.5" /> : <Video className="w-3.5 h-3.5" />,
       onClick: () => onChange(fmt),
     };
   });

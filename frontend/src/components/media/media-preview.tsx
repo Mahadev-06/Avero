@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from 'react';
+import { Image as ImageIcon, Video } from 'lucide-react';
 
 interface MediaPreviewProps {
   url: string;
@@ -58,7 +59,7 @@ export function MediaPreview({ url, thumbnailUrl, title, platform, mediaType }: 
             alignItems: 'center',
             justifyContent: 'center',
             overflow: 'hidden',
-            backgroundColor: 'rgba(0, 0, 0, 0.04)',
+            backgroundColor: 'rgba(0, 0, 0, 0.03)',
           }}
         >
           {effectiveThumbnail ? (
@@ -69,9 +70,22 @@ export function MediaPreview({ url, thumbnailUrl, title, platform, mediaType }: 
               style={{ width: '100%', height: '100%', objectFit: 'contain' }}
             />
           ) : (
-            <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-color)' }}>
-              <div style={{ fontSize: '2.25rem', marginBottom: '0.35rem' }}>🖼️</div>
-              <div style={{ fontWeight: 800, fontSize: '0.95rem' }}>{title || 'High-Resolution Photo'}</div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}>
+              <div
+                style={{
+                  width: '56px',
+                  height: '56px',
+                  borderRadius: '16px',
+                  backgroundColor: 'var(--bg-color)',
+                  boxShadow: '3px 3px 8px var(--neumorph-dark), -3px -3px 8px var(--neumorph-light)',
+                  border: '1px solid rgba(255, 255, 255, 0.6)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <ImageIcon className="w-7 h-7 text-amber-500" />
+              </div>
             </div>
           )}
         </div>
@@ -135,9 +149,20 @@ export function MediaPreview({ url, thumbnailUrl, title, platform, mediaType }: 
               style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.85 }}
             />
           ) : (
-            <div style={{ padding: '2rem', textAlign: 'center', color: '#ffffff' }}>
-              <div style={{ fontSize: '2.5rem', marginBottom: '0.25rem' }}>🎬</div>
-              <div style={{ fontWeight: 700 }}>{title || 'Media Video Content'}</div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}>
+              <div
+                style={{
+                  width: '56px',
+                  height: '56px',
+                  borderRadius: '16px',
+                  backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Video className="w-7 h-7 text-white/50" />
+              </div>
             </div>
           )}
 
