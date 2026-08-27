@@ -2492,13 +2492,13 @@ export function UrlInput() {
                 background: 'transparent',
                 border: 'none',
                 color: 'var(--text-muted)',
-                fontSize: '0.76rem',
+                fontSize: '0.78rem',
                 fontWeight: 600,
                 cursor: 'pointer',
                 padding: '0.2rem 0.4rem',
               }}
             >
-              Clear all
+              {recentDownloads.length === 1 ? 'Clear' : 'Clear all'}
             </button>
           </div>
 
@@ -2511,93 +2511,79 @@ export function UrlInput() {
           />
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-            {recentDownloads.map((item) => {
-              const dotColor =
-                item.platform === 'youtube'
-                  ? '🔴'
-                  : item.platform === 'instagram'
-                  ? '🟣'
-                  : item.platform === 'reddit'
-                  ? '🟠'
-                  : item.platform === 'pinterest'
-                  ? '🔴'
-                  : item.platform === 'facebook'
-                  ? '🔵'
-                  : '⚫';
-
-              return (
+            {recentDownloads.map((item) => (
+              <div
+                key={item.id}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '0.55rem 0.85rem',
+                  backgroundColor: 'var(--bg-color)',
+                  borderRadius: '12px',
+                  boxShadow: 'var(--nm-inset-sm)',
+                  border: '1px solid rgba(255, 255, 255, 0.45)',
+                  gap: '0.65rem',
+                  flexWrap: 'wrap',
+                }}
+              >
                 <div
-                  key={item.id}
                   style={{
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: '0.55rem 0.85rem',
-                    backgroundColor: 'var(--bg-color)',
-                    borderRadius: '12px',
-                    boxShadow: 'var(--nm-inset-sm)',
-                    border: '1px solid rgba(255, 255, 255, 0.45)',
-                    gap: '0.65rem',
-                    flexWrap: 'wrap',
+                    gap: '0.45rem',
+                    minWidth: 0,
+                    flex: 1,
                   }}
                 >
-                  <div
+                  <span
                     style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.45rem',
-                      minWidth: 0,
-                      flex: 1,
+                      fontSize: '0.88rem',
+                      fontWeight: 600,
+                      color: 'var(--text-color)',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
                     }}
+                    title={item.title}
                   >
+                    {item.title}
+                  </span>
+                  {item.quality && (
                     <span
                       style={{
-                        fontSize: '0.88rem',
-                        fontWeight: 600,
-                        color: 'var(--text-color)',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
-                      }}
-                      title={item.title}
-                    >
-                      {item.title}
-                    </span>
-                    <span style={{ fontSize: '0.82rem', flexShrink: 0 }}>{dotColor}</span>
-                    {item.quality && (
-                      <span
-                        style={{
-                          fontSize: '0.7rem',
-                          fontWeight: 700,
-                          color: 'var(--text-muted)',
-                          backgroundColor: 'rgba(0, 0, 0, 0.05)',
-                          padding: '0.12rem 0.4rem',
-                          borderRadius: '6px',
-                          flexShrink: 0,
-                        }}
-                      >
-                        {item.quality}
-                      </span>
-                    )}
-                  </div>
-
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', flexShrink: 0 }}>
-                    <button
-                      type="button"
-                      onClick={() => handleDownloadAgain(item)}
-                      className="pill-btn-black"
-                      style={{
-                        height: '28px',
-                        minHeight: '28px',
-                        padding: '0 0.75rem',
-                        borderRadius: 'var(--radius-full)',
-                        fontSize: '0.74rem',
+                        fontSize: '0.7rem',
                         fontWeight: 700,
-                        cursor: 'pointer',
+                        color: 'var(--text-muted)',
+                        backgroundColor: 'rgba(0, 0, 0, 0.05)',
+                        padding: '0.12rem 0.4rem',
+                        borderRadius: '6px',
+                        flexShrink: 0,
                       }}
                     >
-                      Download again
-                    </button>
+                      {item.quality}
+                    </span>
+                  )}
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', flexShrink: 0 }}>
+                  <button
+                    type="button"
+                    onClick={() => handleDownloadAgain(item)}
+                    className="pill-btn-black"
+                    style={{
+                      height: '28px',
+                      minHeight: '28px',
+                      padding: '0 0.75rem',
+                      borderRadius: 'var(--radius-full)',
+                      fontSize: '0.74rem',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Download again
+                  </button>
+                  {recentDownloads.length > 1 && (
                     <button
                       type="button"
                       onClick={() => {
@@ -2623,10 +2609,10 @@ export function UrlInput() {
                     >
                       ×
                     </button>
-                  </div>
+                  )}
                 </div>
-              );
-            })}
+              </div>
+            ))}
           </div>
         </div>
       )}
