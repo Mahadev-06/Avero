@@ -6,7 +6,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { MediaPreview } from './media-preview';
 import { triggerFileDownload } from '@/lib/utils';
-import { Video, Music, Download, Clock, Search, Loader2, Copy, Check, Plus, Play, AlertCircle, Image as ImageIcon, Trash2, ArrowUpLeft, X, VolumeX } from 'lucide-react';
+import { Video, Music, Download, Clock, Search, Loader2, Copy, Check, Plus, Play, AlertCircle, Image as ImageIcon, Trash2, ArrowUpLeft, X, VolumeX, Clipboard } from 'lucide-react';
 import { TextShimmerWave } from '@/components/core/text-shimmer-wave';
 
 import { detectPlatform } from '@/lib/url-parser';
@@ -1115,9 +1115,9 @@ export function UrlInput() {
               zIndex: 20,
             }}
           >
-            <span style={{ fontSize: '0.95rem' }}>📋</span>
-            <span style={{ fontSize: '0.86rem', fontWeight: 600, color: 'var(--text-color)' }}>
-              Link detected — Paste?
+            <Clipboard className="w-4 h-4" style={{ color: 'var(--text-color)', strokeWidth: 2.2, flexShrink: 0 }} />
+            <span style={{ fontSize: '0.86rem', fontWeight: 650, color: 'var(--text-color)' }}>
+              Link detected
             </span>
             <button
               type="button"
