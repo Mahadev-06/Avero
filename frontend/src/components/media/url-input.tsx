@@ -255,6 +255,11 @@ export function UrlInput() {
   const [isBatchDownloading, setIsBatchDownloading] = useState(false);
   const [batchDownloadIndex, setBatchDownloadIndex] = useState<number | null>(null);
 
+  // Clipboard Auto-Detection Prompt State
+  const [clipboardPrompt, setClipboardPrompt] = useState<{ url: string; platformName: string } | null>(null);
+  const lastDetectedClipboardUrl = useRef<string>('');
+  const clipboardTimerRef = useRef<NodeJS.Timeout | null>(null);
+
   // Search Autocomplete Suggestions State
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -280,6 +285,51 @@ export function UrlInput() {
         ).values()
       ) as PlatformIcon[])
     : [];
+
+  // Clipboard Auto-Detection on Focus / Visibility Change
+  useEffect(() => {
+    const handleCheckClipboard = async () => {
+      if (analyzing || searching || isBatchDownloading || isSearchMode) return;
+
+      try {
+        if (!navigator.clipboard || !navigator.clipboard.readText) return;
+        const text = (await navigator.clipboard.readText()).trim();
+        if (!text) return;
+
+        if (isSocialMediaUrl(text)) {
+          if (text === lastDetectedClipboardUrl.current || text === inputValue.trim()) {
+            return;
+          }
+
+          const platform = getSocialMediaPlatform(text);
+          const platformName = platform?.name || 'Social';
+
+          setClipboardPrompt({ url: text, platformName });
+
+          if (clipboardTimerRef.current) clearTimeout(clipboardTimerRef.current);
+          clipboardTimerRef.current = setTimeout(() => {
+            setClipboardPrompt(null);
+          }, 8000);
+        }
+      } catch {
+        // Silently ignore permissions or background errors
+      }
+    };
+
+    window.addEventListener('focus', handleCheckClipboard);
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        handleCheckClipboard();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener('focus', handleCheckClipboard);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      if (clipboardTimerRef.current) clearTimeout(clipboardTimerRef.current);
+    };
+  }, [inputValue, analyzing, searching, isBatchDownloading, isSearchMode]);
 
   // Close suggestions on click outside
   useEffect(() => {
@@ -465,6 +515,29 @@ export function UrlInput() {
     setStatusMsg(null);
     setSuggestions([]);
     setShowSuggestions(false);
+  };
+
+  const handleAcceptClipboardPrompt = () => {
+    if (!clipboardPrompt) return;
+    const url = clipboardPrompt.url;
+    lastDetectedClipboardUrl.current = url;
+    setClipboardPrompt(null);
+
+    if (isMultiMode) {
+      setInputValue((prev) => (prev ? `${prev}\n${url}` : url));
+      setDisplayValue('');
+    } else {
+      setInputValue(url);
+      const label = getCleanSocialDisplayLabel(url);
+      setDisplayValue(label || url);
+    }
+  };
+
+  const handleDismissClipboardPrompt = () => {
+    if (clipboardPrompt) {
+      lastDetectedClipboardUrl.current = clipboardPrompt.url;
+    }
+    setClipboardPrompt(null);
   };
 
   const handleSelectSuggestion = (suggestion: string) => {
@@ -916,7 +989,74 @@ export function UrlInput() {
         </div>
       </div>
 
-      {/* 2. Main Minimal Search & Paste Bar */}
+      {/* 2. Clipboard Link Detection Floating Prompt Banner */}
+      {clipboardPrompt && !isSearchMode && (
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'center',
+            marginBottom: '1rem',
+            animation: 'fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
+          }}
+        >
+          <div
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.65rem',
+              padding: '0.45rem 0.85rem 0.45rem 1.15rem',
+              backgroundColor: 'var(--bg-color)',
+              borderRadius: 'var(--radius-full)',
+              boxShadow: 'var(--nm-raised-md)',
+              border: '1px solid rgba(255, 255, 255, 0.65)',
+              zIndex: 20,
+            }}
+          >
+            <span style={{ fontSize: '0.95rem' }}>📋</span>
+            <span style={{ fontSize: '0.86rem', fontWeight: 600, color: 'var(--text-color)' }}>
+              Link detected — Paste?
+            </span>
+            <button
+              type="button"
+              onClick={handleAcceptClipboardPrompt}
+              className="pill-btn-black"
+              style={{
+                height: '28px',
+                minHeight: '28px',
+                padding: '0 0.85rem',
+                borderRadius: 'var(--radius-full)',
+                fontSize: '0.78rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+              }}
+            >
+              Paste
+            </button>
+            <button
+              type="button"
+              onClick={handleDismissClipboardPrompt}
+              title="Dismiss"
+              aria-label="Dismiss clipboard prompt"
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: 'var(--text-muted)',
+                cursor: 'pointer',
+                fontSize: '0.85rem',
+                padding: '0.2rem 0.4rem',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                lineHeight: 1,
+              }}
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* 3. Main Minimal Search & Paste Bar */}
       <form onSubmit={handleSubmit} style={{ position: 'relative', width: '100%' }}>
         {isMultiMode && !isSearchMode ? (
           /* Multi-URL Batch Textarea Container */
