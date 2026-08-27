@@ -388,6 +388,14 @@ async def _scrape_instagram(url: str) -> dict:
                             "is_image": False,
                             "muted": True,
                         }
+                    elif thumbnail_img:
+                        return {
+                            "title": title or "Instagram Photo",
+                            "image_url": thumbnail_img,
+                            "thumbnail": thumbnail_img,
+                            "is_image": True,
+                            "muted": False,
+                        }
         except Exception:
             pass
 
@@ -418,18 +426,31 @@ async def _scrape_instagram(url: str) -> dict:
                     "is_image": False,
                     "muted": True,
                 }
-            if og_img and not thumbnail_img:
-                thumbnail_img = og_img.group(1).replace("&amp;", "&")
+            if og_img:
+                img_url = og_img.group(1).replace("&amp;", "&")
+                if not any(img_url.endswith(e) for e in ("instagram_icon.png", "favicon.ico", "rsrc.php")):
+                    return {
+                        "title": title or "Instagram Photo",
+                        "image_url": img_url,
+                        "thumbnail": img_url,
+                        "is_image": True,
+                        "muted": False,
+                    }
+                elif not thumbnail_img:
+                    thumbnail_img = img_url
     except Exception:
         pass
 
-    return {
-        "title": title,
-        "video_url": url,
-        "thumbnail": thumbnail_img,
-        "is_image": False,
-        "muted": True,
-    }
+    if thumbnail_img and not any(thumbnail_img.endswith(e) for e in ("instagram_icon.png", "favicon.ico", "rsrc.php")):
+        return {
+            "title": title or "Instagram Photo",
+            "image_url": thumbnail_img,
+            "thumbnail": thumbnail_img,
+            "is_image": True,
+            "muted": False,
+        }
+
+    return {}
 
 
 async def _scrape_threads(url: str) -> dict:
@@ -467,9 +488,17 @@ async def _scrape_threads(url: str) -> dict:
             resp = await client.get(url)
             html = resp.text
             
-            og_vid = re.search(r'<meta\s+property=["\']og:video(?::secure_url)?["\']\s+content=["\']([^"\']+)["\']', html)
-            og_img = re.search(r'<meta\s+property=["\']og:image["\']\s+content=["\']([^"\']+)["\']', html)
-            og_title = re.search(r'<meta\s+property=["\']og:title["\']\s+content=["\']([^"\']+)["\']', html)
+            og_vid = re.search(r'<meta\s+(?:property|name)=["\'](?:og:video(?::secure_url)?|twitter:player:stream)["\']\s+content=["\']([^"\']+)["\']', html)
+            if not og_vid:
+                og_vid = re.search(r'<meta\s+content=["\']([^"\']+)["\']\s+(?:property|name)=["\'](?:og:video(?::secure_url)?|twitter:player:stream)["\']', html)
+
+            og_img = re.search(r'<meta\s+(?:property|name)=["\'](?:og:image(?::secure_url)?|twitter:image(?::src)?)["\']\s+content=["\']([^"\']+)["\']', html)
+            if not og_img:
+                og_img = re.search(r'<meta\s+content=["\']([^"\']+)["\']\s+(?:property|name)=["\'](?:og:image(?::secure_url)?|twitter:image(?::src)?)["\']', html)
+
+            og_title = re.search(r'<meta\s+(?:property|name)=["\'](?:og:title|twitter:title)["\']\s+content=["\']([^"\']+)["\']', html)
+            if not og_title:
+                og_title = re.search(r'<meta\s+content=["\']([^"\']+)["\']\s+(?:property|name)=["\'](?:og:title|twitter:title)["\']', html)
             
             if og_title:
                 import html as html_module
@@ -500,13 +529,25 @@ async def _scrape_threads(url: str) -> dict:
             if og_img:
                 img_url = og_img.group(1).replace("&amp;", "&")
                 base_img = img_url.split("?")[0].lower()
-                is_junk = any(e in base_img for e in ("favicon.ico", "threads_logo.png", "khwimm5b8pw"))
+                is_junk = any(e in base_img for e in ("favicon.ico", "threads_logo.png", "khwimm5b8pw", "rsrc.php"))
                 if not is_junk:
                     thumbnail_img = img_url
                     return {
                         "title": title or "Threads Photo",
                         "image_url": img_url,
                         "thumbnail": img_url,
+                        "is_image": True,
+                    }
+
+            # Search for direct scontent CDN image URLs in HTML/JSON body
+            scontent_imgs = re.findall(r'https?://[^"\'\\ ]+?scontent[^"\'\\ ]+?\.(?:jpg|jpeg|png|webp|heic)[^"\'\\ ]*', html)
+            if scontent_imgs:
+                clean_img = scontent_imgs[0].replace(r"\u0026", "&").replace(r"\/", "/")
+                if not any(e in clean_img.lower() for e in ("favicon.ico", "threads_logo.png", "khwimm5b8pw", "rsrc.php")):
+                    return {
+                        "title": title or "Threads Photo",
+                        "image_url": clean_img,
+                        "thumbnail": clean_img,
                         "is_image": True,
                     }
 
@@ -553,7 +594,7 @@ async def _scrape_threads(url: str) -> dict:
     except Exception:
         pass
 
-    if thumbnail_img:
+    if thumbnail_img and not any(thumbnail_img.endswith(e) for e in ("favicon.ico", "threads_logo.png", "khwimm5b8pw", "rsrc.php")):
         return {
             "title": title or "Threads Photo",
             "image_url": thumbnail_img,
@@ -561,13 +602,124 @@ async def _scrape_threads(url: str) -> dict:
             "is_image": True,
         }
 
-    # If no video was detected, Threads is predominantly photo/image content
-    return {
-        "title": title or "Threads Photo",
-        "image_url": url,
-        "thumbnail": None,
-        "is_image": True,
+    # If no real CDN media was found, return empty dict to trigger graceful failure
+    return {}
+
+
+async def _scrape_x(url: str) -> dict:
+    """Extract X / Twitter post metadata and media (photo, gallery, or video)."""
+    parsed = urlparse(url)
+    if parsed.hostname:
+        resolve_and_check(parsed.hostname)
+
+    if any(url.lower().endswith(ext) or f"{ext}?" in url.lower() for ext in (".jpg", ".jpeg", ".png", ".webp", ".gif")):
+        return {
+            "title": "X Photo",
+            "image_url": url,
+            "thumbnail": url,
+            "is_image": True,
+        }
+
+    if any(url.lower().endswith(ext) or f"{ext}?" in url.lower() for ext in (".mp4", ".m4v", ".mov", ".webm")):
+        return {
+            "title": "X Video",
+            "video_url": url,
+            "is_image": False,
+        }
+
+    tweet_id_match = re.search(r'status/(\d+)', url)
+    tweet_id = tweet_id_match.group(1) if tweet_id_match else None
+
+    title = "X Post"
+    crawler_headers = {
+        "User-Agent": "facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
     }
+
+    try:
+        # 1. Social Crawler OpenGraph Fetch
+        async with httpx.AsyncClient(follow_redirects=True, timeout=10.0, headers=crawler_headers) as client:
+            resp = await client.get(url)
+            html = resp.text
+
+            og_vid = re.search(r'<meta\s+(?:property|name)=["\'](?:og:video(?::secure_url)?|twitter:player:stream)["\']\s+content=["\']([^"\']+)["\']', html)
+            og_img = re.search(r'<meta\s+(?:property|name)=["\'](?:og:image(?::secure_url)?|twitter:image(?::src)?)["\']\s+content=["\']([^"\']+)["\']', html)
+            og_title = re.search(r'<meta\s+(?:property|name)=["\'](?:og:title|twitter:title)["\']\s+content=["\']([^"\']+)["\']', html)
+
+            if og_title:
+                import html as html_module
+                raw_t = html_module.unescape(og_title.group(1).replace("&amp;", "&")).strip()
+                if raw_t and not any(k in raw_t for k in ("Post Not Found", "404 Error")):
+                    title = raw_t
+
+            if og_vid:
+                return {
+                    "title": title or "X Video",
+                    "video_url": og_vid.group(1).replace("&amp;", "&"),
+                    "thumbnail": og_img.group(1).replace("&amp;", "&") if og_img else None,
+                    "is_image": False,
+                }
+
+            if og_img:
+                raw_img = og_img.group(1).replace("&amp;", "&")
+                if "twimg.com" in raw_img and not any(raw_img.endswith(e) for e in ("og/image.png", "favicon.ico", "default_profile")):
+                    if "name=" in raw_img:
+                        raw_img = re.sub(r'name=[a-zA-Z0-9_]+', 'name=orig', raw_img)
+                    return {
+                        "title": title or "X Photo",
+                        "image_url": raw_img,
+                        "thumbnail": raw_img,
+                        "is_image": True,
+                    }
+
+            # Search for pbs.twimg.com/media images in HTML
+            twimg_matches = re.findall(r'https?://pbs\.twimg\.com/media/[^"\'\\ ]+', html)
+            if twimg_matches:
+                clean_img = twimg_matches[0].replace("&amp;", "&").replace(r"\/", "/")
+                if "name=" in clean_img:
+                    clean_img = re.sub(r'name=[a-zA-Z0-9_]+', 'name=orig', clean_img)
+                return {
+                    "title": title or "X Photo",
+                    "image_url": clean_img,
+                    "thumbnail": clean_img,
+                    "is_image": True,
+                }
+    except Exception:
+        pass
+
+    # 2. Public API Fallback (fxtwitter)
+    if tweet_id:
+        try:
+            async with httpx.AsyncClient(follow_redirects=True, timeout=6.0) as client:
+                r_fx = await client.get(f"https://api.fxtwitter.com/status/{tweet_id}", headers={"User-Agent": "Mozilla/5.0"})
+                if r_fx.status_code == 200:
+                    data = r_fx.json()
+                    tweet = data.get("tweet", {})
+                    t_text = tweet.get("text")
+                    if t_text:
+                        title = t_text[:100]
+                    media = tweet.get("media", {})
+                    photos = media.get("photos", [])
+                    videos = media.get("videos", [])
+                    if videos:
+                        return {
+                            "title": title or "X Video",
+                            "video_url": videos[0].get("url"),
+                            "thumbnail": videos[0].get("thumbnail_url"),
+                            "is_image": False,
+                        }
+                    if photos:
+                        return {
+                            "title": title or "X Photo",
+                            "image_url": photos[0].get("url"),
+                            "thumbnail": photos[0].get("url"),
+                            "is_image": True,
+                        }
+        except Exception:
+            pass
+
+    return {}
+
 
 async def extract_media_info(url: str, platform_name: str) -> MediaInfo:
     # SSRF check on target URL
@@ -669,6 +821,21 @@ async def extract_media_info(url: str, platform_name: str) -> MediaInfo:
                     download_supported=True,
                     embed_supported=True,
                 )
+            else:
+                # Graceful failure for Reddit when extraction returns empty
+                return MediaInfo(
+                    url=url,
+                    platform="reddit",
+                    title="Reddit Post",
+                    media_type="image",
+                    formats=[],
+                    format_options=[],
+                    download_url=url,
+                    download_supported=False,
+                    embed_supported=True,
+                    error="unsupported_reddit",
+                    error_message="Unable to extract media from this Reddit post. Please verify the post is public and contains supported media.",
+                )
         except Exception:
             pass
 
@@ -676,14 +843,14 @@ async def extract_media_info(url: str, platform_name: str) -> MediaInfo:
     if "threads.net" in url or "threads.com" in url:
         try:
             th_data = await _scrape_threads(url)
-            if th_data.get("is_image") or not th_data.get("video_url") or th_data.get("image_url"):
-                target_img = th_data.get("image_url") or th_data.get("thumbnail") or url
+            if th_data.get("is_image") and th_data.get("image_url") and th_data["image_url"] != url:
+                target_img = th_data["image_url"]
                 format_opts = build_image_format_options(target_img)
                 return MediaInfo(
                     url=url,
                     platform="threads",
                     title=th_data.get("title", "Threads Photo"),
-                    thumbnail_url=th_data.get("thumbnail") or th_data.get("image_url") or target_img,
+                    thumbnail_url=th_data.get("thumbnail") or target_img,
                     media_type="image",
                     duration=0,
                     formats=[f"{opt.ext} {opt.quality} ({opt.file_size_formatted})" for opt in format_opts],
@@ -692,8 +859,8 @@ async def extract_media_info(url: str, platform_name: str) -> MediaInfo:
                     download_supported=True,
                     embed_supported=True,
                 )
-            else:
-                video_url = th_data.get("video_url") or url
+            elif th_data.get("video_url") and th_data["video_url"] != url:
+                video_url = th_data["video_url"]
                 thumbnail = th_data.get("thumbnail") or th_data.get("image_url")
                 format_opts = build_format_options(30)
                 return MediaInfo(
@@ -709,10 +876,76 @@ async def extract_media_info(url: str, platform_name: str) -> MediaInfo:
                     download_supported=True,
                     embed_supported=True,
                 )
+            else:
+                # Graceful failure for Threads when extraction returns empty or no CDN media
+                return MediaInfo(
+                    url=url,
+                    platform="threads",
+                    title="Threads Post",
+                    media_type="image",
+                    formats=[],
+                    format_options=[],
+                    download_url=url,
+                    download_supported=False,
+                    embed_supported=True,
+                    error="unsupported_threads",
+                    error_message="Unable to extract media from this Threads post. Please ensure the post is public and contains supported media.",
+                )
         except Exception:
             pass
 
-    # 5. Instagram handler: if cookies are NOT configured, use direct scraper fallback immediately
+    # 5. X / Twitter handler
+    if "x.com" in url or "twitter.com" in url or "t.co" in url:
+        try:
+            x_data = await _scrape_x(url)
+            if x_data.get("is_image") and x_data.get("image_url"):
+                format_opts = build_image_format_options(x_data["image_url"])
+                return MediaInfo(
+                    url=url,
+                    platform="x_twitter",
+                    title=x_data.get("title", "X Photo"),
+                    thumbnail_url=x_data.get("thumbnail") or x_data["image_url"],
+                    media_type="image",
+                    duration=0,
+                    formats=[f"{opt.ext} {opt.quality} ({opt.file_size_formatted})" for opt in format_opts],
+                    format_options=format_opts,
+                    download_url=x_data["image_url"],
+                    download_supported=True,
+                    embed_supported=True,
+                )
+            elif x_data.get("video_url") and x_data["video_url"] != url:
+                format_opts = build_format_options(30)
+                return MediaInfo(
+                    url=url,
+                    platform="x_twitter",
+                    title=x_data.get("title", "X Video"),
+                    thumbnail_url=x_data.get("thumbnail"),
+                    duration=30,
+                    media_type="video",
+                    formats=[f"{opt.ext} {opt.quality} ({opt.file_size_formatted})" for opt in format_opts],
+                    format_options=format_opts,
+                    download_url=x_data["video_url"],
+                    download_supported=True,
+                    embed_supported=True,
+                )
+            else:
+                return MediaInfo(
+                    url=url,
+                    platform="x_twitter",
+                    title="X Post",
+                    media_type="image",
+                    formats=[],
+                    format_options=[],
+                    download_url=url,
+                    download_supported=False,
+                    embed_supported=True,
+                    error="unsupported_x",
+                    error_message="Unable to extract media from this X / Twitter post. Please ensure the post is public and contains supported media.",
+                )
+        except Exception:
+            pass
+
+    # 6. Instagram handler: if cookies are NOT configured, use direct scraper fallback immediately
     if "instagram.com" in url or "instagr.am" in url:
         from app.services.media_service import _get_instagram_cookiefile
         ig_cookie = _get_instagram_cookiefile()
@@ -734,7 +967,7 @@ async def extract_media_info(url: str, platform_name: str) -> MediaInfo:
                         embed_supported=True,
                         muted=False,
                     )
-                elif ig_data.get("video_url"):
+                elif ig_data.get("video_url") and ig_data["video_url"] != url:
                     format_opts = build_format_options(30)
                     return MediaInfo(
                         url=url,
@@ -749,6 +982,20 @@ async def extract_media_info(url: str, platform_name: str) -> MediaInfo:
                         download_supported=True,
                         embed_supported=True,
                         muted=True,
+                    )
+                else:
+                    return MediaInfo(
+                        url=url,
+                        platform="instagram",
+                        title="Instagram Post",
+                        media_type="image",
+                        formats=[],
+                        format_options=[],
+                        download_url=url,
+                        download_supported=False,
+                        embed_supported=True,
+                        error="unsupported_instagram",
+                        error_message="Unable to extract media from this Instagram post. Please ensure the post is public and contains supported media.",
                     )
             except Exception:
                 pass

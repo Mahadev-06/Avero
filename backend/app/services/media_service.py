@@ -436,6 +436,7 @@ def _find_output_file(base_path: str) -> Optional[str]:
 def _resolve_image_url(url: str) -> Optional[str]:
     """Extract direct high-resolution image URL with SSRF validation."""
     import httpx, re
+    url = url.replace("&amp;", "&")
     parsed = urlparse(url)
     if not parsed.hostname:
         return None
@@ -472,7 +473,7 @@ def _resolve_image_url(url: str) -> Optional[str]:
     if "reddit.com" in url or "redd.it" in url:
         try:
             if "i.redd.it" in url or "preview.redd.it" in url:
-                return url
+                return url.replace("&amp;", "&")
             
             crawler_headers = {
                 "User-Agent": "facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)",
@@ -485,14 +486,14 @@ def _resolve_image_url(url: str) -> Optional[str]:
                 if og_img:
                     img_url = og_img.group(1).replace("&amp;", "&")
                     if not any(img_url.endswith(e) for e in ("reddit_icon.png", "reddit_logo.png", "favicon.ico")):
-                        return img_url
+                        return img_url.replace("&amp;", "&")
 
             with httpx.Client(follow_redirects=True, timeout=8.0) as client:
                 r = client.get(f"https://rapidsave.com/info?url={url}", headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"})
                 if r.status_code == 200:
                     img_match = re.search(r'href=["\'](https?://i\.redd\.it/[^"\']+)["\']', r.text)
                     if img_match:
-                        return img_match.group(1)
+                        return img_match.group(1).replace("&amp;", "&")
         except Exception:
             pass
 
@@ -509,7 +510,7 @@ def _resolve_image_url(url: str) -> Optional[str]:
                 og_img = re.search(r'<meta\s+property=["\']og:image["\']\s+content=["\']([^"\']+)["\']', html)
                 if og_img:
                     img_url = og_img.group(1).replace("&amp;", "&")
-                    if not any(img_url.endswith(e) for e in ("favicon.ico", "threads_logo.png", "kHwIMM5b8PW.webp")):
+                    if not any(img_url.endswith(e) for e in ("favicon.ico", "threads_logo.png", "kHwIMM5b8PW.webp", "rsrc.php")):
                         return img_url
         except Exception:
             pass
@@ -586,8 +587,10 @@ def _resolve_video_url(url: str) -> str | None:
 
 
 def _download_image_sync(job_id: str, url: str, fmt: str) -> str:
-    """Download image directly with SSRF verification."""
+    """Download image directly with SSRF verification, Content-Type validation, and minimum size check."""
     import httpx
+    # Ensure any escaped entities in image URL are cleaned
+    url = url.replace("&amp;", "&")
     parsed = urlparse(url)
     if parsed.hostname:
         resolve_and_check(parsed.hostname)
@@ -610,9 +613,40 @@ def _download_image_sync(job_id: str, url: str, fmt: str) -> str:
     }
     with httpx.Client(follow_redirects=True, timeout=30.0, headers=headers) as client:
         resp = client.get(url)
-        resp.raise_for_status()
+        if resp.status_code != 200:
+            raise ValueError(f"Image host returned HTTP status {resp.status_code}")
+
+        content_type = resp.headers.get("content-type", "").lower()
+        body = resp.content
+        body_len = len(body)
+
+        # Validate against HTML/XML error payloads
+        is_html_or_xml = (
+            b"<html" in body[:500].lower()
+            or b"<!doctype" in body[:500].lower()
+            or b"<error" in body[:500].lower()
+            or b"accessdenied" in body[:500].lower()
+        )
+        if is_html_or_xml:
+            raise ValueError("Received HTML/XML error payload instead of valid image")
+
+        # Validate magic bytes
+        is_valid_magic = (
+            body[:2] == b"\xff\xd8"  # JPEG
+            or body[:8] == b"\x89PNG\r\n\x1a\n"  # PNG
+            or (body[:4] == b"RIFF" and b"WEBP" in body[:16])  # WEBP
+            or body[:4] in (b"GIF8", b"II*\x00", b"MM\x00*")  # GIF / TIFF
+        )
+
+        if not is_valid_magic and not content_type.startswith("image/"):
+            raise ValueError(f"Invalid image format received (Content-Type: {content_type})")
+
+        # Reject corrupted files or small error icons (< 5KB without valid magic)
+        if body_len < 1024 or (body_len < 5120 and not is_valid_magic):
+            raise ValueError(f"Downloaded image is suspiciously small ({body_len} bytes) or corrupted")
+
         with open(output_file, "wb") as f:
-            f.write(resp.content)
+            f.write(body)
 
     file_size = os.path.getsize(output_file)
     raw_filename = os.path.basename(output_file)
