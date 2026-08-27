@@ -24,11 +24,11 @@ export function Footer() {
               style={{
                 fontSize: '0.88rem',
                 lineHeight: 1.65,
-                color: 'var(--text-color)',
-                fontWeight: 700,
+                color: 'var(--text-muted)',
+                fontWeight: 500,
                 letterSpacing: '-0.01em',
                 margin: 0,
-                marginBottom: '1.1rem',
+                marginBottom: '1.15rem',
               }}
             >
               Minimal, policy-compliant media utility platform. High-performance processing with zero bloat.
