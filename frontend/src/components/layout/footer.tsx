@@ -17,21 +17,42 @@ export function Footer() {
           
           {/* Left Side: Brand Logo & Description */}
           <div style={{ maxWidth: '340px', flexShrink: 0 }}>
-            <div style={{ marginBottom: '1.35rem' }}>
+            <div style={{ marginBottom: '1.25rem' }}>
               <AveroLogo height={26} />
             </div>
             <p
               style={{
                 fontSize: '0.88rem',
                 lineHeight: 1.65,
-                color: 'var(--text-muted)',
-                fontWeight: 500,
+                color: 'var(--text-color)',
+                fontWeight: 700,
                 letterSpacing: '-0.01em',
                 margin: 0,
+                marginBottom: '1.1rem',
               }}
             >
               Minimal, policy-compliant media utility platform. High-performance processing with zero bloat.
             </p>
+            <div>
+              <a
+                href="https://www.mahadevpatro.dev/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-muted hover:text-foreground transition-colors"
+                style={{
+                  fontSize: '0.88rem',
+                  fontWeight: 700,
+                  color: 'var(--text-color)',
+                  textDecoration: 'none',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.35rem',
+                }}
+              >
+                <span>Meet the Developer</span>
+                <span style={{ fontSize: '0.75rem', opacity: 0.7 }}>↗</span>
+              </a>
+            </div>
           </div>
 
           {/* Right Side: 3 Columns Always Placed Side-by-Side on the Right Edge */}
@@ -104,18 +125,6 @@ export function Footer() {
                   <Link href="/about" className="text-muted hover:text-foreground transition-colors" style={{ fontSize: '0.88rem', fontWeight: 600, whiteSpace: 'nowrap' }}>
                     About Platform
                   </Link>
-                </li>
-                <li>
-                  <a
-                    href="https://www.mahadevpatro.dev/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-muted hover:text-foreground transition-colors"
-                    style={{ fontSize: '0.88rem', fontWeight: 600, whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}
-                  >
-                    <span>Meet the Developer</span>
-                    <span style={{ fontSize: '0.72rem', opacity: 0.7 }}>↗</span>
-                  </a>
                 </li>
                 <li>
                   <Link href="/#faq" className="text-muted hover:text-foreground transition-colors" style={{ fontSize: '0.88rem', fontWeight: 600, whiteSpace: 'nowrap' }}>
