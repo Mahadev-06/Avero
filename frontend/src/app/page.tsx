@@ -22,7 +22,10 @@ import {
   FileText,
   Lock,
   ChevronRight,
-  ChevronDown
+  ChevronDown,
+  Globe,
+  ExternalLink,
+  Code2
 } from 'lucide-react';
 
 export default function Home() {
@@ -580,7 +583,160 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 6. SHARE AVERO SECTION */}
+      {/* 6. MEET THE DEVELOPER / CREATOR SHOWCASE SECTION */}
+      <section id="developer" style={{ paddingTop: '1rem', paddingBottom: '3rem', scrollMarginTop: '2rem' }}>
+        <div className="container" style={{ maxWidth: '860px', margin: '0 auto', padding: '0 1rem' }}>
+          <div
+            style={{
+              backgroundColor: 'var(--bg-color)',
+              border: '1px solid rgba(255, 255, 255, 0.65)',
+              borderRadius: '24px',
+              padding: 'clamp(1.75rem, 3.5vw, 2.5rem)',
+              boxShadow: '8px 8px 20px var(--neumorph-dark), -8px -8px 20px var(--neumorph-light)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '1.5rem',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
+              <div style={{ display: 'inline-flex', padding: '0.35rem 0.85rem', borderRadius: 'var(--radius-full)', backgroundColor: 'var(--bg-color)', border: '1px solid rgba(255,255,255,0.6)', boxShadow: '3px 3px 6px var(--neumorph-dark), -3px -3px 6px var(--neumorph-light)', fontSize: '0.75rem', fontWeight: 800, letterSpacing: '0.08em', color: 'var(--color-accent-500)' }}>
+                MEET THE DEVELOPER
+              </div>
+              <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-muted)' }}>
+                Built with precision &amp; passion
+              </span>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1.75rem', flexWrap: 'wrap' }}>
+              <div
+                style={{
+                  width: '92px',
+                  height: '92px',
+                  borderRadius: '22px',
+                  overflow: 'hidden',
+                  flexShrink: 0,
+                  boxShadow: '4px 4px 10px var(--neumorph-dark), -4px -4px 10px var(--neumorph-light)',
+                  border: '2px solid rgba(255, 255, 255, 0.7)',
+                  backgroundColor: 'var(--bg-color)',
+                }}
+              >
+                <img
+                  src="https://mahadevpatro.dev/me.webp"
+                  alt="Mahadev Patro"
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', flex: 1, minWidth: '260px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', flexWrap: 'wrap' }}>
+                  <h3 style={{ fontSize: '1.35rem', fontWeight: 850, color: 'var(--text-color)', margin: 0, letterSpacing: '-0.02em' }}>
+                    Mahadev Patro
+                  </h3>
+                  <span
+                    style={{
+                      fontSize: '0.72rem',
+                      fontWeight: 800,
+                      color: 'var(--color-accent-500)',
+                      backgroundColor: 'rgba(254, 198, 0, 0.12)',
+                      padding: '0.15rem 0.55rem',
+                      borderRadius: 'var(--radius-full)',
+                      border: '1px solid rgba(254, 198, 0, 0.25)',
+                    }}
+                  >
+                    Full-Stack &amp; AI Engineer
+                  </span>
+                </div>
+                <p style={{ fontSize: '0.92rem', color: 'var(--text-muted)', lineHeight: 1.6, margin: 0 }}>
+                  Architect &amp; creator of AVERO. Specializing in AI-powered web applications, high-performance software engineering, and modern SaaS products.
+                </p>
+              </div>
+            </div>
+
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: '1rem',
+                paddingTop: '1rem',
+                borderTop: '1px solid rgba(0, 0, 0, 0.06)',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+                <a
+                  href="https://www.mahadevpatro.dev/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="pill-btn-black"
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.45rem',
+                    padding: '0.55rem 1.15rem',
+                    borderRadius: 'var(--radius-full)',
+                    fontSize: '0.85rem',
+                    fontWeight: 750,
+                    textDecoration: 'none',
+                  }}
+                >
+                  <Globe className="w-3.5 h-3.5" />
+                  <span>View Portfolio</span>
+                  <ExternalLink className="w-3.5 h-3.5 opacity-70" />
+                </a>
+
+                <a
+                  href="https://github.com/Mahadev-06"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="pill-btn"
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.45rem',
+                    padding: '0.55rem 1.1rem',
+                    borderRadius: 'var(--radius-full)',
+                    fontSize: '0.85rem',
+                    fontWeight: 700,
+                    textDecoration: 'none',
+                    color: 'var(--text-color)',
+                  }}
+                >
+                  <span>GitHub</span>
+                  <ExternalLink className="w-3.5 h-3.5 opacity-60" />
+                </a>
+
+                <a
+                  href="https://www.linkedin.com/in/mahadev-patro-a76267377"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="pill-btn"
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.45rem',
+                    padding: '0.55rem 1.1rem',
+                    borderRadius: 'var(--radius-full)',
+                    fontSize: '0.85rem',
+                    fontWeight: 700,
+                    textDecoration: 'none',
+                    color: 'var(--text-color)',
+                  }}
+                >
+                  <span>LinkedIn</span>
+                  <ExternalLink className="w-3.5 h-3.5 opacity-60" />
+                </a>
+              </div>
+
+              <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+                Available for freelance &amp; custom software
+              </span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 7. SHARE AVERO SECTION */}
       <section style={{ paddingTop: '1rem', paddingBottom: '5rem', textAlign: 'center' }}>
         <div className="container" style={{ maxWidth: '640px', margin: '0 auto', padding: '0 1rem' }}>
           <div

@@ -106,6 +106,18 @@ export function Footer() {
                   </Link>
                 </li>
                 <li>
+                  <a
+                    href="https://www.mahadevpatro.dev/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-muted hover:text-foreground transition-colors"
+                    style={{ fontSize: '0.88rem', fontWeight: 600, whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}
+                  >
+                    <span>Meet the Developer</span>
+                    <span style={{ fontSize: '0.72rem', opacity: 0.7 }}>↗</span>
+                  </a>
+                </li>
+                <li>
                   <Link href="/#faq" className="text-muted hover:text-foreground transition-colors" style={{ fontSize: '0.88rem', fontWeight: 600, whiteSpace: 'nowrap' }}>
                     FAQ & Questions
                   </Link>
@@ -160,14 +172,37 @@ export function Footer() {
       <div
         style={{
           borderTop: '1px solid rgba(0, 0, 0, 0.08)',
-          padding: '1.25rem 0',
+          padding: '1.25rem 1rem',
           textAlign: 'center',
-          fontSize: '0.8rem',
+          fontSize: '0.82rem',
           fontWeight: 600,
           color: 'var(--text-muted)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexWrap: 'wrap',
+          gap: '0.45rem',
         }}
       >
-        © {new Date().getFullYear()} AVERO. All-in-One Media Downloader • All Rights Reserved.
+        <span>© {new Date().getFullYear()} AVERO. All-in-One Media Downloader.</span>
+        <span>•</span>
+        <span>
+          Crafted by{' '}
+          <a
+            href="https://www.mahadevpatro.dev/"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              color: 'var(--text-color)',
+              fontWeight: 750,
+              textDecoration: 'none',
+              borderBottom: '1px dotted var(--color-accent-500)',
+            }}
+            className="hover:underline"
+          >
+            Mahadev Patro ↗
+          </a>
+        </span>
       </div>
     </footer>
   );
