@@ -25,7 +25,6 @@ export function HeroTitleAnimation({
     "measuring" | "fade-in" | "move" | "reveal" | "highlight" | "done"
   >("measuring");
 
-  const [brandOffsetX, setBrandOffsetX] = useState(0);
   const [titleOffsetY, setTitleOffsetY] = useState(0);
   const [ready, setReady] = useState(false);
 
@@ -41,10 +40,6 @@ export function HeroTitleAnimation({
 
     const brandRect = brand.getBoundingClientRect();
     const containerRect = container.getBoundingClientRect();
-
-    const brandCenterX = brandRect.left + brandRect.width / 2;
-    const containerCenterX = containerRect.left + containerRect.width / 2;
-    setBrandOffsetX(containerCenterX - brandCenterX);
 
     const brandMidY = brandRect.top - containerRect.top + brandRect.height / 2;
     const containerMidY = containerRect.height / 2;
@@ -88,19 +83,19 @@ export function HeroTitleAnimation({
 
   const titleBaseStyle: React.CSSProperties = {
     fontFamily: "var(--font-geist-sans), sans-serif",
-    fontSize: "clamp(1.25rem, 2.5vw, 1.85rem)",
+    fontSize: "clamp(1.25rem, 2.6vw, 1.85rem)",
     fontWeight: 500,
     letterSpacing: "-0.015em",
-    lineHeight: 1.3,
+    lineHeight: 1.28,
     display: "flex",
-    flexWrap: "wrap",
-    alignItems: "baseline",
+    flexDirection: "column",
+    alignItems: "center",
     justifyContent: "center",
-    columnGap: "0.35em",
-    rowGap: "0.5rem",
+    rowGap: "0.45rem",
     color: "var(--text-color, #262626)",
     textAlign: "center",
     margin: 0,
+    width: "100%",
   };
 
   return (
@@ -112,7 +107,7 @@ export function HeroTitleAnimation({
         width: "100%",
         display: "flex",
         justifyContent: "center",
-        paddingBottom: "0.75rem",
+        paddingBottom: "0.5rem",
         ...style,
       }}
     >
@@ -126,14 +121,15 @@ export function HeroTitleAnimation({
         }}
         aria-hidden="true"
       >
+        {/* Line 1: Brand text */}
         <span
           ref={measureBrandRef}
           style={{
             display: "inline-flex",
             flexWrap: "wrap",
-            alignItems: "baseline",
+            alignItems: "center",
             justifyContent: "center",
-            columnGap: "0.28em",
+            columnGap: "0.32em",
             fontWeight: 500,
           }}
         >
@@ -143,13 +139,14 @@ export function HeroTitleAnimation({
             </span>
           ))}
         </span>
+
+        {/* Line 2: Highlight text below */}
         <span
           style={{
             display: "inline-flex",
             alignItems: "center",
-            columnGap: "0.28em",
-            whiteSpace: "nowrap",
-            marginLeft: "0.25rem",
+            justifyContent: "center",
+            marginTop: "0.25rem",
           }}
         >
           <span
@@ -158,7 +155,7 @@ export function HeroTitleAnimation({
               display: "inline-flex",
               alignItems: "center",
               columnGap: "0.28em",
-              padding: "0.15rem 0.55rem",
+              padding: "0.22rem 0.85rem",
             }}
           >
             {highlightWords.map((w, i) => (
@@ -179,24 +176,20 @@ export function HeroTitleAnimation({
           left: 0,
           right: 0,
           visibility: ready ? "visible" : "hidden",
-          transform: `translateY(${brandMoved ? 0 : titleOffsetY}px)`,
-          transition: brandMoved
-            ? "transform 0.75s cubic-bezier(0.22, 1, 0.36, 1)"
-            : "none",
         }}
       >
-        {/* Brand Words: fades in centered, then slides smoothly to position */}
+        {/* Line 1: Brand Words (Centered initially, then glides up to top position) */}
         <span
           style={{
             display: "inline-flex",
             flexWrap: "wrap",
-            alignItems: "baseline",
+            alignItems: "center",
             justifyContent: "center",
-            columnGap: "0.28em",
+            columnGap: "0.32em",
             fontWeight: 500,
             color: "var(--text-color, #262626)",
             opacity: brandVisible ? 1 : 0,
-            transform: `translateX(${brandMoved ? 0 : brandOffsetX}px)`,
+            transform: `translateY(${brandMoved ? 0 : titleOffsetY}px)`,
             transition: brandMoved
               ? "opacity 0.55s ease-out, transform 0.75s cubic-bezier(0.22, 1, 0.36, 1)"
               : "opacity 0.55s ease-out",
@@ -209,14 +202,13 @@ export function HeroTitleAnimation({
           ))}
         </span>
 
-        {/* Highlight Words: reveals with smooth blur-in, then highlight box sweeps */}
+        {/* Line 2: Highlight Words (reveals smoothly underneath Line 1 with highlight pill sweep) */}
         <span
           style={{
             display: "inline-flex",
             alignItems: "center",
-            columnGap: "0.28em",
-            whiteSpace: "nowrap",
-            marginLeft: "0.25rem",
+            justifyContent: "center",
+            marginTop: "0.25rem",
             opacity: showReveal ? 1 : 0,
             transform: `translateY(${showReveal ? 0 : 12}px)`,
             filter: `blur(${showReveal ? 0 : 6}px)`,
@@ -230,7 +222,7 @@ export function HeroTitleAnimation({
               display: "inline-flex",
               alignItems: "center",
               columnGap: "0.28em",
-              padding: "0.18rem 0.65rem",
+              padding: "0.22rem 0.85rem",
             }}
           >
             {/* Highlight box sweeps left → right */}
@@ -241,9 +233,9 @@ export function HeroTitleAnimation({
                 bottom: 0,
                 left: 0,
                 right: 0,
-                borderRadius: "var(--radius-md, 12px)",
+                borderRadius: "var(--radius-md, 14px)",
                 backgroundColor: "var(--text-color, #262626)",
-                boxShadow: "3px 3px 8px var(--neumorph-dark), -3px -3px 8px var(--neumorph-light)",
+                boxShadow: "4px 4px 10px var(--neumorph-dark), -4px -4px 10px var(--neumorph-light)",
                 pointerEvents: "none",
                 transformOrigin: "left center",
                 transform: `scaleX(${showHighlight ? 1 : 0})`,

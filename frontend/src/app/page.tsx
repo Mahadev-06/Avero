@@ -182,7 +182,7 @@ export default function Home() {
           {/* Main Headline (H1) with Ruixen HeroTitleAnimation */}
           <div style={{ marginBottom: '2.5rem', width: '100%', display: 'flex', justifyContent: 'center' }}>
             <HeroTitleAnimation
-              brandWords={["Free", "All-in-One", "Social", "Media"]}
+              brandWords={["Free", "Social", "Media"]}
               highlightWords={["Video & Image Downloader"]}
             />
           </div>
