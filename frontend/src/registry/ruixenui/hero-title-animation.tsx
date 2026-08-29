@@ -83,15 +83,15 @@ export function HeroTitleAnimation({
 
   const titleBaseStyle: React.CSSProperties = {
     fontFamily: "var(--font-geist-sans), sans-serif",
-    fontSize: "clamp(1.25rem, 2.6vw, 1.85rem)",
+    fontSize: "clamp(1.65rem, 3.4vw, 2.35rem)",
     fontWeight: 500,
-    letterSpacing: "-0.015em",
+    letterSpacing: "-0.02em",
     lineHeight: 1.28,
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
     justifyContent: "center",
-    rowGap: "0.45rem",
+    rowGap: "0.65rem",
     color: "var(--text-color, #262626)",
     textAlign: "center",
     margin: 0,
@@ -107,7 +107,7 @@ export function HeroTitleAnimation({
         width: "100%",
         display: "flex",
         justifyContent: "center",
-        paddingBottom: "0.5rem",
+        paddingBottom: "0.6rem",
         ...style,
       }}
     >
@@ -146,7 +146,7 @@ export function HeroTitleAnimation({
             display: "inline-flex",
             alignItems: "center",
             justifyContent: "center",
-            marginTop: "0.25rem",
+            marginTop: "0.35rem",
           }}
         >
           <span
@@ -155,7 +155,7 @@ export function HeroTitleAnimation({
               display: "inline-flex",
               alignItems: "center",
               columnGap: "0.28em",
-              padding: "0.22rem 0.85rem",
+              padding: "0.28rem 1.15rem",
             }}
           >
             {highlightWords.map((w, i) => (
@@ -208,9 +208,9 @@ export function HeroTitleAnimation({
             display: "inline-flex",
             alignItems: "center",
             justifyContent: "center",
-            marginTop: "0.25rem",
+            marginTop: "0.35rem",
             opacity: showReveal ? 1 : 0,
-            transform: `translateY(${showReveal ? 0 : 12}px)`,
+            transform: `translateY(${showReveal ? 0 : 14}px)`,
             filter: `blur(${showReveal ? 0 : 6}px)`,
             transition:
               "opacity 0.5s cubic-bezier(0.25,0.46,0.45,0.94), transform 0.5s cubic-bezier(0.25,0.46,0.45,0.94), filter 0.5s cubic-bezier(0.25,0.46,0.45,0.94)",
@@ -222,7 +222,7 @@ export function HeroTitleAnimation({
               display: "inline-flex",
               alignItems: "center",
               columnGap: "0.28em",
-              padding: "0.22rem 0.85rem",
+              padding: "0.28rem 1.15rem",
             }}
           >
             {/* Highlight box sweeps left → right */}
@@ -233,9 +233,9 @@ export function HeroTitleAnimation({
                 bottom: 0,
                 left: 0,
                 right: 0,
-                borderRadius: "var(--radius-md, 14px)",
+                borderRadius: "var(--radius-lg, 18px)",
                 backgroundColor: "var(--text-color, #262626)",
-                boxShadow: "4px 4px 10px var(--neumorph-dark), -4px -4px 10px var(--neumorph-light)",
+                boxShadow: "4px 4px 12px var(--neumorph-dark), -4px -4px 12px var(--neumorph-light)",
                 pointerEvents: "none",
                 transformOrigin: "left center",
                 transform: `scaleX(${showHighlight ? 1 : 0})`,
