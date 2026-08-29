@@ -219,7 +219,7 @@ export const DotGridBackground: React.FC<DotGridBackgroundProps> = ({
           right: 0,
           bottom: 0,
           pointerEvents: "none",
-          background: "radial-gradient(circle at 50% 30%, transparent 40%, rgba(254, 255, 254, 0.6) 100%)",
+          background: "radial-gradient(circle at 50% 30%, transparent 40%, rgba(224, 224, 224, 0.45) 100%)",
         }}
       />
     </div>

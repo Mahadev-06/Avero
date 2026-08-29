@@ -1,40 +1,40 @@
 @import 'slot-text/style.css';
 
 :root {
-  /* Pristine #FEFFFE Pure Light Palette */
-  --bg-color: #FEFFFE;
-  --bg-subtle: #F3F5F3;
-  --card-bg: #FEFFFE;
-  --card-hover-bg: #FEFFFE;
-  --border-color: rgba(0, 0, 0, 0.08);
-  --border-subtle: rgba(0, 0, 0, 0.05);
-  --text-color: #1a1a1a;
-  --text-muted: #555555;
-  --text-faint: #888888;
-  --input-bg: #FEFFFE;
-  --input-focus-bg: #FEFFFE;
+  /* Neumorphism.io Pure #e0e0e0 Light Palette */
+  --bg-color: #e0e0e0;
+  --bg-subtle: #d6d6d6;
+  --card-bg: #e0e0e0;
+  --card-hover-bg: #e0e0e0;
+  --border-color: rgba(255, 255, 255, 0.45);
+  --border-subtle: rgba(190, 190, 190, 0.4);
+  --text-color: #262626;
+  --text-muted: #595959;
+  --text-faint: #858585;
+  --input-bg: #e0e0e0;
+  --input-focus-bg: #e0e0e0;
   
-  /* Neumorphic Dual Light Shadows for #FEFFFE */
+  /* Neumorphic Dual Light Shadows (Base #e0e0e0) */
   --neumorph-light: #ffffff;
-  --neumorph-dark: #d5d8d5;
+  --neumorph-dark: #bebebe;
   
-  --nm-convex: linear-gradient(145deg, #ffffff, #edf0ed);
-  --nm-concave: linear-gradient(145deg, #edf0ed, #ffffff);
+  --nm-convex: linear-gradient(145deg, #f0f0f0, #cacaca);
+  --nm-concave: linear-gradient(145deg, #cacaca, #f0f0f0);
   
-  --nm-raised-sm: 4px 4px 10px rgba(0, 0, 0, 0.06), -4px -4px 10px #ffffff;
-  --nm-raised-md: 8px 8px 20px rgba(0, 0, 0, 0.07), -8px -8px 20px #ffffff;
-  --nm-raised-lg: 16px 16px 32px rgba(0, 0, 0, 0.08), -16px -16px 32px #ffffff;
+  --nm-raised-sm: 5px 5px 10px #bebebe, -5px -5px 10px #ffffff;
+  --nm-raised-md: 10px 10px 20px #bebebe, -10px -10px 20px #ffffff;
+  --nm-raised-lg: 16px 16px 32px #bebebe, -16px -16px 32px #ffffff;
   
-  --nm-inset-sm: inset 4px 4px 8px rgba(0, 0, 0, 0.06), inset -4px -4px 8px #ffffff;
-  --nm-inset-md: inset 6px 6px 14px rgba(0, 0, 0, 0.07), inset -6px -6px 14px #ffffff;
-  --nm-inset-deep: inset 8px 8px 18px rgba(0, 0, 0, 0.08), inset -8px -8px 18px #ffffff;
+  --nm-inset-sm: inset 5px 5px 10px #bebebe, inset -5px -5px 10px #ffffff;
+  --nm-inset-md: inset 7px 7px 14px #bebebe, inset -7px -7px 14px #ffffff;
+  --nm-inset-deep: inset 10px 10px 20px #bebebe, inset -10px -10px 20px #ffffff;
   
   --neumorph-shadow: var(--nm-raised-sm);
-  --neumorph-shadow-hover: 2px 2px 6px rgba(0, 0, 0, 0.06), -2px -2px 6px #ffffff;
+  --neumorph-shadow-hover: 3px 3px 6px #bebebe, -3px -3px 6px #ffffff;
   --neumorph-shadow-active: var(--nm-inset-sm);
 
-  --neumorph-primary-shadow: 6px 6px 14px rgba(0, 0, 0, 0.07), -6px -6px 14px #ffffff;
-  --neumorph-primary-hover: 3px 3px 8px rgba(0, 0, 0, 0.07), -3px -3px 8px #ffffff;
+  --neumorph-primary-shadow: 6px 6px 12px #bebebe, -6px -6px 12px #ffffff;
+  --neumorph-primary-hover: 3px 3px 6px #bebebe, -3px -3px 6px #ffffff;
 
   /* Brand Accent Colors */
   --color-primary-500: #bf7540;
