@@ -92,6 +92,7 @@ const jsonLd = {
 
 import { SmoothScroll } from '@/components/layout/smooth-scroll';
 import MagicCursor from '@/components/ui/magic-cursor';
+import { DotGridBackground } from '@/components/ui/dot-grid-background';
 
 export default function RootLayout({
   children,
@@ -107,9 +108,10 @@ export default function RootLayout({
         />
       </head>
       <body>
+        <DotGridBackground />
         <MagicCursor />
         <SmoothScroll>
-          <div className="flex flex-col" style={{ minHeight: '100vh' }}>
+          <div className="flex flex-col relative z-10" style={{ minHeight: '100vh' }}>
             <Header />
             <main style={{ flex: 1 }}>{children}</main>
             <Footer />
