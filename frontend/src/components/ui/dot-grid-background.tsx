@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useRef } from "react";
-import { cn } from "@/lib/utils";
 
 export interface DotGridBackgroundProps {
   /** Size of each dot in pixels */
@@ -22,6 +21,8 @@ export interface DotGridBackgroundProps {
   cursorStrength?: number;
   /** Additional CSS classes */
   className?: string;
+  /** Optional inline style override */
+  style?: React.CSSProperties;
 }
 
 export const DotGridBackground: React.FC<DotGridBackgroundProps> = ({
@@ -34,6 +35,7 @@ export const DotGridBackground: React.FC<DotGridBackgroundProps> = ({
   cursorRadius = 140,
   cursorStrength = 0.7,
   className,
+  style,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const mouseRef = useRef({ x: -1000, y: -1000 });
@@ -56,10 +58,9 @@ export const DotGridBackground: React.FC<DotGridBackgroundProps> = ({
     }[] = [];
 
     const handleMouseMove = (e: MouseEvent) => {
-      const rect = canvas.getBoundingClientRect();
       mouseRef.current = {
-        x: e.clientX - rect.left,
-        y: e.clientY - rect.top,
+        x: e.clientX,
+        y: e.clientY,
       };
     };
 
@@ -183,15 +184,41 @@ export const DotGridBackground: React.FC<DotGridBackgroundProps> = ({
 
   return (
     <div
-      className={cn("fixed inset-0 pointer-events-none -z-10 overflow-hidden", className)}
-      style={{ backgroundColor: "transparent" }}
+      className={className}
+      style={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        width: "100vw",
+        height: "100vh",
+        pointerEvents: "none",
+        zIndex: 0,
+        overflow: "hidden",
+        backgroundColor: "transparent",
+        ...style,
+      }}
       aria-hidden="true"
     >
-      <canvas ref={canvasRef} className="block w-full h-full" />
+      <canvas
+        ref={canvasRef}
+        style={{
+          display: "block",
+          width: "100%",
+          height: "100%",
+          pointerEvents: "none",
+        }}
+      />
       {/* Subtle radial depth gradient preserving website's exact background color */}
       <div
-        className="absolute inset-0 pointer-events-none"
         style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          pointerEvents: "none",
           background: "radial-gradient(circle at 50% 30%, transparent 40%, rgba(224, 224, 224, 0.45) 100%)",
         }}
       />

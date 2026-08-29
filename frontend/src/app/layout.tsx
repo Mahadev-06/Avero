@@ -111,7 +111,7 @@ export default function RootLayout({
         <DotGridBackground />
         <MagicCursor />
         <SmoothScroll>
-          <div className="flex flex-col relative z-10" style={{ minHeight: '100vh' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', position: 'relative', zIndex: 1 }}>
             <Header />
             <main style={{ flex: 1 }}>{children}</main>
             <Footer />
