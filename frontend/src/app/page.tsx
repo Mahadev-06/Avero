@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { FlaticonIcons } from '@/components/ui/icons';
 import { TextLoop } from '@/components/core/text-loop';
+import { HeroTitleAnimation } from '@/registry/ruixenui/hero-title-animation';
 import { AveroLogo } from '@/components/ui/avero-logo';
 import { SocialShareButton } from '@/components/ui/social-share';
 import { 
@@ -178,65 +179,13 @@ export default function Home() {
       <section className="hero-section" style={{ paddingTop: '9.5rem', paddingBottom: '4.5rem', textAlign: 'center' }}>
         <div className="container" style={{ maxWidth: '1180px' }}>
           
-          {/* Main Headline (H1) with 3D TextLoop Animation */}
-          <h1
-            className="hero-title"
-            style={{
-              fontFamily: 'var(--font-heading)',
-              fontSize: 'clamp(1.25rem, 2.4vw, 1.85rem)',
-              fontWeight: 500,
-              letterSpacing: '-0.015em',
-              marginBottom: '2.5rem',
-              lineHeight: 1.3,
-              display: 'inline-flex',
-              alignItems: 'baseline',
-              justifyContent: 'center',
-              flexWrap: 'wrap',
-              gap: '0.28em',
-              color: 'var(--text-color)',
-            }}
-          >
-            <span>Free</span>
-            <TextLoop
-              className="overflow-y-clip"
-              interval={1.85}
-              transition={{
-                type: 'spring',
-                stiffness: 450,
-                damping: 32,
-                mass: 0.8,
-              }}
-              variants={{
-                initial: {
-                  y: '80%',
-                  rotateX: 85,
-                  opacity: 0,
-                  filter: 'blur(3px)',
-                },
-                animate: {
-                  y: '0%',
-                  rotateX: 0,
-                  opacity: 1,
-                  filter: 'blur(0px)',
-                },
-                exit: {
-                  y: '-80%',
-                  rotateX: -85,
-                  opacity: 0,
-                  filter: 'blur(3px)',
-                },
-              }}
-            >
-              <span>TikTok</span>
-              <span>Instagram</span>
-              <span>Pinterest</span>
-              <span>Reddit</span>
-              <span>Threads</span>
-              <span>Facebook</span>
-              <span>X (Twitter)</span>
-            </TextLoop>
-            <span>Video & Image Downloader</span>
-          </h1>
+          {/* Main Headline (H1) with Ruixen HeroTitleAnimation */}
+          <div style={{ marginBottom: '2.5rem', width: '100%', display: 'flex', justifyContent: 'center' }}>
+            <HeroTitleAnimation
+              brandWords={["Free", "All-in-One", "Social", "Media"]}
+              highlightWords={["Video & Image Downloader"]}
+            />
+          </div>
 
           {/* Search & Paste Bar Component */}
           <UrlInput />
