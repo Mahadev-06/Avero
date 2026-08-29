@@ -11,9 +11,9 @@ export interface DotGridBackgroundProps {
   blinkProbability?: number;
   /** Speed at which dots fade in/out [0, 1] */
   blinkSpeed?: number;
-  /** Base RGB color of the dots: [r, g, b] (default: subtle neumorphic gray [140, 140, 140]) */
+  /** Base RGB color of the dots: [r, g, b] (default: sleek black [0, 0, 0]) */
   dotRgb?: [number, number, number];
-  /** Glow RGB color when hovered: [r, g, b] (default: amber accent [245, 158, 11]) */
+  /** Glow RGB color when hovered: [r, g, b] (default: sleek black [0, 0, 0]) */
   glowRgb?: [number, number, number];
   /** Radius around the cursor where dots light up */
   cursorRadius?: number;
@@ -26,14 +26,14 @@ export interface DotGridBackgroundProps {
 }
 
 export const DotGridBackground: React.FC<DotGridBackgroundProps> = ({
-  dotSize = 1.2,
+  dotSize = 1.25,
   gap = 18,
   blinkProbability = 0.006,
   blinkSpeed = 0.04,
-  dotRgb = [140, 140, 140],
-  glowRgb = [245, 158, 11], // Subtle amber accent matching Avero brand
+  dotRgb = [0, 0, 0], // Black dots
+  glowRgb = [0, 0, 0], // Black hover effect
   cursorRadius = 140,
-  cursorStrength = 0.7,
+  cursorStrength = 0.75,
   className,
   style,
 }) => {
@@ -93,7 +93,7 @@ export const DotGridBackground: React.FC<DotGridBackgroundProps> = ({
         for (let j = 0; j <= rows; j++) {
           const x = i * gap;
           const y = j * gap;
-          const initialOpacity = 0.04 + Math.random() * 0.12;
+          const initialOpacity = 0.04 + Math.random() * 0.1;
 
           dots.push({
             x,
@@ -108,7 +108,7 @@ export const DotGridBackground: React.FC<DotGridBackgroundProps> = ({
       // Stray dots for organic look
       const strayCount = Math.floor(cols * rows * 0.03);
       for (let k = 0; k < strayCount; k++) {
-        const initialOpacity = 0.06 + Math.random() * 0.14;
+        const initialOpacity = 0.05 + Math.random() * 0.12;
         dots.push({
           x: Math.random() * width,
           y: Math.random() * height,
@@ -135,7 +135,7 @@ export const DotGridBackground: React.FC<DotGridBackgroundProps> = ({
         const dot = dots[i];
 
         if (Math.random() < blinkProbability) {
-          dot.targetOpacity = Math.random() > 0.6 ? 0.35 + Math.random() * 0.25 : 0.04 + Math.random() * 0.08;
+          dot.targetOpacity = Math.random() > 0.6 ? 0.3 + Math.random() * 0.2 : 0.04 + Math.random() * 0.07;
         }
 
         dot.opacity += (dot.targetOpacity - dot.opacity) * blinkSpeed;
@@ -152,7 +152,7 @@ export const DotGridBackground: React.FC<DotGridBackgroundProps> = ({
         const finalOpacity = Math.min(0.95, dot.opacity + highlightLevel);
 
         ctx.beginPath();
-        ctx.arc(dot.x, dot.y, dot.size + (highlightLevel > 0 ? highlightLevel * 0.5 : 0), 0, Math.PI * 2);
+        ctx.arc(dot.x, dot.y, dot.size + (highlightLevel > 0 ? highlightLevel * 0.7 : 0), 0, Math.PI * 2);
 
         if (highlightLevel > 0) {
           const r = Math.round(dr + (gr - dr) * highlightLevel);
