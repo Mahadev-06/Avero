@@ -183,11 +183,11 @@ export default function Home() {
             className="hero-title"
             style={{
               fontFamily: 'var(--font-heading)',
-              fontSize: 'clamp(2.1rem, 4.3vw, 3.65rem)',
-              fontWeight: 850,
-              letterSpacing: '-0.035em',
-              marginBottom: '3rem',
-              lineHeight: 1.22,
+              fontSize: 'clamp(1.25rem, 2.4vw, 1.85rem)',
+              fontWeight: 500,
+              letterSpacing: '-0.015em',
+              marginBottom: '2.5rem',
+              lineHeight: 1.3,
               display: 'inline-flex',
               alignItems: 'baseline',
               justifyContent: 'center',

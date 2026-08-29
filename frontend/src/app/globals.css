@@ -788,7 +788,8 @@ button {
   }
 
   .hero-title {
-    font-size: clamp(1.65rem, 5.5vw, 2.75rem) !important;
+    font-size: clamp(1.15rem, 3.5vw, 1.55rem) !important;
+    font-weight: 500 !important;
     margin-bottom: 1.75rem !important;
     gap: 0.2em !important;
   }
@@ -926,7 +927,8 @@ button {
   }
 
   .hero-title {
-    font-size: clamp(1.45rem, 6.2vw, 2.1rem) !important;
+    font-size: clamp(1.05rem, 4vw, 1.35rem) !important;
+    font-weight: 500 !important;
     margin-bottom: 1.35rem !important;
   }
 
