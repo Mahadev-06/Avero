@@ -5,6 +5,7 @@ import { apiClient, MediaInfo, DownloadProgress, SearchResult } from '@/lib/api-
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { MediaPreview } from './media-preview';
+import { MediaPlayerCard } from './media-player-card';
 import { triggerFileDownload } from '@/lib/utils';
 import { Video, Music, Download, Clock, Search, Loader2, Copy, Check, Plus, Play, AlertCircle, Image as ImageIcon, Trash2, ArrowUpLeft, X, VolumeX, Clipboard } from 'lucide-react';
 import { TextShimmerWave } from '@/components/core/text-shimmer-wave';
@@ -1988,46 +1989,16 @@ export function UrlInput() {
                 }}
               >
                 <div className="nm-result-grid">
-                  {/* LEFT COLUMN: Media Preview + Title + Info */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-                    <div style={{ borderRadius: '16px', overflow: 'hidden', boxShadow: 'inset 2px 2px 6px var(--neumorph-dark), inset -2px -2px 6px var(--neumorph-light)', border: '1px solid rgba(255, 255, 255, 0.4)' }}>
-                      <MediaPreview
-                        url={item.info.url}
-                        thumbnailUrl={item.info.thumbnail_url}
-                        title={decodeHtmlEntities(item.info.title)}
-                        platform={item.info.platform}
-                        mediaType={item.info.media_type}
-                      />
-                    </div>
-
-                    <h3 className="text-balance" style={{ fontSize: '1.05rem', fontWeight: 800, lineHeight: 1.35, color: 'var(--text-color)', margin: '0.15rem 0' }}>
-                      {decodeHtmlEntities(item.info.title) || item.info.url}
-                    </h3>
-
-                    {item.info.duration && !isImageMedia ? (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
-                        <div
-                          className="tabular-nums"
-                          style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '0.35rem',
-                            height: '34px',
-                            padding: '0 0.75rem',
-                            borderRadius: 'var(--radius-full)',
-                            backgroundColor: 'var(--bg-color)',
-                            border: '1px solid rgba(255, 255, 255, 0.6)',
-                            boxShadow: '2px 2px 5px var(--neumorph-dark), -2px -2px 5px var(--neumorph-light)',
-                            color: '#16a34a',
-                            fontSize: '0.8rem',
-                            fontWeight: 800,
-                          }}
-                        >
-                          <Clock className="w-3.5 h-3.5 text-emerald-600" />
-                          <span>{formatDurationSeconds(item.info.duration || 59)}</span>
-                        </div>
-                      </div>
-                    ) : null}
+                  {/* LEFT COLUMN: Modern Media Player Card (Inspired by MusicPlayerCard) */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', width: '100%' }}>
+                    <MediaPlayerCard
+                      url={item.info.url}
+                      thumbnailUrl={item.info.thumbnail_url}
+                      title={decodeHtmlEntities(item.info.title) || item.info.url}
+                      platform={item.info.platform}
+                      mediaType={item.info.media_type}
+                      duration={item.info.duration || 59}
+                    />
 
                     {isUnsupported && (
                       <div
@@ -2035,14 +2006,13 @@ export function UrlInput() {
                           display: 'inline-flex',
                           alignItems: 'center',
                           gap: '0.35rem',
-                          padding: '0.2rem 0.65rem',
+                          padding: '0.35rem 0.75rem',
                           borderRadius: 'var(--radius-full)',
                           backgroundColor: 'rgba(239, 68, 68, 0.1)',
                           border: '1px solid rgba(239, 68, 68, 0.3)',
                           color: '#ef4444',
                           fontSize: '0.75rem',
                           fontWeight: 700,
-                          marginTop: '0.35rem',
                         }}
                       >
                         <AlertCircle className="w-3.5 h-3.5 text-red-500" />
@@ -2056,14 +2026,13 @@ export function UrlInput() {
                           display: 'inline-flex',
                           alignItems: 'center',
                           gap: '0.35rem',
-                          padding: '0.2rem 0.65rem',
+                          padding: '0.35rem 0.75rem',
                           borderRadius: 'var(--radius-full)',
                           backgroundColor: 'rgba(239, 68, 68, 0.1)',
                           border: '1px solid rgba(239, 68, 68, 0.3)',
                           color: '#ef4444',
                           fontSize: '0.75rem',
                           fontWeight: 700,
-                          marginTop: '0.35rem',
                         }}
                       >
                         <VolumeX className="w-3.5 h-3.5 text-red-500" />
