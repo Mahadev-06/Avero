@@ -1107,7 +1107,7 @@ button {
   background-color: var(--bg-color) !important;
   border: 1px solid rgba(255, 255, 255, 0.6) !important;
   box-shadow: 1px 1px 3px var(--neumorph-dark), -1px -1px 3px var(--neumorph-light) !important;
-  color: var(--color-accent-500) !important;
+  color: var(--text-color) !important;
   font-size: 0.72rem !important;
   font-weight: 900 !important;
   letter-spacing: 0.02em !important;

@@ -1876,7 +1876,7 @@ export function UrlInput() {
         <div style={{ marginTop: '2.5rem', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem', flexWrap: 'wrap', gap: '0.75rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
-              <div style={{ display: 'inline-flex', alignItems: 'center', height: '36px', padding: '0 1rem', borderRadius: 'var(--radius-full)', backgroundColor: 'var(--bg-color)', border: '1px solid rgba(255,255,255,0.6)', boxShadow: '3px 3px 6px var(--neumorph-dark), -3px -3px 6px var(--neumorph-light)', fontSize: '0.75rem', fontWeight: 800, letterSpacing: '0.08em', color: 'var(--color-accent-500)' }}>
+              <div style={{ display: 'inline-flex', alignItems: 'center', height: '36px', padding: '0 1rem', borderRadius: 'var(--radius-full)', backgroundColor: 'var(--bg-color)', border: '1px solid rgba(255,255,255,0.6)', boxShadow: '3px 3px 6px var(--neumorph-dark), -3px -3px 6px var(--neumorph-light)', fontSize: '0.75rem', fontWeight: 800, letterSpacing: '0.08em', color: 'var(--text-color)' }}>
                 {isMultiMode ? `BATCH DOWNLOAD (${results.length})` : `PROCESSED MEDIA (${results.length})`}
               </div>
 
@@ -1941,7 +1941,7 @@ export function UrlInput() {
               onClick={handleClearResults}
             >
               <Trash2 className="w-3.5 h-3.5 text-red-500" />
-              <span>Clear All</span>
+              <span>{results.length > 1 ? 'Clear All' : 'Clear'}</span>
             </button>
           </div>
 
