@@ -1,3 +1,5 @@
+"use client";
+
 import Link from 'next/link';
 import { AveroLogo } from '@/components/ui/avero-logo';
 import { WordmarkFooter } from '@/registry/ruixenui/wordmark-footer';
@@ -11,13 +13,15 @@ export function Footer() {
         backgroundColor: 'var(--bg-color)',
         color: 'var(--text-color)',
         borderTop: '1px solid rgba(255, 255, 255, 0.35)',
+        display: 'flex',
+        flexDirection: 'column',
       }}
     >
-      <div className="container" style={{ padding: '3.5rem 1.5rem 2.5rem 1.5rem' }}>
+      <div className="container" style={{ padding: '3.5rem 1.5rem 1.5rem 1.5rem', width: '100%' }}>
         <div className="footer-content" style={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: '3rem' }}>
           
-          {/* Left Side: Brand Logo & Description */}
-          <div style={{ maxWidth: '340px', flexShrink: 0 }}>
+          {/* Left Side: Brand Logo, Description, Developer & Copyright Info */}
+          <div style={{ maxWidth: '360px', flexShrink: 0 }}>
             <div style={{ marginBottom: '1.25rem' }}>
               <AveroLogo height={26} />
             </div>
@@ -34,25 +38,32 @@ export function Footer() {
             >
               Minimal, policy-compliant media utility platform. High-performance processing with zero bloat.
             </p>
-            <div>
-              <a
-                href="https://www.mahadevpatro.dev/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-muted hover:text-foreground transition-colors"
-                style={{
-                  fontSize: '0.88rem',
-                  fontWeight: 700,
-                  color: 'var(--text-color)',
-                  textDecoration: 'none',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '0.35rem',
-                }}
-              >
-                <span>Meet the Developer</span>
-                <span style={{ fontSize: '0.75rem', opacity: 0.7 }}>↗</span>
-              </a>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem', marginTop: '1rem' }}>
+              <div>
+                <a
+                  href="https://www.mahadevpatro.dev/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-muted hover:text-foreground transition-colors"
+                  style={{
+                    fontSize: '0.86rem',
+                    fontWeight: 700,
+                    color: 'var(--text-color)',
+                    textDecoration: 'none',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.35rem',
+                  }}
+                >
+                  <span>Meet the Developer</span>
+                  <span style={{ fontSize: '0.75rem', opacity: 0.7 }}>↗</span>
+                </a>
+              </div>
+
+              <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 550 }}>
+                © {new Date().getFullYear()} AVERO. All-in-One Media Downloader.
+              </div>
             </div>
           </div>
 
@@ -129,7 +140,7 @@ export function Footer() {
                 </li>
                 <li>
                   <Link href="/#faq" className="text-muted hover:text-foreground transition-colors" style={{ fontSize: '0.88rem', fontWeight: 600, whiteSpace: 'nowrap' }}>
-                    FAQ & Questions
+                    FAQ &amp; Questions
                   </Link>
                 </li>
               </ul>
@@ -147,7 +158,7 @@ export function Footer() {
                   marginBottom: '1rem',
                 }}
               >
-                Legal & Compliance
+                Legal &amp; Compliance
               </div>
               <ul style={{ listStyleType: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
                 <li>
@@ -178,45 +189,10 @@ export function Footer() {
         </div>
       </div>
 
-      {/* Interactive Metallic Wordmark Footer */}
-      <WordmarkFooter brandName="AVERO" />
-
-      {/* Bottom Copyright Bar */}
-      <div
-        style={{
-          borderTop: '1px solid rgba(0, 0, 0, 0.08)',
-          padding: '1.25rem 1rem',
-          textAlign: 'center',
-          fontSize: '0.82rem',
-          fontWeight: 600,
-          color: 'var(--text-muted)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          flexWrap: 'wrap',
-          gap: '0.45rem',
-        }}
-      >
-        <span>© {new Date().getFullYear()} AVERO. All-in-One Media Downloader.</span>
-        <span>•</span>
-        <span>
-          Crafted by{' '}
-          <a
-            href="https://www.mahadevpatro.dev/"
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-              color: 'var(--text-color)',
-              fontWeight: 750,
-              textDecoration: 'none',
-              borderBottom: '1px dotted var(--color-accent-500)',
-            }}
-            className="hover:underline"
-          >
-            Mahadev Patro ↗
-          </a>
-        </span>
-      </div>
+      {/* Interactive Giant Metallic Wordmark Anchored to Very Bottom */}
+      <WordmarkFooter />
     </footer>
   );
 }
+
+export default Footer;
