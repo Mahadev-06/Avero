@@ -19,23 +19,9 @@ export function Footer() {
       <div className="container" style={{ padding: '3.5rem 1.5rem 1rem 1.5rem', width: '100%' }}>
         <div className="footer-content" style={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: '3rem' }}>
           
-          {/* Left Side: Brand Description, Developer & Copyright Info (Clean text without duplicate small logo) */}
+          {/* Left Side: Developer & Copyright Info */}
           <div style={{ maxWidth: '360px', flexShrink: 0 }}>
-            <p
-              style={{
-                fontSize: '0.9rem',
-                lineHeight: 1.65,
-                color: 'var(--text-muted)',
-                fontWeight: 500,
-                letterSpacing: '-0.01em',
-                margin: 0,
-                marginBottom: '1.25rem',
-              }}
-            >
-              Minimal, policy-compliant media utility platform. High-performance processing with zero bloat.
-            </p>
-            
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem', marginTop: '1rem' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
               <div>
                 <a
                   href="https://www.mahadevpatro.dev/"
