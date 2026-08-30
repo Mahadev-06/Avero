@@ -1,7 +1,6 @@
 "use client";
 
 import Link from 'next/link';
-import { AveroLogo } from '@/components/ui/avero-logo';
 import { WordmarkFooter } from '@/registry/ruixenui/wordmark-footer';
 
 export function Footer() {
@@ -17,23 +16,20 @@ export function Footer() {
         flexDirection: 'column',
       }}
     >
-      <div className="container" style={{ padding: '3.5rem 1.5rem 1.5rem 1.5rem', width: '100%' }}>
+      <div className="container" style={{ padding: '3.5rem 1.5rem 1rem 1.5rem', width: '100%' }}>
         <div className="footer-content" style={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: '3rem' }}>
           
-          {/* Left Side: Brand Logo, Description, Developer & Copyright Info */}
+          {/* Left Side: Brand Description, Developer & Copyright Info (Clean text without duplicate small logo) */}
           <div style={{ maxWidth: '360px', flexShrink: 0 }}>
-            <div style={{ marginBottom: '1.25rem' }}>
-              <AveroLogo height={26} />
-            </div>
             <p
               style={{
-                fontSize: '0.88rem',
+                fontSize: '0.9rem',
                 lineHeight: 1.65,
                 color: 'var(--text-muted)',
                 fontWeight: 500,
                 letterSpacing: '-0.01em',
                 margin: 0,
-                marginBottom: '1.15rem',
+                marginBottom: '1.25rem',
               }}
             >
               Minimal, policy-compliant media utility platform. High-performance processing with zero bloat.
@@ -189,7 +185,7 @@ export function Footer() {
         </div>
       </div>
 
-      {/* Interactive Giant Metallic Wordmark Anchored to Very Bottom */}
+      {/* Seamless Interactive Wordmark without separating lines or cropping */}
       <WordmarkFooter />
     </footer>
   );

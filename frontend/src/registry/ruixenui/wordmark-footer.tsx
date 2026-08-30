@@ -5,8 +5,8 @@ import { motion } from "motion/react";
 
 /**
  * Wordmark Footer — AVERO Edition.
- * Giant full-width brand wordmark anchored to the very bottom of the page
- * with interactive cursor-tracking pearl white illumination and subtle half-cut.
+ * Fully responsive, uncropped brand watermark seamlessly integrated into the footer
+ * with interactive cursor-following pearl white illumination.
  */
 
 interface WordmarkFooterProps {
@@ -17,10 +17,6 @@ interface WordmarkFooterProps {
 function makeShine(x: number, y: number): string {
   return `radial-gradient(ellipse 90% 90% at ${x.toFixed(1)}% ${y.toFixed(1)}%, #ffffff 0%, rgba(255, 255, 255, 0.96) 28%, rgba(235, 235, 240, 0.65) 60%, rgba(215, 215, 225, 0.35) 100%)`;
 }
-
-/* ── Vertical mask — dims bottom for subtle half-cut fade ── */
-const VMASK =
-  "linear-gradient(to bottom, black 0%, black 52%, rgba(0,0,0,0.75) 82%, rgba(0,0,0,0.3) 100%)";
 
 export function WordmarkFooter({ className }: WordmarkFooterProps) {
   const [inView, setInView] = useState(false);
@@ -109,39 +105,33 @@ export function WordmarkFooter({ className }: WordmarkFooterProps) {
         position: "relative",
         width: "100%",
         overflow: "hidden",
-        backgroundColor: "var(--bg-color)",
-        height: "clamp(150px, 21vw, 280px)",
+        backgroundColor: "transparent",
+        padding: "2.5rem 1.5rem 3.5rem 1.5rem",
         display: "flex",
-        alignItems: "flex-end",
+        alignItems: "center",
         justifyContent: "center",
-        borderTop: "1px solid rgba(255, 255, 255, 0.45)",
-        boxShadow: "inset 0 4px 12px var(--neumorph-dark)",
-        marginTop: "1.5rem",
-        paddingBottom: "0",
       }}
     >
-      {/* ── Wordmark — anchored to bottom edge, perfectly sized ── */}
+      {/* ── Wordmark — Centered, perfectly proportioned, no zoom or clipping ── */}
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 14 }}
         animate={inView ? { opacity: 1, y: 0 } : {}}
         transition={{ type: "spring", stiffness: 260, damping: 28 }}
         style={{
           width: "100%",
-          maxWidth: "1340px",
-          height: "100%",
+          maxWidth: "1180px",
           display: "flex",
-          alignItems: "flex-end",
+          alignItems: "center",
           justifyContent: "center",
-          padding: "0 clamp(16px, 3vw, 48px)",
           pointerEvents: "none",
         }}
       >
-        {/* Exact AVERO Logo rendered with alpha-mask, expansive responsive sizing */}
+        {/* Exact AVERO Logo rendered with alpha-mask and full containment */}
         <div
           ref={logoRef}
           style={{
-            width: "clamp(300px, 88vw, 1240px)",
-            height: "clamp(80px, 18vw, 220px)",
+            width: "min(88vw, 860px)",
+            height: "clamp(60px, 11vw, 135px)",
             backgroundImage: makeShine(50, 30),
             WebkitMaskImage: "url(/avero-logo-white.png)",
             maskImage: "url(/avero-logo-white.png)",
@@ -149,12 +139,11 @@ export function WordmarkFooter({ className }: WordmarkFooterProps) {
             maskSize: "contain",
             WebkitMaskRepeat: "no-repeat",
             maskRepeat: "no-repeat",
-            WebkitMaskPosition: "bottom center",
-            maskPosition: "bottom center",
-            filter: "drop-shadow(0 4px 10px rgba(0, 0, 0, 0.12)) drop-shadow(0 -1px 3px rgba(255, 255, 255, 0.95))",
+            WebkitMaskPosition: "center",
+            maskPosition: "center",
+            filter: "drop-shadow(0 3px 6px rgba(0, 0, 0, 0.10)) drop-shadow(0 -1px 2px rgba(255, 255, 255, 0.95))",
             opacity: 0.96,
             transition: "filter 0.3s ease",
-            transform: "translateY(6%)",
           }}
         />
       </motion.div>
