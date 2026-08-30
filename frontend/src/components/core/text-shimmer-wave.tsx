@@ -22,8 +22,14 @@ export function TextShimmerWave({
   children,
   as: Component = 'span',
   className,
-  duration = 1.2,
+  duration = 1,
   spread = 1,
+  zDistance = 1,
+  scaleDistance = 1.1,
+  rotateYDistance = 20,
+  rotateXDistance = 0,
+  xDistance = 0,
+  yDistance = -2,
   style,
 }: TextShimmerWaveProps) {
   const letters = useMemo(() => children.split(''), [children]);
@@ -35,6 +41,13 @@ export function TextShimmerWave({
         display: 'inline-flex',
         whiteSpace: 'pre',
         perspective: '500px',
+        // @ts-expect-error CSS variable
+        '--tsw-z': `${zDistance * 6}px`,
+        '--tsw-scale': scaleDistance,
+        '--tsw-rot-y': `${rotateYDistance}deg`,
+        '--tsw-rot-x': `${rotateXDistance}deg`,
+        '--tsw-y': `${yDistance}px`,
+        '--tsw-x': `${xDistance}px`,
         ...style,
       }}
     >

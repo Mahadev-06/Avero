@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { FlaticonIcons } from '@/components/ui/icons';
 import { TextLoop } from '@/components/core/text-loop';
 import { HeroTitleAnimation } from '@/registry/ruixenui/hero-title-animation';
+import { ArcRevealHero } from "@/registry/ruixenui/arc-reveal-hero";
 import { AveroLogo } from '@/components/ui/avero-logo';
 import { SocialShareButton } from '@/components/ui/social-share';
 import { 
@@ -170,7 +171,8 @@ export default function Home() {
   };
 
   return (
-    <div style={{ paddingBottom: '2.5rem' }}>
+    <ArcRevealHero>
+      <div style={{ paddingBottom: '2.5rem' }}>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
@@ -557,5 +559,6 @@ export default function Home() {
       </section>
 
     </div>
+    </ArcRevealHero>
   );
 }

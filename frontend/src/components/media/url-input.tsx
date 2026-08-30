@@ -9,6 +9,7 @@ import { MediaPlayerCard } from './media-player-card';
 import { triggerFileDownload } from '@/lib/utils';
 import { Video, Music, Download, Clock, Search, Loader2, Copy, Check, Plus, Play, AlertCircle, Image as ImageIcon, Trash2, ArrowUpLeft, X, VolumeX, Clipboard } from 'lucide-react';
 import { TextShimmerWave } from '@/components/core/text-shimmer-wave';
+import { motion, AnimatePresence } from 'motion/react';
 
 import { detectPlatform } from '@/lib/url-parser';
 
@@ -324,6 +325,7 @@ export function UrlInput() {
   const [results, setResults] = useState<VideoResultItem[]>([]);
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [activeMediaTabs, setActiveMediaTabs] = useState<Record<string, 'video' | 'audio'>>({});
 
   // Recent Downloads State (persisted via localStorage)
   const [recentDownloads, setRecentDownloads] = useState<RecentDownloadItem[]>([]);
@@ -1514,8 +1516,10 @@ export function UrlInput() {
                 </button>
               )}
 
-              <button
+              <motion.button
                 type="submit"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.90 }}
                 disabled={analyzing || searching}
                 aria-label="Process link or search"
                 className="pill-btn-black submit-action-btn"
@@ -1534,7 +1538,6 @@ export function UrlInput() {
                   fontWeight: 800,
                   flexShrink: 0,
                   cursor: analyzing || searching ? 'wait' : 'pointer',
-                  transition: 'all 0.25s cubic-bezier(0.2, 0, 0, 1)',
                   position: 'relative',
                   zIndex: 10,
                 }}
@@ -1548,9 +1551,9 @@ export function UrlInput() {
                     <span className="submit-btn-text">{isSearchMode ? 'Searching...' : 'Analyzing...'}</span>
                   </>
                 ) : (
-                  <span>➔</span>
+                  <span style={{ display: 'inline-block', transition: 'transform 0.12s ease' }}>➔</span>
                 )}
-              </button>
+              </motion.button>
             </div>
           </div>
         )}
@@ -2054,14 +2057,12 @@ export function UrlInput() {
 
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '0.55rem' }}>
                           <TextShimmerWave
-                            className="text-xs font-extrabold"
-                            duration={1.2}
+                            className="[--base-color:#0D74CE] [--base-gradient-color:#5EB1EF] text-xs font-extrabold"
+                            duration={1}
                             spread={1}
-                            style={{
-                              // @ts-expect-error CSS variable
-                              '--base-color': 'var(--text-color)',
-                              '--base-gradient-color': 'var(--color-accent-500)',
-                            }}
+                            zDistance={1}
+                            scaleDistance={1.1}
+                            rotateYDistance={20}
                           >
                             {item.progress.status === 'CONVERTING'
                               ? 'Processing file...'
@@ -2083,11 +2084,11 @@ export function UrlInput() {
                                 padding: '0.15rem 0.55rem',
                                 borderRadius: 'var(--radius-full)',
                                 backgroundColor: 'var(--bg-color)',
-                                border: '1px solid rgba(255, 255, 255, 0.7)',
+                                border: '1px solid rgba(94, 177, 239, 0.45)',
                                 boxShadow: '2px 2px 4px var(--neumorph-dark), -2px -2px 4px var(--neumorph-light)',
                                 fontSize: '0.75rem',
                                 fontWeight: 900,
-                                color: 'var(--color-accent-500)',
+                                color: '#0D74CE',
                               }}
                             >
                               {item.progress.percent.toFixed(1)}%
@@ -2212,157 +2213,248 @@ export function UrlInput() {
                           </div>
                         </div>
                       ) : (
-                        <>
-                          <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', fontSize: '0.98rem', fontWeight: 800, color: 'var(--text-color)', marginBottom: '0.75rem' }}>
-                              <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '26px', height: '26px', borderRadius: '7px', backgroundColor: 'var(--bg-color)', border: '1px solid rgba(255, 255, 255, 0.6)', boxShadow: '2px 2px 4px var(--neumorph-dark), -2px -2px 4px var(--neumorph-light)' }}>
-                                <Video className="w-3.5 h-3.5 text-emerald-600" />
-                              </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, width: '100%' }}>
+                          {/* SIDE BY SIDE TABS FOR VIDEO & AUDIO WITH FLOATING PILL ANIMATION */}
+                          <div
+                            style={{
+                              position: 'relative',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              padding: '4px',
+                              borderRadius: '9999px',
+                              backgroundColor: 'var(--bg-color)',
+                              boxShadow: 'inset 3px 3px 6px var(--neumorph-dark), inset -3px -3px 6px var(--neumorph-light)',
+                              border: '1px solid rgba(255, 255, 255, 0.5)',
+                              marginBottom: '1rem',
+                              width: 'fit-content',
+                              userSelect: 'none',
+                            }}
+                          >
+                            <button
+                              type="button"
+                              onClick={() => setActiveMediaTabs((prev) => ({ ...prev, [item.id]: 'video' }))}
+                              style={{
+                                position: 'relative',
+                                zIndex: 10,
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '0.45rem',
+                                padding: '0.45rem 1.25rem',
+                                borderRadius: '9999px',
+                                fontSize: '0.85rem',
+                                fontWeight: 800,
+                                cursor: 'pointer',
+                                border: 'none',
+                                backgroundColor: 'transparent',
+                                color: (activeMediaTabs[item.id] || 'video') === 'video' ? 'var(--text-color)' : 'var(--text-muted)',
+                                transition: 'color 0.2s ease',
+                              }}
+                            >
+                              {(activeMediaTabs[item.id] || 'video') === 'video' && (
+                                <motion.div
+                                  layoutId={`active-format-pill-${item.id}`}
+                                  transition={{ type: "spring", stiffness: 450, damping: 32 }}
+                                  style={{
+                                    position: 'absolute',
+                                    inset: 0,
+                                    borderRadius: '9999px',
+                                    backgroundColor: 'var(--bg-color)',
+                                    boxShadow: '4px 4px 10px var(--neumorph-dark), -4px -4px 10px var(--neumorph-light)',
+                                    border: '1px solid rgba(255, 255, 255, 0.75)',
+                                    zIndex: -1,
+                                  }}
+                                />
+                              )}
+                              <Video className="w-4 h-4 text-emerald-600" />
                               <span>Video Formats</span>
-                            </div>
+                            </button>
 
-                            <div
+                            <button
+                              type="button"
+                              onClick={() => setActiveMediaTabs((prev) => ({ ...prev, [item.id]: 'audio' }))}
                               style={{
-                                border: '1px solid rgba(255, 255, 255, 0.5)',
-                                borderRadius: '16px',
-                                overflow: 'hidden',
-                                backgroundColor: 'var(--bg-color)',
-                                boxShadow: 'inset 2px 2px 5px var(--neumorph-dark), inset -2px -2px 5px var(--neumorph-light)',
+                                position: 'relative',
+                                zIndex: 10,
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '0.45rem',
+                                padding: '0.45rem 1.25rem',
+                                borderRadius: '9999px',
+                                fontSize: '0.85rem',
+                                fontWeight: 800,
+                                cursor: 'pointer',
+                                border: 'none',
+                                backgroundColor: 'transparent',
+                                color: (activeMediaTabs[item.id] || 'video') === 'audio' ? 'var(--text-color)' : 'var(--text-muted)',
+                                transition: 'color 0.2s ease',
                               }}
                             >
-                              {defaultVideo.map((opt, idx) => (
-                                <div
-                                  key={opt.format_id}
-                                  className="nm-format-row"
+                              {(activeMediaTabs[item.id] || 'video') === 'audio' && (
+                                <motion.div
+                                  layoutId={`active-format-pill-${item.id}`}
+                                  transition={{ type: "spring", stiffness: 450, damping: 32 }}
                                   style={{
-                                    borderBottom: idx === defaultVideo.length - 1 ? 'none' : '1px solid rgba(0, 0, 0, 0.05)',
-                                    backgroundColor: idx % 2 === 0 ? 'transparent' : 'rgba(0, 0, 0, 0.02)',
+                                    position: 'absolute',
+                                    inset: 0,
+                                    borderRadius: '9999px',
+                                    backgroundColor: 'var(--bg-color)',
+                                    boxShadow: '4px 4px 10px var(--neumorph-dark), -4px -4px 10px var(--neumorph-light)',
+                                    border: '1px solid rgba(255, 255, 255, 0.75)',
+                                    zIndex: -1,
                                   }}
-                                >
-                                  <div className="nm-format-info">
-                                    <span className="nm-format-badge">
-                                      {opt.ext}
-                                    </span>
-
-                                    <span className="nm-format-quality">
-                                      {opt.quality}
-                                    </span>
-
-                                    {opt.file_size_formatted && (
-                                      <span className="nm-format-size tabular-nums">
-                                        {opt.file_size_formatted}
-                                      </span>
-                                    )}
-                                  </div>
-
-                                  <button
-                                    type="button"
-                                    className="pill-btn nm-format-btn"
-                                    onClick={() => handleSpecificDownload(item, opt.ext, opt.quality)}
-                                    disabled={item.downloadState === 'downloading'}
-                                  >
-                                    {item.downloadState === 'downloading' && item.activeQuality === `${opt.ext} ${opt.quality}` ? (
-                                      <>
-                                        <div className="uiverse-spinner spinner-emerald" style={{ color: '#16a34a', marginRight: '3px' }}>
-                                          <div /><div /><div /><div /><div /><div /><div /><div /><div /><div />
-                                        </div>
-                                        <span>Downloading...</span>
-                                      </>
-                                    ) : (
-                                      <>
-                                        <Download className="w-3.5 h-3.5" /> <span>Download</span>
-                                      </>
-                                    )}
-                                  </button>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-
-                          {/* SUB-COLUMN 2: MUSIC / AUDIO OPTIONS */}
-                          <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', fontSize: '0.98rem', fontWeight: 800, color: 'var(--text-color)', marginBottom: '0.75rem' }}>
-                              <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '26px', height: '26px', borderRadius: '7px', backgroundColor: 'var(--bg-color)', border: '1px solid rgba(255, 255, 255, 0.6)', boxShadow: '2px 2px 4px var(--neumorph-dark), -2px -2px 4px var(--neumorph-light)' }}>
-                                <Music className="w-3.5 h-3.5 text-amber-600" />
-                              </div>
+                                />
+                              )}
+                              <Music className="w-4 h-4 text-amber-600" />
                               <span>Audio / MP3</span>
-                            </div>
-
-                            <div
-                              style={{
-                                border: '1px solid rgba(255, 255, 255, 0.5)',
-                                borderRadius: '16px',
-                                overflow: 'hidden',
-                                backgroundColor: 'var(--bg-color)',
-                                boxShadow: 'inset 2px 2px 5px var(--neumorph-dark), inset -2px -2px 5px var(--neumorph-light)',
-                              }}
-                            >
-                              {defaultAudio.map((opt, idx) => (
-                                <div
-                                  key={opt.format_id}
-                                  className="nm-format-row"
-                                  style={{
-                                    borderBottom: idx === defaultAudio.length - 1 ? 'none' : '1px solid rgba(0, 0, 0, 0.05)',
-                                    backgroundColor: idx % 2 === 0 ? 'transparent' : 'rgba(0, 0, 0, 0.02)',
-                                  }}
-                                >
-                                  <div className="nm-format-info">
-                                    <span className="nm-format-badge">
-                                      {opt.ext}
-                                    </span>
-
-                                    <span className="nm-format-quality">
-                                      {opt.quality}
-                                    </span>
-
-                                    {opt.file_size_formatted && (
-                                      <span className="nm-format-size tabular-nums">
-                                        {opt.file_size_formatted}
-                                      </span>
-                                    )}
-                                  </div>
-
-                                  <button
-                                    type="button"
-                                    className="pill-btn nm-format-btn"
-                                    style={{
-                                      color: '#16a34a',
-                                      fontWeight: 800,
-                                      fontSize: '0.78rem',
-                                      padding: '0.35rem 0.85rem',
-                                      display: 'inline-flex',
-                                      alignItems: 'center',
-                                      gap: '0.3rem',
-                                      minHeight: '32px',
-                                      cursor: 'pointer',
-                                      whiteSpace: 'nowrap',
-                                    }}
-                                    onClick={() => handleSpecificDownload(item, opt.ext, opt.quality)}
-                                    disabled={item.downloadState === 'downloading'}
-                                  >
-                                    {item.downloadState === 'downloading' && item.activeQuality === `${opt.ext} ${opt.quality}` ? (
-                                      <>
-                                        <div className="uiverse-spinner spinner-emerald" style={{ color: '#16a34a', marginRight: '3px' }}>
-                                          <div /><div /><div /><div /><div /><div /><div /><div /><div /><div />
-                                        </div>
-                                        <span>Downloading...</span>
-                                      </>
-                                    ) : (
-                                      <>
-                                        <Download className="w-3.5 h-3.5" /> <span>Download</span>
-                                      </>
-                                    )}
-                                  </button>
-                                </div>
-                              ))}
-                            </div>
+                            </button>
                           </div>
-                        </>
+
+                          {/* Render Active Tab's Table with Smooth Transition Animation */}
+                          <AnimatePresence mode="wait" initial={false}>
+                            {(activeMediaTabs[item.id] || 'video') === 'video' ? (
+                              <motion.div
+                                key={`video-tab-${item.id}`}
+                                initial={{ opacity: 0, y: 6, scale: 0.98 }}
+                                animate={{ opacity: 1, y: 0, scale: 1 }}
+                                exit={{ opacity: 0, y: -6, scale: 0.98 }}
+                                transition={{ duration: 0.2, ease: [0.2, 0, 0, 1] }}
+                                style={{
+                                  border: '1px solid rgba(255, 255, 255, 0.5)',
+                                  borderRadius: '16px',
+                                  overflow: 'hidden',
+                                  backgroundColor: 'var(--bg-color)',
+                                  boxShadow: 'inset 2px 2px 5px var(--neumorph-dark), inset -2px -2px 5px var(--neumorph-light)',
+                                }}
+                              >
+                                {defaultVideo.map((opt, idx) => (
+                                  <div
+                                    key={opt.format_id}
+                                    className="nm-format-row"
+                                    style={{
+                                      borderBottom: idx === defaultVideo.length - 1 ? 'none' : '1px solid rgba(0, 0, 0, 0.05)',
+                                      backgroundColor: idx % 2 === 0 ? 'transparent' : 'rgba(0, 0, 0, 0.02)',
+                                    }}
+                                  >
+                                    <div className="nm-format-info">
+                                      <span className="nm-format-badge">
+                                        {opt.ext}
+                                      </span>
+
+                                      <span className="nm-format-quality">
+                                        {opt.quality}
+                                      </span>
+
+                                      {opt.file_size_formatted && (
+                                        <span className="nm-format-size tabular-nums">
+                                          {opt.file_size_formatted}
+                                        </span>
+                                      )}
+                                    </div>
+
+                                    <button
+                                      type="button"
+                                      className="pill-btn nm-format-btn"
+                                      onClick={() => handleSpecificDownload(item, opt.ext, opt.quality)}
+                                      disabled={item.downloadState === 'downloading'}
+                                    >
+                                      {item.downloadState === 'downloading' && item.activeQuality === `${opt.ext} ${opt.quality}` ? (
+                                        <>
+                                          <div className="uiverse-spinner spinner-emerald" style={{ color: '#16a34a', marginRight: '3px' }}>
+                                            <div /><div /><div /><div /><div /><div /><div /><div /><div /><div />
+                                          </div>
+                                          <span>Downloading...</span>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <Download className="w-3.5 h-3.5" /> <span>Download</span>
+                                        </>
+                                      )}
+                                    </button>
+                                  </div>
+                                ))}
+                              </motion.div>
+                            ) : (
+                              <motion.div
+                                key={`audio-tab-${item.id}`}
+                                initial={{ opacity: 0, y: 6, scale: 0.98 }}
+                                animate={{ opacity: 1, y: 0, scale: 1 }}
+                                exit={{ opacity: 0, y: -6, scale: 0.98 }}
+                                transition={{ duration: 0.2, ease: [0.2, 0, 0, 1] }}
+                                style={{
+                                  border: '1px solid rgba(255, 255, 255, 0.5)',
+                                  borderRadius: '16px',
+                                  overflow: 'hidden',
+                                  backgroundColor: 'var(--bg-color)',
+                                  boxShadow: 'inset 2px 2px 5px var(--neumorph-dark), inset -2px -2px 5px var(--neumorph-light)',
+                                }}
+                              >
+                                {defaultAudio.map((opt, idx) => (
+                                  <div
+                                    key={opt.format_id}
+                                    className="nm-format-row"
+                                    style={{
+                                      borderBottom: idx === defaultAudio.length - 1 ? 'none' : '1px solid rgba(0, 0, 0, 0.05)',
+                                      backgroundColor: idx % 2 === 0 ? 'transparent' : 'rgba(0, 0, 0, 0.02)',
+                                    }}
+                                  >
+                                    <div className="nm-format-info">
+                                      <span className="nm-format-badge">
+                                        {opt.ext}
+                                      </span>
+
+                                      <span className="nm-format-quality">
+                                        {opt.quality}
+                                      </span>
+
+                                      {opt.file_size_formatted && (
+                                        <span className="nm-format-size tabular-nums">
+                                          {opt.file_size_formatted}
+                                        </span>
+                                      )}
+                                    </div>
+
+                                    <button
+                                      type="button"
+                                      className="pill-btn nm-format-btn"
+                                      style={{
+                                        color: '#16a34a',
+                                        fontWeight: 800,
+                                        fontSize: '0.78rem',
+                                        padding: '0.35rem 0.85rem',
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '0.3rem',
+                                        minHeight: '32px',
+                                        cursor: 'pointer',
+                                        whiteSpace: 'nowrap',
+                                      }}
+                                      onClick={() => handleSpecificDownload(item, opt.ext, opt.quality)}
+                                      disabled={item.downloadState === 'downloading'}
+                                    >
+                                      {item.downloadState === 'downloading' && item.activeQuality === `${opt.ext} ${opt.quality}` ? (
+                                        <>
+                                          <div className="uiverse-spinner spinner-emerald" style={{ color: '#16a34a', marginRight: '3px' }}>
+                                            <div /><div /><div /><div /><div /><div /><div /><div /><div /><div />
+                                          </div>
+                                          <span>Downloading...</span>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <Download className="w-3.5 h-3.5" /> <span>Download</span>
+                                        </>
+                                      )}
+                                    </button>
+                                  </div>
+                                ))}
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </div>
                       )}
 
                     </div>
 
-                    {/* Clean Inline Notification Bar */}
+                                        {/* Clean Inline Notification Bar */}
                     {statusMsg && (
                       <div style={{ marginTop: '1.25rem', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
                         <div
