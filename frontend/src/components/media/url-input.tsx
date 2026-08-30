@@ -1661,7 +1661,7 @@ export function UrlInput() {
             gap: '0.45rem',
           }}
         >
-          <Search className="w-4 h-4" /> Search Video
+          <Search className="w-4 h-4" /> Search yt video
         </button>
       </div>
 
