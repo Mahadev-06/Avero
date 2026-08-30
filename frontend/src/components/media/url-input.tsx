@@ -283,13 +283,14 @@ interface VideoResultItem {
 }
 
 const ROTATING_PLACEHOLDERS = [
-  'Paste TikTok link here...',
-  'Paste Instagram link here...',
-  'Paste Pinterest link here...',
-  'Paste Reddit link here...',
-  'Paste Threads link here...',
-  'Paste Facebook link here...',
-  'Paste X (Twitter) link here...',
+  'Paste TikTok link...',
+  'Paste Instagram link...',
+  'Paste Pinterest link...',
+  'Paste Reddit link...',
+  'Paste Threads link...',
+  'Paste Facebook link...',
+  'Paste X (Twitter) link...',
+  'Paste YouTube link...',
 ];
 
 function formatDurationSeconds(sec?: number): string {
@@ -1396,6 +1397,7 @@ export function UrlInput() {
 
             <div style={{ position: 'relative', flex: 1, display: 'flex', alignItems: 'center', minWidth: 0, textAlign: 'left' }}>
               <input
+                className="url-main-input"
                 type="text"
                 value={displayValue || inputValue}
                 onChange={handleInputChange}
@@ -1425,6 +1427,7 @@ export function UrlInput() {
               {!inputValue && !isSearchMode && !isMultiMode && (
                 <div
                   aria-hidden="true"
+                  className="url-placeholder-wrapper"
                   style={{
                     position: 'absolute',
                     left: 0,
@@ -1446,6 +1449,7 @@ export function UrlInput() {
                 >
                   <span
                     key={placeholderIndex}
+                    className="url-placeholder-text"
                     style={{
                       display: 'inline-block',
                       animation: 'textFadeIn 0.35s ease-out',
@@ -1457,7 +1461,7 @@ export function UrlInput() {
               )}
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginLeft: '0.35rem' }}>
+            <div className="input-bar-controls" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginLeft: '0.35rem' }}>
               {!analyzing && !searching && (
                 inputValue.trim() ? (
                   <button

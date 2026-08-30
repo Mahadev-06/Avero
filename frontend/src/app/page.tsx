@@ -196,16 +196,16 @@ export default function Home() {
       </section>
 
       {/* Flaticon-style Trust Badges Bar */}
-      <section style={{ boxShadow: 'var(--nm-inset-sm)', borderTop: '1px solid rgba(255, 255, 255, 0.3)', borderBottom: '1px solid rgba(0, 0, 0, 0.08)', backgroundColor: 'var(--bg-color)', padding: '1.25rem 0' }}>
+      <section className="trust-badges-section" style={{ boxShadow: 'var(--nm-inset-sm)', borderTop: '1px solid rgba(255, 255, 255, 0.3)', borderBottom: '1px solid rgba(0, 0, 0, 0.08)', backgroundColor: 'var(--bg-color)', padding: '1.25rem 0' }}>
         <div className="container trust-badges-bar" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '2.5rem', flexWrap: 'wrap', fontSize: '0.88rem', fontWeight: 700, color: 'var(--text-color)' }}>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
+          <span className="trust-badge-item" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
             <Zap className="w-4 h-4 text-amber-500" /> <strong>Fast Processing</strong>
           </span>
 
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
+          <span className="trust-badge-item" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
             <Sparkles className="w-4 h-4 text-purple-500" /> <strong>100% Free & Unlimited</strong>
           </span>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
+          <span className="trust-badge-item" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
             <Smartphone className="w-4 h-4 text-blue-500" /> <strong>iOS, Android & Desktop</strong>
           </span>
         </div>

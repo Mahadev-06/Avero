@@ -779,11 +779,15 @@ button {
   }
 }
 
-/* --- Mobile Responsive Enhancements --- */
+/* --- Mobile Responsive Enhancements (Strictly Phone View < 768px) --- */
 @media (max-width: 768px) {
   .hero-section {
-    padding-top: 6rem !important;
-    padding-bottom: 2.5rem !important;
+    padding-top: 7rem !important;
+    padding-bottom: 2.75rem !important;
+  }
+
+  .hero-title-container {
+    margin-bottom: 2rem !important;
   }
 
   .hero-title {
@@ -795,7 +799,7 @@ button {
 
   .platform-marquee-container {
     max-width: 320px !important;
-    margin: 0 auto 1.75rem auto !important;
+    margin: 0 auto 1.85rem auto !important;
     padding: 6px 0 !important;
   }
 
@@ -866,16 +870,40 @@ button {
 }
 
 @media (max-width: 640px) {
+  .hero-section {
+    padding-top: 6.75rem !important;
+    padding-bottom: 2.5rem !important;
+  }
+
+  .hero-title-container {
+    margin-bottom: 1.75rem !important;
+  }
+
   .platform-marquee-container {
     max-width: 310px !important;
-    margin: 0 auto 1.35rem auto !important;
+    margin: 0 auto 1.65rem auto !important;
     padding: 4px 0 !important;
   }
 
   .input-bar-inner {
-    padding: 0.4rem 0.5rem 0.4rem 1.15rem !important;
-    min-height: 52px !important;
+    padding: 0.35rem 0.45rem 0.35rem 1.15rem !important;
+    min-height: 54px !important;
     border-radius: 9999px !important;
+  }
+
+  .url-main-input {
+    font-size: 0.92rem !important;
+    padding: 0.65rem 0 !important;
+    letter-spacing: -0.01em !important;
+  }
+
+  .url-placeholder-wrapper {
+    font-size: 0.92rem !important;
+  }
+
+  .input-bar-controls {
+    gap: 0.35rem !important;
+    margin-left: 0.25rem !important;
   }
 
   .input-bar-multi {
@@ -884,10 +912,10 @@ button {
   }
 
   .input-action-btn {
-    padding: 0.35rem 0.65rem !important;
-    font-size: 0.76rem !important;
-    font-weight: 800 !important;
-    min-height: 36px !important;
+    padding: 0.32rem 0.65rem !important;
+    font-size: 0.74rem !important;
+    font-weight: 750 !important;
+    min-height: 34px !important;
     border-radius: 9999px !important;
   }
 
@@ -908,21 +936,47 @@ button {
   }
 
   .mode-switcher-row {
-    gap: 0.65rem !important;
-    margin-top: 1.25rem !important;
-    margin-bottom: 0.75rem !important;
+    gap: 0.75rem !important;
+    margin-top: 1.5rem !important;
+    margin-bottom: 1.25rem !important;
   }
 
   .mode-switcher-row button {
-    padding: 0.45rem 1.15rem !important;
-    font-size: 0.82rem !important;
+    padding: 0.5rem 1.35rem !important;
+    font-size: 0.84rem !important;
+    border-radius: 9999px !important;
+  }
+
+  .trust-badges-section {
+    padding: 1.35rem 0 !important;
+  }
+
+  .trust-badges-bar {
+    gap: 0.75rem 1.15rem !important;
+    font-size: 0.8rem !important;
+    justify-content: center !important;
+  }
+
+  .trust-badge-item {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 0.45rem !important;
+    padding: 0.35rem 0.85rem !important;
+    border-radius: 9999px !important;
+    background-color: var(--bg-color) !important;
+    box-shadow: 2px 2px 5px var(--neumorph-dark), -2px -2px 5px var(--neumorph-light) !important;
+    border: 1px solid rgba(255, 255, 255, 0.6) !important;
   }
 }
 
 @media (max-width: 480px) {
   .hero-section {
-    padding-top: 5.5rem !important;
+    padding-top: 6.25rem !important;
     padding-bottom: 2rem !important;
+  }
+
+  .hero-title-container {
+    margin-bottom: 1.5rem !important;
   }
 
   .hero-title {
@@ -933,7 +987,7 @@ button {
 
   .platform-marquee-container {
     max-width: 290px !important;
-    margin: 0 auto 1.25rem auto !important;
+    margin: 0 auto 1.5rem auto !important;
   }
 
   .container {
@@ -946,25 +1000,56 @@ button {
   }
 
   .input-bar-inner {
-    padding: 0.35rem 0.45rem 0.35rem 1rem !important;
+    padding: 0.3rem 0.35rem 0.3rem 0.95rem !important;
+    min-height: 50px !important;
+  }
+
+  .url-main-input {
+    font-size: 0.85rem !important;
+    padding: 0.55rem 0 !important;
+  }
+
+  .url-placeholder-wrapper {
+    font-size: 0.85rem !important;
+  }
+
+  .input-bar-controls {
+    gap: 0.25rem !important;
+    margin-left: 0.2rem !important;
   }
 
   .input-action-btn {
-    padding: 0.3rem 0.55rem !important;
-    font-size: 0.74rem !important;
-    min-height: 34px !important;
+    padding: 0.28rem 0.5rem !important;
+    font-size: 0.72rem !important;
+    min-height: 32px !important;
   }
 
   .submit-action-btn {
-    height: 36px !important;
-    min-height: 36px !important;
-    width: 36px !important;
-    min-width: 36px !important;
+    height: 34px !important;
+    min-height: 34px !important;
+    width: 34px !important;
+    min-width: 34px !important;
     padding: 0 !important;
-    font-size: 0.95rem !important;
+    font-size: 0.9rem !important;
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
+  }
+
+  .mode-switcher-row {
+    gap: 0.65rem !important;
+    margin-top: 1.35rem !important;
+    margin-bottom: 1.15rem !important;
+  }
+
+  .mode-switcher-row button {
+    padding: 0.45rem 1.15rem !important;
+    font-size: 0.8rem !important;
+  }
+
+  .trust-badge-item {
+    font-size: 0.76rem !important;
+    padding: 0.3rem 0.7rem !important;
   }
 
   .footer-links-wrap {
@@ -974,13 +1059,26 @@ button {
 }
 
 @media (max-width: 380px) {
-  .mode-switcher-row {
-    gap: 0.45rem !important;
+  .input-bar-inner {
+    padding: 0.25rem 0.3rem 0.25rem 0.85rem !important;
+  }
+
+  .url-main-input {
+    font-size: 0.8rem !important;
+  }
+
+  .url-placeholder-wrapper {
+    font-size: 0.8rem !important;
+  }
+
+  .input-action-btn {
+    padding: 0.25rem 0.45rem !important;
+    font-size: 0.68rem !important;
   }
 
   .mode-switcher-row button {
     padding: 0.4rem 0.95rem !important;
-    font-size: 0.78rem !important;
+    font-size: 0.76rem !important;
   }
 }
 
