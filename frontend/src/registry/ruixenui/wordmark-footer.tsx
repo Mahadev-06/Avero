@@ -4,47 +4,28 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { motion } from "motion/react";
 
 /**
- * Wordmark Footer — Rauno Freiberg craft, Ruixen UI edition.
- * Centered giant wordmark on a full-width dark surface with a subtle
- * bottom clip. Move your cursor and the metallic shine follows —
- * a radial gradient spotlight tracks the pointer with lerped
- * smoothing at 60fps via direct DOM writes, zero re-renders.
- * A vertical mask handles the half-cut fade independently.
+ * Wordmark Footer — AVERO Edition.
+ * Uses the exact AVERO logo geometry as an interactive alpha mask on a clean,
+ * seamless white/cream surface with cursor-following metallic pearl illumination.
  */
 
 interface WordmarkFooterProps {
-  brandName?: string;
   className?: string;
 }
 
-/* ── Scoped CSS ── */
-const STYLE = `
-.wf {
-  --wf-bg: #0e0e10;
-  --wf-line: rgba(255, 255, 255, 0.08);
-}
-.dark .wf, [data-theme="dark"] .wf {
-  --wf-bg: #08080a;
-  --wf-line: rgba(255, 255, 255, 0.09);
-}
-`.replace(/\n/g, "");
-
-/* ── Radial shine gradient — follows cursor ── */
+/* ── Radial shine gradient — follows cursor with pearl-white luminance ── */
 function makeShine(x: number, y: number): string {
-  return `radial-gradient(ellipse 100% 100% at ${x.toFixed(1)}% ${y.toFixed(1)}%, rgba(255,255,255,.92) 0%, rgba(255,255,255,.68) 24%, rgba(255,255,255,.36) 50%, rgba(255,255,255,.14) 100%)`;
+  return `radial-gradient(ellipse 90% 90% at ${x.toFixed(1)}% ${y.toFixed(1)}%, #ffffff 0%, rgba(255, 255, 255, 0.95) 28%, rgba(235, 235, 240, 0.65) 60%, rgba(215, 215, 225, 0.35) 100%)`;
 }
 
-/* ── Vertical mask — dims bottom for the half-cut, independent of shine ── */
+/* ── Vertical mask — dims bottom for subtle half-cut fade ── */
 const VMASK =
-  "linear-gradient(to bottom, black 0%, black 36%, rgba(0,0,0,.55) 75%, rgba(0,0,0,.25) 100%)";
+  "linear-gradient(to bottom, black 0%, black 50%, rgba(0,0,0,0.7) 80%, rgba(0,0,0,0.3) 100%)";
 
-export function WordmarkFooter({
-  brandName = "AVERO",
-  className,
-}: WordmarkFooterProps) {
+export function WordmarkFooter({ className }: WordmarkFooterProps) {
   const [inView, setInView] = useState(false);
   const sectionRef = useRef<HTMLElement>(null);
-  const textRef = useRef<HTMLSpanElement>(null);
+  const logoRef = useRef<HTMLDivElement>(null);
 
   /* ── Cursor-tracking state — refs only, zero re-renders ── */
   const hovering = useRef(false);
@@ -61,8 +42,8 @@ export function WordmarkFooter({
 
     const grad = makeShine(curX.current, curY.current);
 
-    if (textRef.current) {
-      textRef.current.style.backgroundImage = grad;
+    if (logoRef.current) {
+      logoRef.current.style.backgroundImage = grad;
     }
 
     const dx = Math.abs(tgtX.current - curX.current);
@@ -121,61 +102,59 @@ export function WordmarkFooter({
   return (
     <section
       ref={sectionRef}
-      className={`wf ${className || ""}`}
+      className={className}
       onMouseMove={onMove}
       onMouseLeave={onLeave}
       style={{
         position: "relative",
         width: "100%",
         overflow: "hidden",
-        background: "var(--wf-bg)",
-        height: "clamp(110px, 16vw, 220px)",
-        borderTop: "1px solid rgba(255, 255, 255, 0.08)",
-        borderBottom: "1px solid rgba(255, 255, 255, 0.05)",
+        backgroundColor: "var(--bg-color)",
+        height: "clamp(120px, 17vw, 210px)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        borderTop: "1px solid rgba(255, 255, 255, 0.45)",
+        borderBottom: "1px solid rgba(0, 0, 0, 0.05)",
+        boxShadow: "inset 0 4px 12px var(--neumorph-dark)",
       }}
     >
-      <style dangerouslySetInnerHTML={{ __html: STYLE }} />
-
       {/* ── Wordmark — absolute, centered, pointer-events off ── */}
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={inView ? { opacity: 1, y: 0 } : {}}
         transition={{ type: "spring", stiffness: 260, damping: 28 }}
         style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
+          width: "100%",
+          maxWidth: "960px",
+          height: "100%",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          gap: "clamp(10px, 2vw, 24px)",
-          padding: "clamp(16px, 2.5vw, 36px) clamp(24px, 4vw, 56px)",
+          padding: "0 1.5rem",
           pointerEvents: "none",
         }}
       >
-        {/* Brand text styled identically to AVERO typography */}
-        <span
-          ref={textRef}
+        {/* Exact AVERO Logo rendered with alpha-mask and white spotlight shine */}
+        <div
+          ref={logoRef}
           style={{
-            fontSize: "clamp(60px, 15vw, 210px)",
-            fontWeight: 800,
-            letterSpacing: "0.08em",
-            lineHeight: 1,
+            width: "clamp(260px, 68vw, 840px)",
+            height: "clamp(48px, 12vw, 130px)",
             backgroundImage: makeShine(50, 30),
-            WebkitBackgroundClip: "text",
-            backgroundClip: "text",
-            WebkitTextFillColor: "transparent",
-            maskImage: VMASK,
-            WebkitMaskImage: VMASK,
-            userSelect: "none",
-            whiteSpace: "nowrap",
-            fontFamily: "var(--font-geist-sans), -apple-system, BlinkMacSystemFont, sans-serif",
-            textTransform: "uppercase",
+            WebkitMaskImage: "url(/avero-logo-white.png)",
+            maskImage: "url(/avero-logo-white.png)",
+            WebkitMaskSize: "contain",
+            maskSize: "contain",
+            WebkitMaskRepeat: "no-repeat",
+            maskRepeat: "no-repeat",
+            WebkitMaskPosition: "center",
+            maskPosition: "center",
+            filter: "drop-shadow(0 3px 6px rgba(0, 0, 0, 0.12)) drop-shadow(0 -1px 2px rgba(255, 255, 255, 0.95))",
+            opacity: 0.96,
+            transition: "filter 0.3s ease",
           }}
-        >
-          {brandName}
-        </span>
+        />
       </motion.div>
 
       {/* ── Hairline — just above the clip edge ── */}
@@ -184,9 +163,9 @@ export function WordmarkFooter({
           position: "absolute",
           left: 0,
           right: 0,
-          bottom: "clamp(10px, 1.5vw, 22px)",
-          height: 0.5,
-          background: "var(--wf-line)",
+          bottom: 0,
+          height: 1,
+          background: "rgba(255, 255, 255, 0.4)",
           pointerEvents: "none",
         }}
       />
