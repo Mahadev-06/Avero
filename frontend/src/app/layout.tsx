@@ -101,7 +101,6 @@ const jsonLd = {
 };
 
 import { SmoothScroll } from '@/components/layout/smooth-scroll';
-import MagicCursor from '@/components/ui/magic-cursor';
 
 export default function RootLayout({
   children,
@@ -117,7 +116,6 @@ export default function RootLayout({
         />
       </head>
       <body>
-        <MagicCursor />
         <SmoothScroll>
           <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', position: 'relative', zIndex: 1 }}>
             <Header />
