@@ -167,8 +167,22 @@ def _load_cookiejar(cookiefile: str | None):
 
 
 # Unified shared YouTube player client lists
-YOUTUBE_PLAYER_CLIENTS_DEFAULT: list[str] = ["ios", "android"]
-YOUTUBE_PLAYER_CLIENTS_WITH_COOKIES: list[str] = ["ios", "android", "mweb", "web"]
+YOUTUBE_PLAYER_CLIENTS_DEFAULT: list[str] = [
+    "tv_embedded",
+    "web_embedded",
+    "ios",
+    "android",
+    "mweb",
+    "web",
+]
+YOUTUBE_PLAYER_CLIENTS_WITH_COOKIES: list[str] = [
+    "tv_embedded",
+    "web_embedded",
+    "ios",
+    "android",
+    "mweb",
+    "web",
+]
 
 
 def get_youtube_player_clients(has_cookies: bool = False) -> list[str]:
@@ -884,8 +898,8 @@ def _download_sync(job_id: str, url: str, fmt: str, quality: str) -> str:
     if is_youtube:
         if yt_cookie_file:
             ydl_opts["cookiefile"] = yt_cookie_file
-        ydl_opts["sleep_interval"] = 1
-        ydl_opts["sleep_interval_requests"] = 1
+        ydl_opts["sleep_interval"] = 3
+        ydl_opts["sleep_interval_requests"] = 3
     elif is_instagram:
         ig_cookie_file = _get_instagram_cookiefile()
         if ig_cookie_file:

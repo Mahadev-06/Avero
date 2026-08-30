@@ -1076,8 +1076,8 @@ async def extract_media_info(url: str, platform_name: str) -> MediaInfo:
             ydl_opts['cookiefile'] = yt_cookie
         ydl_opts['retries'] = 3
         ydl_opts['fragment_retries'] = 3
-        ydl_opts['sleep_interval'] = 1
-        ydl_opts['sleep_interval_requests'] = 1
+        ydl_opts['sleep_interval'] = 3
+        ydl_opts['sleep_interval_requests'] = 3
     elif is_ig:
         ig_cookie = _get_instagram_cookiefile()
         if ig_cookie:

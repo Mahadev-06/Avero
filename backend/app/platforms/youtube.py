@@ -1,5 +1,6 @@
 from __future__ import annotations
 import asyncio
+import re
 import yt_dlp
 import structlog
 from app.platforms.base import PlatformAdapter
@@ -67,8 +68,8 @@ class YouTubeAdapter(PlatformAdapter):
             ydl_opts['cookiefile'] = cookie_file
             ydl_opts['retries'] = 3
             ydl_opts['fragment_retries'] = 3
-            ydl_opts['sleep_interval'] = 1
-            ydl_opts['sleep_interval_requests'] = 1
+            ydl_opts['sleep_interval'] = 3
+            ydl_opts['sleep_interval_requests'] = 3
 
         def _extract():
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
