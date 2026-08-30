@@ -249,9 +249,6 @@ export default function Home() {
       <section style={{ paddingTop: '1rem', paddingBottom: '3.5rem' }}>
         <div className="container" style={{ maxWidth: '960px' }}>
           <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
-            <div style={{ display: 'inline-flex', padding: '0.35rem 0.85rem', borderRadius: 'var(--radius-full)', backgroundColor: 'var(--bg-color)', border: '1px solid rgba(255,255,255,0.6)', boxShadow: '3px 3px 6px var(--neumorph-dark), -3px -3px 6px var(--neumorph-light)', fontSize: '0.75rem', fontWeight: 800, letterSpacing: '0.08em', color: 'var(--color-accent-500)', marginBottom: '0.75rem' }}>
-              FORMAT SUPPORT
-            </div>
             <h2 className="text-2xl sm:text-3xl font-extrabold" style={{ letterSpacing: '-0.02em' }}>
               Supported Output Formats & Resolutions
             </h2>
@@ -453,7 +450,7 @@ export default function Home() {
       <section id="faq" style={{ paddingTop: '2rem', paddingBottom: '4rem', scrollMarginTop: '2rem' }}>
         <div className="container" style={{ maxWidth: '860px' }}>
           <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
-            <div style={{ display: 'inline-flex', padding: '0.35rem 0.85rem', borderRadius: 'var(--radius-full)', backgroundColor: 'var(--bg-color)', border: '1px solid rgba(255,255,255,0.6)', boxShadow: '3px 3px 6px var(--neumorph-dark), -3px -3px 6px var(--neumorph-light)', fontSize: '0.75rem', fontWeight: 800, letterSpacing: '0.08em', color: 'var(--color-accent-500)', marginBottom: '0.75rem' }}>
+            <div style={{ display: 'inline-flex', padding: '0.35rem 0.85rem', borderRadius: 'var(--radius-full)', backgroundColor: 'var(--bg-color)', border: '1px solid rgba(255,255,255,0.6)', boxShadow: '3px 3px 6px var(--neumorph-dark), -3px -3px 6px var(--neumorph-light)', fontSize: '0.75rem', fontWeight: 800, letterSpacing: '0.08em', color: 'var(--text-color)', marginBottom: '0.75rem' }}>
               FREQUENTLY ASKED QUESTIONS
             </div>
             <h2 className="text-3xl font-extrabold" style={{ letterSpacing: '-0.02em' }}>
