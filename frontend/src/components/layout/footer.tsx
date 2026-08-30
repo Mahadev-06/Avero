@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { AveroLogo } from '@/components/ui/avero-logo';
+import { WordmarkFooter } from '@/registry/ruixenui/wordmark-footer';
 
 export function Footer() {
   return (
@@ -176,6 +177,9 @@ export function Footer() {
 
         </div>
       </div>
+
+      {/* Interactive Metallic Wordmark Footer */}
+      <WordmarkFooter brandName="AVERO" />
 
       {/* Bottom Copyright Bar */}
       <div
