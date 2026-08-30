@@ -74,18 +74,26 @@ export const metadata: Metadata = {
     type: 'website',
     images: [
       {
-        url: '/avero-logo.png',
+        url: '/og-icon.png',
+        width: 512,
+        height: 512,
+        type: 'image/png',
+        alt: 'AVERO Favicon Logo',
+      },
+      {
+        url: '/og-image.png',
         width: 1200,
         height: 630,
+        type: 'image/png',
         alt: 'AVERO Media Downloader & Converter',
-      }
+      },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'AVERO | Free All Video & Image Downloader',
-    description: 'Free, private, high-speed video and image downloader for all major platforms.',
-    images: ['/avero-logo.png'],
+    title: 'AVERO | Free All-in-One Video & Image Downloader',
+    description: 'Fast, clean, high-speed media downloader & converter for video, audio, and photo links.',
+    images: ['/og-image.png'],
   },
   alternates: {
     canonical: '/',
