@@ -169,19 +169,15 @@ def _load_cookiejar(cookiefile: str | None):
 # Unified shared YouTube player client lists
 YOUTUBE_PLAYER_CLIENTS_DEFAULT: list[str] = [
     "tv_embedded",
-    "web_embedded",
-    "ios",
     "android",
-    "mweb",
-    "web",
+    "web_embedded",
 ]
 YOUTUBE_PLAYER_CLIENTS_WITH_COOKIES: list[str] = [
-    "tv_embedded",
-    "web_embedded",
-    "ios",
-    "android",
-    "mweb",
     "web",
+    "ios",
+    "mweb",
+    "android",
+    "tv_embedded",
 ]
 
 
