@@ -779,6 +779,19 @@ button {
   }
 }
 
+/* --- Trust Badges (Desktop Default) --- */
+.trust-badges-desktop {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  gap: 2.5rem !important;
+  flex-wrap: wrap !important;
+}
+
+.trust-badges-mobile {
+  display: none !important;
+}
+
 /* --- Mobile Responsive Enhancements (Strictly Phone View < 768px) --- */
 @media (max-width: 768px) {
   .hero-section {
