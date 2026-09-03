@@ -811,9 +811,30 @@ button {
   }
 
   .platform-marquee-container {
-    max-width: 320px !important;
-    margin: 0 auto 1.85rem auto !important;
-    padding: 6px 0 !important;
+    max-width: 260px !important;
+    margin: 0 auto 1.45rem auto !important;
+    padding: 3px 0 !important;
+  }
+
+  .platform-marquee-group {
+    gap: 0.55rem !important;
+    padding-right: 0.55rem !important;
+  }
+
+  .pearl-icon-badge,
+  .pearl-icon-btn {
+    width: 28px !important;
+    height: 28px !important;
+    min-width: 28px !important;
+    min-height: 28px !important;
+  }
+
+  .pearl-icon-badge svg,
+  .pearl-icon-badge img,
+  .pearl-icon-btn svg,
+  .pearl-icon-btn img {
+    width: 14px !important;
+    height: 14px !important;
   }
 
   .container {
@@ -903,9 +924,30 @@ button {
   }
 
   .platform-marquee-container {
-    max-width: 310px !important;
-    margin: 0 auto 1.65rem auto !important;
-    padding: 4px 0 !important;
+    max-width: 245px !important;
+    margin: 0 auto 1.35rem auto !important;
+    padding: 2px 0 !important;
+  }
+
+  .platform-marquee-group {
+    gap: 0.5rem !important;
+    padding-right: 0.5rem !important;
+  }
+
+  .pearl-icon-badge,
+  .pearl-icon-btn {
+    width: 26px !important;
+    height: 26px !important;
+    min-width: 26px !important;
+    min-height: 26px !important;
+  }
+
+  .pearl-icon-badge svg,
+  .pearl-icon-badge img,
+  .pearl-icon-btn svg,
+  .pearl-icon-btn img {
+    width: 13px !important;
+    height: 13px !important;
   }
 
   .input-bar-inner {
@@ -959,15 +1001,21 @@ button {
   }
 
   .mode-switcher-row {
-    gap: 0.75rem !important;
-    margin-top: 1.5rem !important;
-    margin-bottom: 1.25rem !important;
+    gap: 0.5rem !important;
+    margin-top: 1.2rem !important;
+    margin-bottom: 0.9rem !important;
   }
 
   .mode-switcher-row button {
-    padding: 0.5rem 1.35rem !important;
-    font-size: 0.84rem !important;
+    padding: 0.35rem 0.95rem !important;
+    font-size: 0.76rem !important;
+    min-height: 30px !important;
     border-radius: 9999px !important;
+  }
+
+  .mode-switcher-row button svg {
+    width: 12px !important;
+    height: 12px !important;
   }
 
   .trust-badges-section {
@@ -992,8 +1040,29 @@ button {
   }
 
   .platform-marquee-container {
-    max-width: 290px !important;
-    margin: 0 auto 1.5rem auto !important;
+    max-width: 220px !important;
+    margin: 0 auto 1.2rem auto !important;
+  }
+
+  .platform-marquee-group {
+    gap: 0.45rem !important;
+    padding-right: 0.45rem !important;
+  }
+
+  .pearl-icon-badge,
+  .pearl-icon-btn {
+    width: 24px !important;
+    height: 24px !important;
+    min-width: 24px !important;
+    min-height: 24px !important;
+  }
+
+  .pearl-icon-badge svg,
+  .pearl-icon-badge img,
+  .pearl-icon-btn svg,
+  .pearl-icon-btn img {
+    width: 12px !important;
+    height: 12px !important;
   }
 
   .container {
@@ -1043,14 +1112,20 @@ button {
   }
 
   .mode-switcher-row {
-    gap: 0.65rem !important;
-    margin-top: 1.35rem !important;
-    margin-bottom: 1.15rem !important;
+    gap: 0.45rem !important;
+    margin-top: 1.1rem !important;
+    margin-bottom: 0.8rem !important;
   }
 
   .mode-switcher-row button {
-    padding: 0.45rem 1.15rem !important;
-    font-size: 0.8rem !important;
+    padding: 0.32rem 0.85rem !important;
+    font-size: 0.72rem !important;
+    min-height: 28px !important;
+  }
+
+  .mode-switcher-row button svg {
+    width: 12px !important;
+    height: 12px !important;
   }
 
   .footer-links-wrap {
@@ -1078,8 +1153,9 @@ button {
   }
 
   .mode-switcher-row button {
-    padding: 0.4rem 0.95rem !important;
-    font-size: 0.76rem !important;
+    padding: 0.28rem 0.75rem !important;
+    font-size: 0.68rem !important;
+    min-height: 26px !important;
   }
 }
 
