@@ -800,7 +800,7 @@ button {
   }
 
   .hero-title-container {
-    margin-bottom: 2rem !important;
+    margin-bottom: 1.85rem !important;
   }
 
   .hero-title {
@@ -812,7 +812,7 @@ button {
 
   .platform-marquee-container {
     max-width: 260px !important;
-    margin: 0 auto 1.45rem auto !important;
+    margin: 0 auto 1.85rem auto !important;
     padding: 3px 0 !important;
   }
 
@@ -925,7 +925,7 @@ button {
 
   .platform-marquee-container {
     max-width: 245px !important;
-    margin: 0 auto 1.35rem auto !important;
+    margin: 0 auto 1.75rem auto !important;
     padding: 2px 0 !important;
   }
 
@@ -1030,18 +1030,19 @@ button {
   }
 
   .hero-title-container {
-    margin-bottom: 1.5rem !important;
+    margin-bottom: 1.6rem !important;
   }
 
   .hero-title {
     font-size: clamp(1.05rem, 4vw, 1.35rem) !important;
     font-weight: 500 !important;
     margin-bottom: 1.35rem !important;
+    gap: 0.2em !important;
   }
 
   .platform-marquee-container {
     max-width: 220px !important;
-    margin: 0 auto 1.2rem auto !important;
+    margin: 0 auto 1.6rem auto !important;
   }
 
   .platform-marquee-group {
