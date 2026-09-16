@@ -1266,48 +1266,33 @@ export function UrlInput() {
                         key="multi-detected-paste-btn"
                         type="button"
                         onClick={handleAcceptClipboardPrompt}
-                        initial={{ opacity: 0, x: 8, scale: 0.95 }}
-                        animate={{ opacity: 1, x: 0, scale: 1 }}
-                        exit={{ opacity: 0, x: -8, scale: 0.95 }}
-                        transition={{ duration: 0.22, ease: 'easeOut' }}
+                        initial={{ opacity: 0, x: 24 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -24 }}
+                        transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
                         title={`Click to paste detected ${clipboardPrompt.platformName} link`}
                         className="pill-btn input-action-btn"
                         style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '0.35rem',
                           padding: '0.35rem 0.85rem',
                           fontSize: '0.78rem',
-                          fontWeight: 750,
+                          fontWeight: 700,
                           whiteSpace: 'nowrap',
                           minHeight: '34px',
                           color: 'var(--text-color)',
-                          border: '1px solid rgba(16, 185, 129, 0.55)',
-                          boxShadow: '0 0 10px rgba(16, 185, 129, 0.22), 2px 2px 5px var(--neumorph-dark), -2px -2px 5px var(--neumorph-light)',
                           cursor: 'pointer',
                         }}
                       >
-                        <span
-                          style={{
-                            width: '6px',
-                            height: '6px',
-                            borderRadius: '50%',
-                            backgroundColor: '#10b981',
-                            boxShadow: '0 0 6px #10b981',
-                            flexShrink: 0,
-                          }}
-                        />
-                        <span>Paste Link</span>
+                        Link detected
                       </motion.button>
                     ) : (
                       <motion.button
                         key="multi-normal-paste-btn"
                         type="button"
                         onClick={handlePaste}
-                        initial={{ opacity: 0, x: -8, scale: 0.95 }}
-                        animate={{ opacity: 1, x: 0, scale: 1 }}
-                        exit={{ opacity: 0, x: 8, scale: 0.95 }}
-                        transition={{ duration: 0.2, ease: 'easeOut' }}
+                        initial={{ opacity: 0, x: 24 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -24 }}
+                        transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
                         title="Paste from clipboard"
                         className="pill-btn input-action-btn"
                         style={{
@@ -1316,6 +1301,7 @@ export function UrlInput() {
                           fontWeight: 700,
                           whiteSpace: 'nowrap',
                           minHeight: '34px',
+                          color: 'var(--text-color)',
                         }}
                       >
                         Paste
@@ -1514,48 +1500,33 @@ export function UrlInput() {
                           key="detected-paste-btn"
                           type="button"
                           onClick={handleAcceptClipboardPrompt}
-                          initial={{ opacity: 0, x: 10, scale: 0.95 }}
-                          animate={{ opacity: 1, x: 0, scale: 1 }}
-                          exit={{ opacity: 0, x: -10, scale: 0.95 }}
-                          transition={{ duration: 0.22, ease: 'easeOut' }}
+                          initial={{ opacity: 0, x: 24 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, x: -24 }}
+                          transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
                           title={`Click to paste detected ${clipboardPrompt.platformName} link`}
                           className="pill-btn input-action-btn"
                           style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '0.4rem',
-                            padding: '0.42rem 0.95rem',
+                            padding: '0.45rem 0.95rem',
                             fontSize: '0.82rem',
-                            fontWeight: 750,
+                            fontWeight: 700,
                             whiteSpace: 'nowrap',
                             minHeight: '38px',
                             color: 'var(--text-color)',
-                            border: '1px solid rgba(16, 185, 129, 0.55)',
-                            boxShadow: '0 0 10px rgba(16, 185, 129, 0.22), 2px 2px 5px var(--neumorph-dark), -2px -2px 5px var(--neumorph-light)',
                             cursor: 'pointer',
                           }}
                         >
-                          <span
-                            style={{
-                              width: '6.5px',
-                              height: '6.5px',
-                              borderRadius: '50%',
-                              backgroundColor: '#10b981',
-                              boxShadow: '0 0 6px #10b981',
-                              flexShrink: 0,
-                            }}
-                          />
-                          <span>Paste Link</span>
+                          Link detected
                         </motion.button>
                       ) : (
                         <motion.button
                           key="normal-paste-btn"
                           type="button"
                           onClick={handlePaste}
-                          initial={{ opacity: 0, x: -10, scale: 0.95 }}
-                          animate={{ opacity: 1, x: 0, scale: 1 }}
-                          exit={{ opacity: 0, x: 10, scale: 0.95 }}
-                          transition={{ duration: 0.2, ease: 'easeOut' }}
+                          initial={{ opacity: 0, x: 24 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, x: -24 }}
+                          transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
                           title="Paste from clipboard"
                           className="pill-btn input-action-btn"
                           style={{
@@ -1564,6 +1535,7 @@ export function UrlInput() {
                             fontWeight: 700,
                             whiteSpace: 'nowrap',
                             minHeight: '38px',
+                            color: 'var(--text-color)',
                           }}
                         >
                           Paste
