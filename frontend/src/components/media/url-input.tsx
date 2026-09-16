@@ -1260,56 +1260,19 @@ export function UrlInput() {
                     Clear All
                   </button>
                 ) : (
-                  <motion.button
+                  <button
                     type="button"
                     onClick={clipboardPrompt ? handleAcceptClipboardPrompt : handlePaste}
                     title={clipboardPrompt ? `Click to paste detected ${clipboardPrompt.platformName} link` : "Paste from clipboard"}
-                    className="pill-btn input-action-btn"
-                    layout
-                    transition={{
-                      layout: { duration: 0.32, ease: [0.16, 1, 0.3, 1] },
-                    }}
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      padding: '0.35rem 0.85rem',
-                      fontSize: '0.78rem',
-                      fontWeight: 700,
-                      whiteSpace: 'nowrap',
-                      minHeight: '34px',
-                      color: 'var(--text-color)',
-                      cursor: 'pointer',
-                      overflow: 'hidden',
-                      transformOrigin: 'right center',
-                    }}
+                    className={`pill-btn input-action-btn paste-detect-btn ${clipboardPrompt ? 'is-detected' : ''}`}
                   >
-                    <AnimatePresence mode="popLayout" initial={false}>
-                      {clipboardPrompt ? (
-                        <motion.span
-                          key="multi-detected-label"
-                          initial={{ opacity: 0, x: 14 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          exit={{ opacity: 0, x: 14 }}
-                          transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-                          style={{ display: 'inline-block', whiteSpace: 'nowrap' }}
-                        >
-                          Link detected
-                        </motion.span>
-                      ) : (
-                        <motion.span
-                          key="multi-paste-label"
-                          initial={{ opacity: 0, x: -10 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          exit={{ opacity: 0, x: -10 }}
-                          transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-                          style={{ display: 'inline-block', whiteSpace: 'nowrap' }}
-                        >
-                          Paste
-                        </motion.span>
-                      )}
-                    </AnimatePresence>
-                  </motion.button>
+                    <span className={`paste-label-detected ${clipboardPrompt ? 'active' : ''}`}>
+                      Link detected
+                    </span>
+                    <span className={`paste-label-normal ${clipboardPrompt ? 'is-hidden' : ''}`}>
+                      Paste
+                    </span>
+                  </button>
                 )}
 
                 <button
@@ -1496,56 +1459,19 @@ export function UrlInput() {
                   </button>
                 ) : (
                   !isSearchMode && (
-                    <motion.button
+                    <button
                       type="button"
                       onClick={clipboardPrompt ? handleAcceptClipboardPrompt : handlePaste}
                       title={clipboardPrompt ? `Click to paste detected ${clipboardPrompt.platformName} link` : "Paste from clipboard"}
-                      className="pill-btn input-action-btn"
-                      layout
-                      transition={{
-                        layout: { duration: 0.32, ease: [0.16, 1, 0.3, 1] },
-                      }}
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        padding: '0.45rem 0.95rem',
-                        fontSize: '0.82rem',
-                        fontWeight: 700,
-                        whiteSpace: 'nowrap',
-                        minHeight: '38px',
-                        color: 'var(--text-color)',
-                        cursor: 'pointer',
-                        overflow: 'hidden',
-                        transformOrigin: 'right center',
-                      }}
+                      className={`pill-btn input-action-btn paste-detect-btn ${clipboardPrompt ? 'is-detected' : ''}`}
                     >
-                      <AnimatePresence mode="popLayout" initial={false}>
-                        {clipboardPrompt ? (
-                          <motion.span
-                            key="detected-label"
-                            initial={{ opacity: 0, x: 14 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: 14 }}
-                            transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-                            style={{ display: 'inline-block', whiteSpace: 'nowrap' }}
-                          >
-                            Link detected
-                          </motion.span>
-                        ) : (
-                          <motion.span
-                            key="paste-label"
-                            initial={{ opacity: 0, x: -10 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: -10 }}
-                            transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-                            style={{ display: 'inline-block', whiteSpace: 'nowrap' }}
-                          >
-                            Paste
-                          </motion.span>
-                        )}
-                      </AnimatePresence>
-                    </motion.button>
+                      <span className={`paste-label-detected ${clipboardPrompt ? 'active' : ''}`}>
+                        Link detected
+                      </span>
+                      <span className={`paste-label-normal ${clipboardPrompt ? 'is-hidden' : ''}`}>
+                        Paste
+                      </span>
+                    </button>
                   )
                 )
               )}

@@ -764,6 +764,96 @@ button {
     transform: translateY(0);
   }
 }
+
+/* --- Auto-Detect Link Button Styles with Leftward Slide Extension --- */
+.paste-detect-btn {
+  position: relative !important;
+  overflow: hidden !important;
+  white-space: nowrap !important;
+  padding: 0 !important;
+  width: 68px !important;
+  min-width: 68px !important;
+  max-width: 68px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  transition: width 0.38s cubic-bezier(0.16, 1, 0.3, 1),
+              min-width 0.38s cubic-bezier(0.16, 1, 0.3, 1),
+              max-width 0.38s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.paste-detect-btn.is-detected {
+  width: 126px !important;
+  min-width: 126px !important;
+  max-width: 126px !important;
+}
+
+.paste-label-detected {
+  position: absolute !important;
+  inset: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transform: translateX(100%) !important;
+  opacity: 0 !important;
+  transition: transform 0.38s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.28s ease !important;
+  pointer-events: none !important;
+  white-space: nowrap !important;
+  font-weight: 700 !important;
+}
+
+.paste-label-detected.active {
+  transform: translateX(0) !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+.paste-label-normal {
+  position: absolute !important;
+  inset: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transform: translateX(0) !important;
+  opacity: 1 !important;
+  transition: transform 0.38s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.28s ease !important;
+  pointer-events: auto !important;
+  white-space: nowrap !important;
+  font-weight: 700 !important;
+}
+
+.paste-label-normal.is-hidden {
+  transform: translateX(-100%) !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+@media (max-width: 640px) {
+  .paste-detect-btn {
+    width: 58px !important;
+    min-width: 58px !important;
+    max-width: 58px !important;
+  }
+  .paste-detect-btn.is-detected {
+    width: 106px !important;
+    min-width: 106px !important;
+    max-width: 106px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .paste-detect-btn {
+    width: 52px !important;
+    min-width: 52px !important;
+    max-width: 52px !important;
+  }
+  .paste-detect-btn.is-detected {
+    width: 98px !important;
+    min-width: 98px !important;
+    max-width: 98px !important;
+  }
+}
 /* --- Media Result Grid Layout --- */
 .nm-result-grid {
   display: grid;
