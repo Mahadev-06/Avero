@@ -12,6 +12,7 @@ import { TextShimmerWave } from '@/components/core/text-shimmer-wave';
 import { motion, AnimatePresence } from 'motion/react';
 
 import { detectPlatform } from '@/lib/url-parser';
+import { useMediaQuery } from '@/hooks/use-media-query';
 
 interface PlatformIcon {
   name: string;
@@ -339,10 +340,14 @@ export function UrlInput() {
   const [isBatchDownloading, setIsBatchDownloading] = useState(false);
   const [batchDownloadIndex, setBatchDownloadIndex] = useState<number | null>(null);
 
+  // Screen width detector for exact responsive button widths
+  const isMobile = useMediaQuery('(max-width: 640px)');
+
   // Clipboard Auto-Detection Prompt State
   const [clipboardPrompt, setClipboardPrompt] = useState<{ url: string; platformName: string } | null>(null);
   const lastDetectedClipboardUrl = useRef<string>('');
   const clipboardTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const detectionDelayTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Search Autocomplete Suggestions State
   const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -371,7 +376,7 @@ export function UrlInput() {
     : [];
 
   // Clipboard Auto-Detection Function (extracts URLs and checks validity)
-  const handleCheckClipboard = useCallback(async () => {
+  const handleCheckClipboard = useCallback(async (immediate: boolean = false) => {
     if (analyzing || searching || isBatchDownloading || isSearchMode) return;
 
     try {
@@ -402,12 +407,21 @@ export function UrlInput() {
         const platform = getSocialMediaPlatform(candidateUrl);
         const platformName = platform?.name || 'Social';
 
-        setClipboardPrompt({ url: candidateUrl, platformName });
+        // 350ms delay on window focus so user sees "Paste" first, then watches it smoothly expand & slide left
+        const delay = immediate ? 0 : 350;
 
-        if (clipboardTimerRef.current) clearTimeout(clipboardTimerRef.current);
-        clipboardTimerRef.current = setTimeout(() => {
-          setClipboardPrompt(null);
-        }, 6500);
+        if (detectionDelayTimerRef.current) {
+          clearTimeout(detectionDelayTimerRef.current);
+        }
+
+        detectionDelayTimerRef.current = setTimeout(() => {
+          setClipboardPrompt({ url: candidateUrl, platformName });
+
+          if (clipboardTimerRef.current) clearTimeout(clipboardTimerRef.current);
+          clipboardTimerRef.current = setTimeout(() => {
+            setClipboardPrompt(null);
+          }, 8000);
+        }, delay);
       }
     } catch {
       // Silently ignore permissions or background restrictions
@@ -416,19 +430,31 @@ export function UrlInput() {
 
   // Trigger clipboard auto-detection on focus, visibility change, and pointer entry
   useEffect(() => {
-    window.addEventListener('focus', handleCheckClipboard);
-    const handleVisibilityChange = () => {
+    const onFocus = () => handleCheckClipboard(false);
+    const onBlur = () => {
+      // Reset so returning from another tab with a copied link detects freshly
+      lastDetectedClipboardUrl.current = '';
+    };
+    const onVisibility = () => {
       if (document.visibilityState === 'visible') {
-        handleCheckClipboard();
+        handleCheckClipboard(false);
+      } else {
+        lastDetectedClipboardUrl.current = '';
       }
     };
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('pointerenter', handleCheckClipboard, { passive: true });
+    const onPointer = () => handleCheckClipboard(false);
+
+    window.addEventListener('focus', onFocus);
+    window.addEventListener('blur', onBlur);
+    document.addEventListener('visibilitychange', onVisibility);
+    window.addEventListener('pointerenter', onPointer, { passive: true });
 
     return () => {
-      window.removeEventListener('focus', handleCheckClipboard);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('pointerenter', handleCheckClipboard);
+      window.removeEventListener('focus', onFocus);
+      window.removeEventListener('blur', onBlur);
+      document.removeEventListener('visibilitychange', onVisibility);
+      window.removeEventListener('pointerenter', onPointer);
+      if (detectionDelayTimerRef.current) clearTimeout(detectionDelayTimerRef.current);
       if (clipboardTimerRef.current) clearTimeout(clipboardTimerRef.current);
     };
   }, [handleCheckClipboard]);
@@ -639,6 +665,16 @@ export function UrlInput() {
     setStatusMsg(null);
     setSuggestions([]);
     setShowSuggestions(false);
+    lastDetectedClipboardUrl.current = '';
+    if (detectionDelayTimerRef.current) {
+      clearTimeout(detectionDelayTimerRef.current);
+      detectionDelayTimerRef.current = null;
+    }
+    if (clipboardTimerRef.current) {
+      clearTimeout(clipboardTimerRef.current);
+      clipboardTimerRef.current = null;
+    }
+    setClipboardPrompt(null);
   };
 
   const handleAcceptClipboardPrompt = () => {
@@ -646,6 +682,10 @@ export function UrlInput() {
     const url = clipboardPrompt.url;
     lastDetectedClipboardUrl.current = url;
     setClipboardPrompt(null);
+    if (detectionDelayTimerRef.current) {
+      clearTimeout(detectionDelayTimerRef.current);
+      detectionDelayTimerRef.current = null;
+    }
     if (clipboardTimerRef.current) {
       clearTimeout(clipboardTimerRef.current);
       clipboardTimerRef.current = null;
@@ -664,6 +704,14 @@ export function UrlInput() {
   const handleDismissClipboardPrompt = () => {
     if (clipboardPrompt) {
       lastDetectedClipboardUrl.current = clipboardPrompt.url;
+    }
+    if (detectionDelayTimerRef.current) {
+      clearTimeout(detectionDelayTimerRef.current);
+      detectionDelayTimerRef.current = null;
+    }
+    if (clipboardTimerRef.current) {
+      clearTimeout(clipboardTimerRef.current);
+      clipboardTimerRef.current = null;
     }
     setClipboardPrompt(null);
   };
@@ -1177,11 +1225,13 @@ export function UrlInput() {
               boxShadow: 'var(--nm-inset-md)',
               transition: 'border-radius 0.2s ease, box-shadow 0.2s ease',
             }}
+            onMouseEnter={() => handleCheckClipboard(true)}
           >
             <textarea
               rows={4}
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
+              onFocus={() => handleCheckClipboard(true)}
               placeholder="Paste multiple URLs (one per line)..."
               style={{
                 width: '100%',
@@ -1260,19 +1310,80 @@ export function UrlInput() {
                     Clear All
                   </button>
                 ) : (
-                  <button
+                  <motion.button
                     type="button"
                     onClick={clipboardPrompt ? handleAcceptClipboardPrompt : handlePaste}
                     title={clipboardPrompt ? `Click to paste detected ${clipboardPrompt.platformName} link` : "Paste from clipboard"}
-                    className={`pill-btn input-action-btn paste-detect-btn ${clipboardPrompt ? 'is-detected' : ''}`}
+                    className="pill-btn input-action-btn paste-motion-btn"
+                    animate={{
+                      width: clipboardPrompt ? (isMobile ? 104 : 124) : (isMobile ? 54 : 66),
+                    }}
+                    transition={{
+                      duration: 0.38,
+                      ease: [0.16, 1, 0.3, 1],
+                    }}
+                    style={{
+                      position: 'relative',
+                      overflow: 'hidden',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      whiteSpace: 'nowrap',
+                      color: 'var(--text-color)',
+                      fontWeight: 700,
+                      fontSize: isMobile ? '0.72rem' : '0.78rem',
+                      minHeight: isMobile ? '30px' : '34px',
+                      height: isMobile ? '30px' : '34px',
+                      padding: 0,
+                      flexShrink: 0,
+                      cursor: 'pointer',
+                      transformOrigin: 'right center',
+                    }}
                   >
-                    <span className={`paste-label-detected ${clipboardPrompt ? 'active' : ''}`}>
-                      Link detected
-                    </span>
-                    <span className={`paste-label-normal ${clipboardPrompt ? 'is-hidden' : ''}`}>
-                      Paste
-                    </span>
-                  </button>
+                    <AnimatePresence initial={false} mode="popLayout">
+                      {clipboardPrompt ? (
+                        <motion.span
+                          key="detected-multi"
+                          initial={{ x: 36, opacity: 0 }}
+                          animate={{ x: 0, opacity: 1 }}
+                          exit={{ x: -36, opacity: 0 }}
+                          transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                          style={{
+                            position: 'absolute',
+                            inset: 0,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            userSelect: 'none',
+                            whiteSpace: 'nowrap',
+                            color: 'var(--text-color)',
+                          }}
+                        >
+                          Link detected
+                        </motion.span>
+                      ) : (
+                        <motion.span
+                          key="paste-multi"
+                          initial={{ x: 36, opacity: 0 }}
+                          animate={{ x: 0, opacity: 1 }}
+                          exit={{ x: -36, opacity: 0 }}
+                          transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                          style={{
+                            position: 'absolute',
+                            inset: 0,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            userSelect: 'none',
+                            whiteSpace: 'nowrap',
+                            color: 'var(--text-color)',
+                          }}
+                        >
+                          Paste
+                        </motion.span>
+                      )}
+                    </AnimatePresence>
+                  </motion.button>
                 )}
 
                 <button
@@ -1334,7 +1445,7 @@ export function UrlInput() {
           /* Single URL Input Pill Container */
           <div
             className="input-bar-inner"
-            onMouseEnter={handleCheckClipboard}
+            onMouseEnter={() => handleCheckClipboard(true)}
             style={{
               position: 'relative',
               display: 'flex',
@@ -1382,7 +1493,7 @@ export function UrlInput() {
                 onFocus={() => {
                   setIsInputFocused(true);
                   if (isSearchMode && suggestions.length > 0) setShowSuggestions(true);
-                  handleCheckClipboard();
+                  handleCheckClipboard(true);
                 }}
                 onBlur={() => setIsInputFocused(false)}
                 placeholder={isSearchMode ? 'Type keywords (e.g. lofi hip hop, podcast)...' : ''}
@@ -1459,19 +1570,80 @@ export function UrlInput() {
                   </button>
                 ) : (
                   !isSearchMode && (
-                    <button
+                    <motion.button
                       type="button"
                       onClick={clipboardPrompt ? handleAcceptClipboardPrompt : handlePaste}
                       title={clipboardPrompt ? `Click to paste detected ${clipboardPrompt.platformName} link` : "Paste from clipboard"}
-                      className={`pill-btn input-action-btn paste-detect-btn ${clipboardPrompt ? 'is-detected' : ''}`}
+                      className="pill-btn input-action-btn paste-motion-btn"
+                      animate={{
+                        width: clipboardPrompt ? (isMobile ? 104 : 124) : (isMobile ? 54 : 66),
+                      }}
+                      transition={{
+                        duration: 0.38,
+                        ease: [0.16, 1, 0.3, 1],
+                      }}
+                      style={{
+                        position: 'relative',
+                        overflow: 'hidden',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        whiteSpace: 'nowrap',
+                        color: 'var(--text-color)',
+                        fontWeight: 700,
+                        fontSize: isMobile ? '0.72rem' : '0.82rem',
+                        minHeight: isMobile ? '32px' : '38px',
+                        height: isMobile ? '32px' : '38px',
+                        padding: 0,
+                        flexShrink: 0,
+                        cursor: 'pointer',
+                        transformOrigin: 'right center',
+                      }}
                     >
-                      <span className={`paste-label-detected ${clipboardPrompt ? 'active' : ''}`}>
-                        Link detected
-                      </span>
-                      <span className={`paste-label-normal ${clipboardPrompt ? 'is-hidden' : ''}`}>
-                        Paste
-                      </span>
-                    </button>
+                      <AnimatePresence initial={false} mode="popLayout">
+                        {clipboardPrompt ? (
+                          <motion.span
+                            key="detected-single"
+                            initial={{ x: 36, opacity: 0 }}
+                            animate={{ x: 0, opacity: 1 }}
+                            exit={{ x: -36, opacity: 0 }}
+                            transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                            style={{
+                              position: 'absolute',
+                              inset: 0,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              userSelect: 'none',
+                              whiteSpace: 'nowrap',
+                              color: 'var(--text-color)',
+                            }}
+                          >
+                            Link detected
+                          </motion.span>
+                        ) : (
+                          <motion.span
+                            key="paste-single"
+                            initial={{ x: 36, opacity: 0 }}
+                            animate={{ x: 0, opacity: 1 }}
+                            exit={{ x: -36, opacity: 0 }}
+                            transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                            style={{
+                              position: 'absolute',
+                              inset: 0,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              userSelect: 'none',
+                              whiteSpace: 'nowrap',
+                              color: 'var(--text-color)',
+                            }}
+                          >
+                            Paste
+                          </motion.span>
+                        )}
+                      </AnimatePresence>
+                    </motion.button>
                   )
                 )
               )}
