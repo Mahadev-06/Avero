@@ -1260,54 +1260,56 @@ export function UrlInput() {
                     Clear All
                   </button>
                 ) : (
-                  <AnimatePresence mode="wait" initial={false}>
-                    {clipboardPrompt ? (
-                      <motion.button
-                        key="multi-detected-paste-btn"
-                        type="button"
-                        onClick={handleAcceptClipboardPrompt}
-                        initial={{ opacity: 0, x: 24 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: -24 }}
-                        transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
-                        title={`Click to paste detected ${clipboardPrompt.platformName} link`}
-                        className="pill-btn input-action-btn"
-                        style={{
-                          padding: '0.35rem 0.85rem',
-                          fontSize: '0.78rem',
-                          fontWeight: 700,
-                          whiteSpace: 'nowrap',
-                          minHeight: '34px',
-                          color: 'var(--text-color)',
-                          cursor: 'pointer',
-                        }}
-                      >
-                        Link detected
-                      </motion.button>
-                    ) : (
-                      <motion.button
-                        key="multi-normal-paste-btn"
-                        type="button"
-                        onClick={handlePaste}
-                        initial={{ opacity: 0, x: 24 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: -24 }}
-                        transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
-                        title="Paste from clipboard"
-                        className="pill-btn input-action-btn"
-                        style={{
-                          padding: '0.35rem 0.85rem',
-                          fontSize: '0.78rem',
-                          fontWeight: 700,
-                          whiteSpace: 'nowrap',
-                          minHeight: '34px',
-                          color: 'var(--text-color)',
-                        }}
-                      >
-                        Paste
-                      </motion.button>
-                    )}
-                  </AnimatePresence>
+                  <motion.button
+                    type="button"
+                    onClick={clipboardPrompt ? handleAcceptClipboardPrompt : handlePaste}
+                    title={clipboardPrompt ? `Click to paste detected ${clipboardPrompt.platformName} link` : "Paste from clipboard"}
+                    className="pill-btn input-action-btn"
+                    layout
+                    transition={{
+                      layout: { duration: 0.32, ease: [0.16, 1, 0.3, 1] },
+                    }}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: '0.35rem 0.85rem',
+                      fontSize: '0.78rem',
+                      fontWeight: 700,
+                      whiteSpace: 'nowrap',
+                      minHeight: '34px',
+                      color: 'var(--text-color)',
+                      cursor: 'pointer',
+                      overflow: 'hidden',
+                      transformOrigin: 'right center',
+                    }}
+                  >
+                    <AnimatePresence mode="popLayout" initial={false}>
+                      {clipboardPrompt ? (
+                        <motion.span
+                          key="multi-detected-label"
+                          initial={{ opacity: 0, x: 14 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, x: 14 }}
+                          transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+                          style={{ display: 'inline-block', whiteSpace: 'nowrap' }}
+                        >
+                          Link detected
+                        </motion.span>
+                      ) : (
+                        <motion.span
+                          key="multi-paste-label"
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, x: -10 }}
+                          transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+                          style={{ display: 'inline-block', whiteSpace: 'nowrap' }}
+                        >
+                          Paste
+                        </motion.span>
+                      )}
+                    </AnimatePresence>
+                  </motion.button>
                 )}
 
                 <button
@@ -1494,54 +1496,56 @@ export function UrlInput() {
                   </button>
                 ) : (
                   !isSearchMode && (
-                    <AnimatePresence mode="wait" initial={false}>
-                      {clipboardPrompt ? (
-                        <motion.button
-                          key="detected-paste-btn"
-                          type="button"
-                          onClick={handleAcceptClipboardPrompt}
-                          initial={{ opacity: 0, x: 24 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          exit={{ opacity: 0, x: -24 }}
-                          transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
-                          title={`Click to paste detected ${clipboardPrompt.platformName} link`}
-                          className="pill-btn input-action-btn"
-                          style={{
-                            padding: '0.45rem 0.95rem',
-                            fontSize: '0.82rem',
-                            fontWeight: 700,
-                            whiteSpace: 'nowrap',
-                            minHeight: '38px',
-                            color: 'var(--text-color)',
-                            cursor: 'pointer',
-                          }}
-                        >
-                          Link detected
-                        </motion.button>
-                      ) : (
-                        <motion.button
-                          key="normal-paste-btn"
-                          type="button"
-                          onClick={handlePaste}
-                          initial={{ opacity: 0, x: 24 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          exit={{ opacity: 0, x: -24 }}
-                          transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
-                          title="Paste from clipboard"
-                          className="pill-btn input-action-btn"
-                          style={{
-                            padding: '0.45rem 0.95rem',
-                            fontSize: '0.82rem',
-                            fontWeight: 700,
-                            whiteSpace: 'nowrap',
-                            minHeight: '38px',
-                            color: 'var(--text-color)',
-                          }}
-                        >
-                          Paste
-                        </motion.button>
-                      )}
-                    </AnimatePresence>
+                    <motion.button
+                      type="button"
+                      onClick={clipboardPrompt ? handleAcceptClipboardPrompt : handlePaste}
+                      title={clipboardPrompt ? `Click to paste detected ${clipboardPrompt.platformName} link` : "Paste from clipboard"}
+                      className="pill-btn input-action-btn"
+                      layout
+                      transition={{
+                        layout: { duration: 0.32, ease: [0.16, 1, 0.3, 1] },
+                      }}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: '0.45rem 0.95rem',
+                        fontSize: '0.82rem',
+                        fontWeight: 700,
+                        whiteSpace: 'nowrap',
+                        minHeight: '38px',
+                        color: 'var(--text-color)',
+                        cursor: 'pointer',
+                        overflow: 'hidden',
+                        transformOrigin: 'right center',
+                      }}
+                    >
+                      <AnimatePresence mode="popLayout" initial={false}>
+                        {clipboardPrompt ? (
+                          <motion.span
+                            key="detected-label"
+                            initial={{ opacity: 0, x: 14 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: 14 }}
+                            transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+                            style={{ display: 'inline-block', whiteSpace: 'nowrap' }}
+                          >
+                            Link detected
+                          </motion.span>
+                        ) : (
+                          <motion.span
+                            key="paste-label"
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: -10 }}
+                            transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+                            style={{ display: 'inline-block', whiteSpace: 'nowrap' }}
+                          >
+                            Paste
+                          </motion.span>
+                        )}
+                      </AnimatePresence>
+                    </motion.button>
                   )
                 )
               )}
