@@ -1,10 +1,13 @@
 "use client";
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { AveroLogo } from '@/components/ui/avero-logo';
 
 export function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
+  const pathname = usePathname();
+  const [hash, setHash] = useState('');
 
   useEffect(() => {
     const handleScroll = () => {
@@ -15,10 +18,33 @@ export function Header() {
       }
     };
 
+    const handleHashChange = () => {
+      setHash(window.location.hash);
+    };
+
     window.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener('hashchange', handleHashChange);
     handleScroll();
-    return () => window.removeEventListener('scroll', handleScroll);
+    setHash(window.location.hash);
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('hashchange', handleHashChange);
+    };
   }, []);
+
+  // Compute active statuses based on current route
+  const isFaqActive = (pathname === '/' || pathname === '') && hash === '#faq';
+  const isHomeActive = (pathname === '/' || pathname === '') && hash !== '#faq';
+  const isBlogActive = pathname === '/blog' || (pathname && pathname.startsWith('/blog/'));
+  const isAboutActive = pathname === '/about' || (pathname && pathname.startsWith('/about/'));
+
+  const navItems = [
+    { name: 'Home', href: '/', isActive: isHomeActive, onClick: () => setHash('') },
+    { name: 'Blog', href: '/blog', isActive: isBlogActive, onClick: () => setHash('') },
+    { name: 'About', href: '/about', isActive: isAboutActive, onClick: () => setHash('') },
+    { name: 'FAQ', href: '/#faq', isActive: isFaqActive, onClick: () => setHash('#faq') },
+  ];
 
   return (
     <header
@@ -55,6 +81,7 @@ export function Header() {
         {/* Left AVERO Logo */}
         <Link
           href="/"
+          onClick={() => setHash('')}
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -68,64 +95,31 @@ export function Header() {
 
         {/* Center Nav Links */}
         <div className="nav-links-wrap" style={{ display: 'flex', alignItems: 'center', gap: '1.4rem' }}>
-          <Link
-            href="/"
-            className="nav-link-item"
-            style={{
-              fontSize: '0.9rem',
-              fontWeight: 700,
-              color: 'var(--text-color)',
-              textDecoration: 'none',
-              transition: 'color 0.15s ease',
-            }}
-          >
-            Home
-          </Link>
-          <Link
-            href="/blog"
-            className="nav-link-item"
-            style={{
-              fontSize: '0.9rem',
-              fontWeight: 600,
-              color: 'var(--text-muted)',
-              textDecoration: 'none',
-              transition: 'color 0.15s ease',
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--text-color)')}
-            onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-muted)')}
-          >
-            Blog
-          </Link>
-          <Link
-            href="/about"
-            className="nav-link-item"
-            style={{
-              fontSize: '0.9rem',
-              fontWeight: 600,
-              color: 'var(--text-muted)',
-              textDecoration: 'none',
-              transition: 'color 0.15s ease',
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--text-color)')}
-            onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-muted)')}
-          >
-            About
-          </Link>
-          <Link
-            href="/#faq"
-            className="nav-link-item"
-            style={{
-              fontSize: '0.9rem',
-              fontWeight: 600,
-              color: 'var(--text-muted)',
-              textDecoration: 'none',
-              transition: 'color 0.15s ease',
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--text-color)')}
-            onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-muted)')}
-          >
-            FAQ
-          </Link>
+          {navItems.map((item) => (
+            <Link
+              key={item.name}
+              href={item.href}
+              onClick={item.onClick}
+              className={`nav-link-item ${item.isActive ? 'active' : ''}`}
+              style={{
+                fontSize: '0.9rem',
+                fontWeight: item.isActive ? 750 : 600,
+                color: item.isActive ? 'var(--text-color)' : 'var(--text-muted)',
+                textDecoration: 'none',
+                transition: 'color 0.15s ease, font-weight 0.15s ease',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = 'var(--text-color)';
+              }}
+              onMouseLeave={(e) => {
+                if (!item.isActive) {
+                  e.currentTarget.style.color = 'var(--text-muted)';
+                }
+              }}
+            >
+              {item.name}
+            </Link>
+          ))}
         </div>
       </nav>
     </header>
