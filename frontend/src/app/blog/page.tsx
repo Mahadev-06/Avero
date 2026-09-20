@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ArrowRight, BookOpen, Calendar, Clock, Sparkles } from 'lucide-react';
+import { ArrowRight, Clock } from 'lucide-react';
 import { getAllBlogPosts } from '@/lib/blog-data';
 import { SITE_URL } from '@/lib/constants';
 import { BlogCtaCard } from '@/components/blog/blog-cta-card';
@@ -66,26 +66,6 @@ export default function BlogIndexPage() {
         }}
       >
         <div className="container" style={{ maxWidth: '840px' }}>
-          <div
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '0.45rem',
-              padding: '0.35rem 0.95rem',
-              borderRadius: 'var(--radius-full)',
-              backgroundColor: 'var(--bg-color)',
-              boxShadow: '2px 2px 5px var(--neumorph-dark), -2px -2px 5px var(--neumorph-light)',
-              fontSize: '0.75rem',
-              fontWeight: 800,
-              letterSpacing: '0.08em',
-              color: 'var(--text-color)',
-              marginBottom: '1.25rem',
-            }}
-          >
-            <BookOpen className="w-3.5 h-3.5 text-pink-500" />
-            <span>AVERO KNOWLEDGE HUB</span>
-          </div>
-
           <h1
             style={{
               fontSize: 'clamp(1.95rem, 4.5vw, 2.85rem)',
@@ -93,23 +73,11 @@ export default function BlogIndexPage() {
               letterSpacing: '-0.03em',
               color: 'var(--text-color)',
               lineHeight: 1.15,
-              marginBottom: '1rem',
+              margin: 0,
             }}
           >
             Social Media Download Guides &amp; Tutorials
           </h1>
-
-          <p
-            style={{
-              fontSize: 'clamp(1rem, 2.2vw, 1.15rem)',
-              color: 'var(--text-muted)',
-              lineHeight: 1.6,
-              maxWidth: '680px',
-              margin: '0 auto',
-            }}
-          >
-            Substantial, platform-tested walkthroughs on how to extract video, audio, and photo media in master quality with zero watermarks or account restrictions.
-          </p>
         </div>
       </section>
 
