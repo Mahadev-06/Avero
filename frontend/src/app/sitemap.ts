@@ -1,10 +1,13 @@
 import type { MetadataRoute } from 'next';
+import { SITE_URL } from '@/lib/constants';
+import { getAllBlogPosts } from '@/lib/blog-data';
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://avero.app';
+  const baseUrl = SITE_URL;
   const currentDate = new Date();
-  
-  return [
+  const blogPosts = getAllBlogPosts();
+
+  const staticRoutes: MetadataRoute.Sitemap = [
     {
       url: baseUrl,
       lastModified: currentDate,
@@ -12,10 +15,10 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 1.0,
     },
     {
-      url: `${baseUrl}/youtube-downloader`,
+      url: `${baseUrl}/blog`,
       lastModified: currentDate,
-      changeFrequency: 'weekly',
-      priority: 0.9,
+      changeFrequency: 'daily',
+      priority: 0.8,
     },
     {
       url: `${baseUrl}/instagram-downloader`,
@@ -66,4 +69,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.3,
     },
   ];
+
+  const blogRoutes: MetadataRoute.Sitemap = blogPosts.map((post) => ({
+    url: `${baseUrl}/blog/${post.slug}`,
+    lastModified: new Date(post.updatedAt || post.publishedAt),
+    changeFrequency: 'weekly',
+    priority: 0.8,
+  }));
+
+  return [...staticRoutes, ...blogRoutes];
 }

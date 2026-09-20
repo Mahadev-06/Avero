@@ -121,6 +121,11 @@ export function Footer() {
                   </Link>
                 </li>
                 <li>
+                  <Link href="/blog" className="text-muted hover:text-foreground transition-colors" style={{ fontSize: '0.88rem', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                    Guides &amp; Blog
+                  </Link>
+                </li>
+                <li>
                   <Link href="/#faq" className="text-muted hover:text-foreground transition-colors" style={{ fontSize: '0.88rem', fontWeight: 600, whiteSpace: 'nowrap' }}>
                     FAQ &amp; Questions
                   </Link>

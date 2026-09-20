@@ -4,6 +4,7 @@ import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
 import { Geist, Geist_Mono } from "next/font/google";
 import { cn } from "@/lib/utils";
+import { SITE_URL } from "@/lib/constants";
 
 const geistSans = Geist({
   subsets: ['latin'],
@@ -17,10 +18,10 @@ const geistMono = Geist_Mono({
   display: 'swap',
 });
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://avero-indol.vercel.app';
+const siteUrl = SITE_URL;
 
 export const metadata: Metadata = {
-  metadataBase: new URL(siteUrl),
+  metadataBase: new URL(SITE_URL),
   title: {
     default: 'AVERO | Free All-in-One Video & Image Downloader',
     template: '%s | AVERO',
@@ -68,20 +69,20 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'AVERO | Free All-in-One Video & Image Downloader',
     description: 'Fast, clean, high-speed media downloader & converter for video, audio, and photo links.',
-    url: siteUrl,
+    url: SITE_URL,
     siteName: 'AVERO',
     locale: 'en_US',
     type: 'website',
     images: [
       {
-        url: '/og-icon.png',
+        url: `${SITE_URL}/og-icon.png`,
         width: 512,
         height: 512,
         type: 'image/png',
         alt: 'AVERO Favicon Logo',
       },
       {
-        url: '/og-image.png',
+        url: `${SITE_URL}/og-image.png`,
         width: 1200,
         height: 630,
         type: 'image/png',
@@ -93,10 +94,10 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'AVERO | Free All-in-One Video & Image Downloader',
     description: 'Fast, clean, high-speed media downloader & converter for video, audio, and photo links.',
-    images: ['/og-image.png'],
+    images: [`${SITE_URL}/og-image.png`],
   },
   alternates: {
-    canonical: '/',
+    canonical: `${SITE_URL}/`,
   },
 };
 

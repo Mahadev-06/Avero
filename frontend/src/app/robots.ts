@@ -1,14 +1,13 @@
 import type { MetadataRoute } from 'next';
+import { SITE_URL } from '@/lib/constants';
 
 export default function robots(): MetadataRoute.Robots {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://avero.app';
-
   return {
     rules: {
       userAgent: '*',
-      allow: '/',
+      allow: ['/', '/blog/', '/blog/*'],
       disallow: ['/api/'],
     },
-    sitemap: `${baseUrl}/sitemap.xml`,
+    sitemap: `${SITE_URL}/sitemap.xml`,
   };
 }
