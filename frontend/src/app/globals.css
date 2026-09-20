@@ -229,13 +229,7 @@ button {
   gap: 0.35rem;
   height: 100%;
   box-sizing: border-box;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
   text-align: left;
-}
-
-.nm-tool-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 8px 8px 20px var(--neumorph-dark), -8px -8px 20px var(--neumorph-light);
 }
 
 @media (min-width: 640px) {
