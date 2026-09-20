@@ -96,15 +96,15 @@ export default function BlogIndexPage() {
                 key={post.slug}
                 className="nm-result-card"
                 style={{
-                  borderRadius: '22px',
+                  borderRadius: '24px',
                   backgroundColor: 'var(--bg-color)',
-                  boxShadow: 'var(--neumorph-raised-sm)',
-                  border: '1px solid rgba(255, 255, 255, 0.7)',
-                  padding: '1.65rem',
+                  boxShadow: '8px 8px 20px var(--neumorph-dark), -8px -8px 20px var(--neumorph-light)',
+                  border: '1px solid rgba(255, 255, 255, 0.65)',
+                  padding: '1.75rem',
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'space-between',
-                  transition: 'transform 0.15s ease, box-shadow 0.15s ease',
+                  transition: 'transform 0.2s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.2s cubic-bezier(0.2, 0, 0, 1)',
                 }}
               >
                 <div>
@@ -120,11 +120,11 @@ export default function BlogIndexPage() {
                       style={{
                         display: 'inline-flex',
                         alignItems: 'center',
-                        padding: '0.25rem 0.65rem',
+                        padding: '0.28rem 0.75rem',
                         borderRadius: 'var(--radius-full)',
                         backgroundColor: 'var(--bg-color)',
-                        boxShadow: 'var(--neumorph-raised-sm)',
-                        border: `1px solid ${post.badgeColor}40`,
+                        boxShadow: '2px 2px 5px var(--neumorph-dark), -2px -2px 5px var(--neumorph-light)',
+                        border: `1px solid ${post.badgeColor}35`,
                         fontSize: '0.72rem',
                         fontWeight: 800,
                         letterSpacing: '0.06em',
@@ -202,10 +202,13 @@ export default function BlogIndexPage() {
                       display: 'inline-flex',
                       alignItems: 'center',
                       gap: '0.4rem',
-                      padding: '0.45rem 0.95rem',
-                      fontSize: '0.8rem',
+                      padding: '0.5rem 1.1rem',
+                      fontSize: '0.82rem',
                       fontWeight: 750,
                       borderRadius: 'var(--radius-full)',
+                      backgroundColor: 'var(--bg-color)',
+                      boxShadow: '4px 4px 10px var(--neumorph-dark), -4px -4px 10px var(--neumorph-light)',
+                      border: '1px solid rgba(255, 255, 255, 0.65)',
                       textDecoration: 'none',
                       color: 'var(--text-color)',
                     }}

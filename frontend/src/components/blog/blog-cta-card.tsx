@@ -11,12 +11,12 @@ export function BlogCtaCard({ platformName = 'Social Media', customHeadline }: B
     <div
       className="nm-result-card"
       style={{
-        margin: '2.5rem 0',
-        padding: 'clamp(1.5rem, 4vw, 2.25rem)',
-        borderRadius: '24px',
+        margin: '2.75rem 0 1.5rem 0',
+        padding: 'clamp(1.75rem, 4vw, 2.5rem)',
+        borderRadius: '28px',
         backgroundColor: 'var(--bg-color)',
-        boxShadow: 'var(--neumorph-raised-lg)',
-        border: '1px solid rgba(255, 255, 255, 0.7)',
+        boxShadow: '10px 10px 26px var(--neumorph-dark), -10px -10px 26px var(--neumorph-light)',
+        border: '1px solid rgba(255, 255, 255, 0.65)',
         position: 'relative',
         overflow: 'hidden',
       }}

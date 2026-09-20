@@ -25,6 +25,10 @@
   --nm-raised-md: 10px 10px 20px #bebebe, -10px -10px 20px #ffffff;
   --nm-raised-lg: 16px 16px 32px #bebebe, -16px -16px 32px #ffffff;
   
+  --neumorph-raised-sm: 5px 5px 10px #bebebe, -5px -5px 10px #ffffff;
+  --neumorph-raised-md: 10px 10px 20px #bebebe, -10px -10px 20px #ffffff;
+  --neumorph-raised-lg: 16px 16px 32px #bebebe, -16px -16px 32px #ffffff;
+  
   --nm-inset-sm: inset 5px 5px 10px #bebebe, inset -5px -5px 10px #ffffff;
   --nm-inset-md: inset 7px 7px 14px #bebebe, inset -7px -7px 14px #ffffff;
   --nm-inset-deep: inset 10px 10px 20px #bebebe, inset -10px -10px 20px #ffffff;
@@ -437,20 +441,22 @@ button {
 
 /* Neumorphism.io Cards & Surfaces */
 .card-editorial,
-.nm-card {
+.nm-card,
+.nm-result-card {
   background: var(--card-bg);
   border-radius: var(--radius-xl);
   padding: 1.75rem;
-  box-shadow: var(--nm-raised-md);
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  overflow: visible;
+  box-shadow: 8px 8px 20px var(--neumorph-dark), -8px -8px 20px var(--neumorph-light);
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  overflow: hidden;
   position: relative;
-  transition: box-shadow 0.2s cubic-bezier(0.2, 0, 0, 1), transform 0.2s ease;
+  transition: box-shadow 0.25s cubic-bezier(0.2, 0, 0, 1), transform 0.25s ease;
 }
 
 .card-editorial:hover,
-.nm-card:hover {
-  box-shadow: var(--nm-raised-lg);
+.nm-card:hover,
+.nm-result-card:hover {
+  box-shadow: 12px 12px 28px var(--neumorph-dark), -12px -12px 28px var(--neumorph-light);
   transform: translateY(-2px);
 }
 

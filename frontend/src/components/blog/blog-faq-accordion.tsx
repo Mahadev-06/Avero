@@ -25,7 +25,8 @@ export function BlogFaqAccordion({ faqs, platformName = 'Platform' }: BlogFaqAcc
             height: '32px',
             borderRadius: '50%',
             backgroundColor: 'var(--bg-color)',
-            boxShadow: 'var(--neumorph-raised-sm)',
+            boxShadow: '3px 3px 6px var(--neumorph-dark), -3px -3px 6px var(--neumorph-light)',
+            border: '1px solid rgba(255, 255, 255, 0.65)',
             display: 'inline-flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -54,10 +55,12 @@ export function BlogFaqAccordion({ faqs, platformName = 'Platform' }: BlogFaqAcc
             <div
               key={idx}
               style={{
-                borderRadius: '16px',
+                borderRadius: '18px',
                 backgroundColor: 'var(--bg-color)',
                 border: '1px solid rgba(255, 255, 255, 0.65)',
-                boxShadow: isOpen ? 'var(--nm-inset-sm)' : 'var(--neumorph-raised-sm)',
+                boxShadow: isOpen
+                  ? 'inset 4px 4px 8px var(--neumorph-dark), inset -4px -4px 8px var(--neumorph-light)'
+                  : '5px 5px 12px var(--neumorph-dark), -5px -5px 12px var(--neumorph-light)',
                 transition: 'box-shadow 0.2s ease, border-color 0.2s ease',
                 overflow: 'hidden',
               }}
