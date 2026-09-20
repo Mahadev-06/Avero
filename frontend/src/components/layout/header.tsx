@@ -82,6 +82,21 @@ export function Header() {
             Home
           </Link>
           <Link
+            href="/blog"
+            className="nav-link-item"
+            style={{
+              fontSize: '0.9rem',
+              fontWeight: 600,
+              color: 'var(--text-muted)',
+              textDecoration: 'none',
+              transition: 'color 0.15s ease',
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--text-color)')}
+            onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-muted)')}
+          >
+            Blog
+          </Link>
+          <Link
             href="/about"
             className="nav-link-item"
             style={{
