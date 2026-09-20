@@ -513,17 +513,41 @@ button {
 .platform-marquee-container {
   max-width: 380px;
   width: 100%;
-  margin: 0 auto 3.75rem auto;
+  margin: 0 auto 3.35rem auto;
   overflow: hidden;
   position: relative;
-  padding: 0.35rem 0;
+  padding: 12px 0;
   background: transparent;
   border: none;
   box-shadow: none;
   pointer-events: none;
   user-select: none;
-  mask-image: linear-gradient(to right, transparent 0%, black 15%, black 85%, transparent 100%);
-  -webkit-mask-image: linear-gradient(to right, transparent 0%, black 15%, black 85%, transparent 100%);
+  mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    rgba(0, 0, 0, 0.04) 2%,
+    rgba(0, 0, 0, 0.25) 6%,
+    rgba(0, 0, 0, 0.7) 12%,
+    black 18%,
+    black 82%,
+    rgba(0, 0, 0, 0.7) 88%,
+    rgba(0, 0, 0, 0.25) 94%,
+    rgba(0, 0, 0, 0.04) 98%,
+    transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    rgba(0, 0, 0, 0.04) 2%,
+    rgba(0, 0, 0, 0.25) 6%,
+    rgba(0, 0, 0, 0.7) 12%,
+    black 18%,
+    black 82%,
+    rgba(0, 0, 0, 0.7) 88%,
+    rgba(0, 0, 0, 0.25) 94%,
+    rgba(0, 0, 0, 0.04) 98%,
+    transparent 100%
+  );
 }
 
 .platform-marquee-track {
@@ -820,8 +844,8 @@ button {
 
   .platform-marquee-container {
     max-width: 260px !important;
-    margin: 0 auto 1.85rem auto !important;
-    padding: 3px 0 !important;
+    margin: 0 auto 1.45rem auto !important;
+    padding: 10px 0 !important;
   }
 
   .platform-marquee-group {
@@ -933,8 +957,8 @@ button {
 
   .platform-marquee-container {
     max-width: 245px !important;
-    margin: 0 auto 1.75rem auto !important;
-    padding: 2px 0 !important;
+    margin: 0 auto 1.35rem auto !important;
+    padding: 10px 0 !important;
   }
 
   .platform-marquee-group {
@@ -1050,7 +1074,8 @@ button {
 
   .platform-marquee-container {
     max-width: 220px !important;
-    margin: 0 auto 1.6rem auto !important;
+    margin: 0 auto 1.25rem auto !important;
+    padding: 10px 0 !important;
   }
 
   .platform-marquee-group {
