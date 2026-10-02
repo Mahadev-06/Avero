@@ -82,17 +82,17 @@ export function HeroTitleAnimation({
   const showHighlight = phase === "highlight" || phase === "done";
 
   const titleBaseStyle: React.CSSProperties = {
-    fontFamily: "var(--font-geist-sans), sans-serif",
-    fontSize: "clamp(1.65rem, 3.4vw, 2.35rem)",
-    fontWeight: 500,
-    letterSpacing: "-0.02em",
-    lineHeight: 1.28,
+    fontFamily: "var(--font-heading)",
+    fontSize: "clamp(2.1rem, 4.8vw, 3.25rem)",
+    fontWeight: 900,
+    letterSpacing: "-0.03em",
+    lineHeight: 1.1,
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
     justifyContent: "center",
     rowGap: "0.65rem",
-    color: "var(--text-color, #262626)",
+    color: "#16171a",
     textAlign: "center",
     margin: 0,
     width: "100%",
@@ -130,7 +130,7 @@ export function HeroTitleAnimation({
             alignItems: "center",
             justifyContent: "center",
             columnGap: "0.32em",
-            fontWeight: 500,
+            fontWeight: 900,
           }}
         >
           {brandWords.map((w, i) => (
@@ -159,7 +159,7 @@ export function HeroTitleAnimation({
             }}
           >
             {highlightWords.map((w, i) => (
-              <span key={i} style={{ fontWeight: 700 }}>
+              <span key={i} style={{ fontWeight: 800 }}>
                 {w}
               </span>
             ))}
@@ -186,8 +186,8 @@ export function HeroTitleAnimation({
             alignItems: "center",
             justifyContent: "center",
             columnGap: "0.32em",
-            fontWeight: 500,
-            color: "var(--text-color, #262626)",
+            fontWeight: 900,
+            color: "#16171a",
             opacity: brandVisible ? 1 : 0,
             transform: `translateY(${brandMoved ? 0 : titleOffsetY}px)`,
             transition: brandMoved
@@ -248,7 +248,8 @@ export function HeroTitleAnimation({
                 style={{
                   position: "relative",
                   zIndex: 2,
-                  fontWeight: 700,
+                  fontWeight: 800,
+                  letterSpacing: "-0.03em",
                   color: showHighlight
                     ? "#FFFFFF"
                     : "var(--text-color, #262626)",

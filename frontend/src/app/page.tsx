@@ -1,5 +1,5 @@
-import Link from 'next/link';
 import { UrlInput } from '@/components/media/url-input';
+import { DedicatedToolsSection } from '@/components/media/dedicated-tools-section';
 import { HowItWorksGuide } from '@/components/media/how-it-works-guide';
 import { AdSlot } from '@/components/layout/ad-slot';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
@@ -52,112 +52,6 @@ export default function Home() {
     },
   ];
 
-  const toolsList = [
-    {
-      title: 'Instagram Downloader',
-      desc: 'Download Instagram Reels, video posts, carousel galleries, and story clips.',
-      href: '/instagram-downloader',
-      icon: (
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
-          <defs>
-            <linearGradient id="igToolGrad" x1="0%" y1="100%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#FFD521" />
-              <stop offset="25%" stopColor="#F50000" />
-              <stop offset="50%" stopColor="#B900B4" />
-              <stop offset="100%" stopColor="#7E00FF" />
-            </linearGradient>
-          </defs>
-          <rect width="24" height="24" rx="6" fill="url(#igToolGrad)"/>
-          <rect x="3.5" y="3.5" width="17" height="17" rx="4.5" stroke="#FFFFFF" strokeWidth="1.8" fill="none"/>
-          <circle cx="12" cy="12" r="3.8" stroke="#FFFFFF" strokeWidth="1.8" fill="none"/>
-          <circle cx="16.5" cy="7.5" r="1.1" fill="#FFFFFF"/>
-        </svg>
-      ),
-    },
-    {
-      title: 'TikTok Downloader',
-      desc: 'Save trending TikTok videos in high-resolution, watermark-free MP4 format.',
-      href: '/tiktok-downloader',
-      icon: (
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
-          <circle cx="12" cy="12" r="12" fill="#000000" />
-          <path fill="#25F4EE" d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.82.56-1.31 1.55-1.24 2.55.05.9.6 1.75 1.41 2.16.85.45 1.92.42 2.73-.06.77-.45 1.28-1.29 1.34-2.19.04-3.58.02-7.16.02-10.74z"/>
-          <path fill="#FE2C55" d="M11.5 1.5c1.2 0 2.4 0 3.6 0 .07 1.4.58 2.8 1.6 3.8 1 1 2.4 1.5 3.8 1.6v3.6c-1.3-.05-2.6-.32-3.8-.88-.5-.23-1-.53-1.4-.84-.01 2.6.01 5.2-.02 7.8-.07 1.2-.48 2.5-1.2 3.5-1.2 1.7-3.2 2.8-5.3 2.9-1.3.07-2.5-.28-3.6-.92-1.8-1-3.1-3-3.3-5.1-.02-.4-.03-.9-.01-1.3.16-1.7 1-3.3 2.3-4.4 1.5-1.3 3.6-1.9 5.5-1.5.02 1.3-.04 2.6-.04 4-.9-.28-1.9-.2-2.7.33-.7.5-1.2 1.4-1.1 2.3.04.8.5 1.5 1.2 1.9.7.4 1.7.38 2.4-.05.7-.4 1.1-1.1 1.2-1.9.04-3.2.02-6.4.02-9.6z" opacity="0.85" />
-          <path fill="#FFFFFF" d="M12 1c1.2 0 2.4 0 3.6 0 .07 1.4.58 2.8 1.6 3.8 1 1 2.4 1.5 3.8 1.6v3.6c-1.3-.05-2.6-.32-3.8-.88-.5-.23-1-.53-1.4-.84-.01 2.6.01 5.2-.02 7.8-.07 1.2-.48 2.5-1.2 3.5-1.2 1.7-3.2 2.8-5.3 2.9-1.3.07-2.5-.28-3.6-.92-1.8-1-3.1-3-3.3-5.1-.02-.4-.03-.9-.01-1.3.16-1.7 1-3.3 2.3-4.4 1.5-1.3 3.6-1.9 5.5-1.5.02 1.3-.04 2.6-.04 4-.9-.28-1.9-.2-2.7.33-.7.5-1.2 1.4-1.1 2.3.04.8.5 1.5 1.2 1.9.7.4 1.7.38 2.4-.05.7-.4 1.1-1.1 1.2-1.9.04-3.2.02-6.4.02-9.6z"/>
-        </svg>
-      ),
-    },
-    {
-      title: 'Pinterest Downloader',
-      desc: 'Save Pinterest pins, full-resolution photos, GIFs, and idea video clips.',
-      href: '/',
-      icon: (
-        <img
-          src="/pinterest-logo.png"
-          alt="Pinterest"
-          width={28}
-          height={28}
-          style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'contain' }}
-        />
-      ),
-    },
-    {
-      title: 'Reddit Downloader',
-      desc: 'Download Reddit videos with merged audio, photo galleries, and media posts.',
-      href: '/',
-      icon: (
-        <img
-          src="/reddit-logo.png"
-          alt="Reddit"
-          width={28}
-          height={28}
-          style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'contain' }}
-        />
-      ),
-    },
-    {
-      title: 'Threads Downloader',
-      desc: 'Save Threads videos, photo posts, and multimedia links in master quality.',
-      href: '/',
-      icon: (
-        <img
-          src="/threads-logo.png"
-          alt="Threads"
-          width={28}
-          height={28}
-          style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'contain' }}
-        />
-      ),
-    },
-    {
-      title: 'Facebook Downloader',
-      desc: 'Download Facebook public videos, Watch streams, and Reels in Full HD quality.',
-      href: '/',
-      icon: (
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
-          <circle cx="12" cy="12" r="12" fill="#1877F2" />
-          <path fill="#FFFFFF" d="M15.5 12h-2.5v8h-3v-8h-2v-2.8h2v-1.8c0-2.3 1.4-3.6 3.5-3.6 1 0 1.9.08 2.1.1v2.5h-1.5c-1.1 0-1.4.5-1.4 1.3v1.5h2.8l-.5 2.8z"/>
-        </svg>
-      ),
-    },
-    {
-      title: 'X / Twitter Downloader',
-      desc: 'Save X video clips, animated GIFs, and high-resolution photo posts.',
-      href: '/',
-      icon: (
-        <div style={{ width: '28px', height: '28px', borderRadius: '50%', backgroundColor: '#000000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <img
-            src="/x-logo.png"
-            alt="X"
-            width={18}
-            height={18}
-            style={{ width: '18px', height: '18px', objectFit: 'contain' }}
-          />
-        </div>
-      ),
-    },
-  ];
-
   const faqJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'FAQPage',
@@ -204,41 +98,26 @@ export default function Home() {
         <AdSlot placement="hero-bottom" />
       </div>
 
-      {/* 2. POPULAR MEDIA TOOLS DIRECTORY */}
-      <section style={{ paddingTop: '2.5rem', paddingBottom: '3.5rem' }}>
-        <div className="container" style={{ maxWidth: '1080px' }}>
-          <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
-            <h2 className="text-3xl font-extrabold" style={{ letterSpacing: '-0.02em', color: 'var(--text-color)' }}>
-              Explore Dedicated Downloader Tools
-            </h2>
-          </div>
-
-          <div className="tools-grid">
-            {toolsList.map((tool) => (
-              <Link key={tool.title} href={tool.href} style={{ textDecoration: 'none' }}>
-                <div className="nm-tool-card">
-                  <div style={{ marginBottom: '0.45rem', display: 'flex', alignItems: 'center' }}>
-                    {tool.icon}
-                  </div>
-                  <h3 style={{ fontSize: '1.18rem', fontWeight: 800, color: 'var(--text-color)', margin: 0, letterSpacing: '-0.01em' }}>
-                    {tool.title}
-                  </h3>
-                  <p style={{ fontSize: '0.88rem', color: 'var(--text-muted)', margin: 0, lineHeight: 1.55, fontWeight: 500 }}>
-                    {tool.desc}
-                  </p>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
+      {/* 2. DEDICATED DOWNLOADER TOOLS */}
+      <DedicatedToolsSection />
 
       {/* 3. SUPPORTED FORMATS & QUALITY MATRIX TABLE */}
       <section style={{ paddingTop: '1rem', paddingBottom: '3.5rem' }}>
         <div className="container" style={{ maxWidth: '960px' }}>
-          <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
-            <h2 className="text-2xl sm:text-3xl font-extrabold" style={{ letterSpacing: '-0.02em' }}>
-              Supported Output Formats & Resolutions
+          <div style={{ textAlign: 'center', marginBottom: '2.75rem' }}>
+            <h2
+              style={{
+                fontSize: 'clamp(2.1rem, 4.8vw, 3rem)',
+                fontWeight: 900,
+                letterSpacing: '-0.03em',
+                lineHeight: 1.08,
+                margin: 0,
+                textAlign: 'center',
+                fontFamily: 'var(--font-heading)',
+              }}
+            >
+              <span style={{ display: 'block', color: '#16171a' }}>Supported Output</span>
+              <span style={{ display: 'block', color: '#5e6065', fontWeight: 800 }}>Formats & Resolutions</span>
             </h2>
           </div>
 
@@ -437,12 +316,23 @@ export default function Home() {
       {/* 5. FAQ ACCORDION SECTION */}
       <section id="faq" style={{ paddingTop: '2rem', paddingBottom: '4rem', scrollMarginTop: '2rem' }}>
         <div className="container" style={{ maxWidth: '860px' }}>
-          <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
-            <div style={{ display: 'inline-flex', padding: '0.35rem 0.85rem', borderRadius: 'var(--radius-full)', backgroundColor: 'var(--bg-color)', border: '1px solid rgba(255,255,255,0.6)', boxShadow: '3px 3px 6px var(--neumorph-dark), -3px -3px 6px var(--neumorph-light)', fontSize: '0.75rem', fontWeight: 800, letterSpacing: '0.08em', color: 'var(--text-color)', marginBottom: '0.75rem' }}>
+          <div style={{ textAlign: 'center', marginBottom: '2.75rem' }}>
+            <div style={{ display: 'inline-flex', padding: '0.35rem 0.85rem', borderRadius: 'var(--radius-full)', backgroundColor: 'var(--bg-color)', border: '1px solid rgba(255,255,255,0.6)', boxShadow: '3px 3px 6px var(--neumorph-dark), -3px -3px 6px var(--neumorph-light)', fontSize: '0.75rem', fontWeight: 800, letterSpacing: '0.08em', color: 'var(--text-color)', marginBottom: '1rem' }}>
               FREQUENTLY ASKED QUESTIONS
             </div>
-            <h2 className="text-3xl font-extrabold" style={{ letterSpacing: '-0.02em' }}>
-              Everything You Need to Know
+            <h2
+              style={{
+                fontSize: 'clamp(2.1rem, 4.8vw, 3rem)',
+                fontWeight: 900,
+                letterSpacing: '-0.03em',
+                lineHeight: 1.08,
+                margin: 0,
+                textAlign: 'center',
+                fontFamily: 'var(--font-heading)',
+              }}
+            >
+              <span style={{ display: 'block', color: '#16171a' }}>Everything You</span>
+              <span style={{ display: 'block', color: '#5e6065', fontWeight: 800 }}>Need to Know</span>
             </h2>
           </div>
 
@@ -532,8 +422,19 @@ export default function Home() {
               gap: '1.25rem',
             }}
           >
-            <h3 style={{ fontSize: '1.45rem', fontWeight: 800, color: 'var(--text-color)', margin: 0, letterSpacing: '-0.02em' }}>
-              Love using AVERO? Share with friends!
+            <h3
+              style={{
+                fontSize: 'clamp(1.5rem, 3.5vw, 1.85rem)',
+                fontWeight: 900,
+                letterSpacing: '-0.03em',
+                lineHeight: 1.15,
+                margin: 0,
+                textAlign: 'center',
+                fontFamily: 'var(--font-heading)',
+              }}
+            >
+              <span style={{ color: '#16171a' }}>Love using AVERO? </span>
+              <span style={{ color: '#5e6065', fontWeight: 800 }}>Share with friends!</span>
             </h3>
 
             <div>

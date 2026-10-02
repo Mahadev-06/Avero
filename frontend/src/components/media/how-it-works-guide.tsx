@@ -112,17 +112,22 @@ export function HowItWorksGuide() {
     <section id="how-it-works" style={{ paddingTop: '3rem', paddingBottom: '4rem' }}>
       <div className="container" style={{ maxWidth: '1200px' }}>
         
-        {/* Section Title & Subtitle */}
-        <div style={{ textAlign: 'center', maxWidth: '780px', margin: '0 auto 3rem auto' }}>
+        {/* Section Title */}
+        <div style={{ textAlign: 'center', maxWidth: '780px', margin: '0 auto 2.75rem auto' }}>
           <h2
-            className="text-3xl sm:text-4xl font-extrabold text-balance"
-            style={{ letterSpacing: '-0.02em', marginBottom: '1rem', fontFamily: 'var(--font-heading)' }}
+            style={{
+              fontSize: 'clamp(2.1rem, 4.8vw, 3rem)',
+              fontWeight: 900,
+              letterSpacing: '-0.03em',
+              lineHeight: 1.08,
+              margin: 0,
+              textAlign: 'center',
+              fontFamily: 'var(--font-heading)',
+            }}
           >
-            How to Download in 5 Simple Steps
+            <span style={{ display: 'block', color: '#16171a' }}>How to Download</span>
+            <span style={{ display: 'block', color: '#5e6065', fontWeight: 800 }}>in 5 Simple Steps</span>
           </h2>
-          <p className="text-muted text-pretty" style={{ fontSize: '1.02rem', lineHeight: 1.6, margin: 0 }}>
-            From grabbing the link to saving high-resolution video or audio, the workflow is fast, free, and seamless.
-          </p>
         </div>
 
         {/* Unified Interconnected Process Board */}
