@@ -41,7 +41,6 @@ export function TextShimmerWave({
         display: 'inline-flex',
         whiteSpace: 'pre',
         perspective: '500px',
-        // @ts-expect-error CSS variable
         '--tsw-z': `${zDistance * 6}px`,
         '--tsw-scale': scaleDistance,
         '--tsw-rot-y': `${rotateYDistance}deg`,

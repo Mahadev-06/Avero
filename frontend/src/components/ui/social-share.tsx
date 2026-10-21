@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
 import { FaWhatsapp, FaInstagram, FaFacebook } from "react-icons/fa";
 import { FaXTwitter } from "react-icons/fa6";
@@ -16,26 +17,33 @@ export interface SocialShareLinks {
 export function SocialShareButton({
   links = {},
   label = "Share Avero",
+  url,
 }: {
   links?: SocialShareLinks;
   label?: string;
+  url?: string;
 }) {
   const [hovered, setHovered] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [currentUrl, setCurrentUrl] = useState("https://avero-indol.vercel.app");
+  const pathname = usePathname();
 
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      setCurrentUrl(window.location.href);
+  const fallbackBase = "https://avero-indol.vercel.app";
+  const derivedUrl = url || (pathname ? `${fallbackBase}${pathname === "/" ? "" : pathname}` : fallbackBase);
+
+  const getShareUrl = () => {
+    if (url) return url;
+    if (typeof window !== "undefined" && window.location.href) {
+      return window.location.href;
     }
-  }, []);
+    return derivedUrl;
+  };
 
   const shareText = "Download videos, reels, photos & audio in master quality with Avero:";
 
   const defaultLinks: SocialShareLinks = {
-    whatsapp: `https://api.whatsapp.com/send?text=${encodeURIComponent(`${shareText} ${currentUrl}`)}`,
-    x: `https://x.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(currentUrl)}`,
-    facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(currentUrl)}`,
+    whatsapp: `https://api.whatsapp.com/send?text=${encodeURIComponent(`${shareText} ${derivedUrl}`)}`,
+    x: `https://x.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(derivedUrl)}`,
+    facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(derivedUrl)}`,
     instagram: "https://instagram.com/",
     ...links,
   };
@@ -44,11 +52,30 @@ export function SocialShareButton({
     e.preventDefault();
     e.stopPropagation();
     try {
-      await navigator.clipboard.writeText(currentUrl);
+      await navigator.clipboard.writeText(getShareUrl());
       setCopied(true);
       setTimeout(() => setCopied(false), 2200);
     } catch (err) {
       console.error("Failed to copy link", err);
+    }
+  };
+
+  const handleSocialClick = (e: React.MouseEvent<HTMLAnchorElement>, key: string) => {
+    if (links[key as keyof SocialShareLinks] || key === "instagram") {
+      return;
+    }
+    e.preventDefault();
+    const activeUrl = getShareUrl();
+    let shareUrl = "";
+    if (key === "whatsapp") {
+      shareUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(`${shareText} ${activeUrl}`)}`;
+    } else if (key === "x") {
+      shareUrl = `https://x.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(activeUrl)}`;
+    } else if (key === "facebook") {
+      shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(activeUrl)}`;
+    }
+    if (shareUrl) {
+      window.open(shareUrl, "_blank", "noopener,noreferrer");
     }
   };
 
@@ -193,6 +220,7 @@ export function SocialShareButton({
               <motion.a
                 key={key}
                 href={href}
+                onClick={(e) => handleSocialClick(e, key)}
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label={iconLabel}

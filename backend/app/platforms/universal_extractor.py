@@ -339,6 +339,57 @@ async def _scrape_reddit(url: str) -> dict:
     return {}
 
 
+def _extract_full_res_instagram_image(html: str) -> str | None:
+    """Extract full-resolution uncropped Instagram image from JSON or HTML."""
+    # 1. Look for image_versions2 candidates in JSON (Polaris / Relay)
+    json_candidate = re.search(
+        r'["\']image_versions2["\']\s*:\s*\{["\']candidates["\']\s*:\s*\[\s*\{["\']url["\']\s*:\s*["\']([^"\']+)["\']',
+        html,
+    )
+    if json_candidate:
+        clean = json_candidate.group(1).replace(r'\/', '/').replace(r'\u0026', '&').replace('&amp;', '&')
+        return clean
+
+    # 2. Look for link preload as image
+    preload_match = re.search(
+        r'<link\s+[^>]*rel=["\']preload["\'][^>]*as=["\']image["\'][^>]*href=["\']([^"\']+)["\']',
+        html,
+        re.IGNORECASE,
+    )
+    if not preload_match:
+        preload_match = re.search(
+            r'<link\s+[^>]*href=["\']([^"\']+)["\'][^>]*rel=["\']preload["\'][^>]*as=["\']image["\']',
+            html,
+            re.IGNORECASE,
+        )
+    if preload_match:
+        clean = preload_match.group(1).replace(r'\/', '/').replace(r'\u0026', '&').replace('&amp;', '&')
+        if ("cdninstagram.com" in clean or "fbcdn.net" in clean) and not any(k in clean for k in ("rsrc.php", "favicon")):
+            return clean
+
+    # 3. Find candidate image URLs from cdninstagram / fbcdn
+    all_imgs = re.findall(r'https?:\\?/\\?/[^"\'\s<>]+?\.(?:jpg|jpeg|webp)[^"\'\s<>]*', html)
+    clean_candidates = [u.replace(r'\/', '/').replace(r'\u0026', '&').replace('&amp;', '&') for u in all_imgs]
+
+    uncropped = []
+    for u in clean_candidates:
+        if ("cdninstagram.com" in u or "fbcdn.net" in u) and not any(
+            k in u for k in ("rsrc.php", "favicon", "150x150", "320x320", "s150x150")
+        ):
+            m_stp = re.search(r'stp=([^&]+)', u)
+            stp_val = m_stp.group(1) if m_stp else ""
+            if not re.search(r'c\d+\.\d+', stp_val):
+                uncropped.append(u)
+
+    if uncropped:
+        for u in uncropped:
+            if "dst-jpg_e35_tt6" in u:
+                return u
+        return uncropped[0]
+
+    return None
+
+
 async def _scrape_instagram(url: str) -> dict:
     """Extract Instagram Reel, Post, or Photo with multi-tier extraction."""
     parsed = urlparse(url)
@@ -386,9 +437,15 @@ async def _scrape_instagram(url: str) -> dict:
                         if raw_caption:
                             title = raw_caption[:80]
                     
-                    img_match = re.search(r'class=["\']EmbeddedMediaImage["\'][^>]*src=["\']([^"\']+)["\']', html)
-                    if img_match:
-                        thumbnail_img = img_match.group(1).replace("&amp;", "&")
+                    # Check for full-resolution uncropped image on embed page
+                    full_res = _extract_full_res_instagram_image(html)
+                    if full_res:
+                        thumbnail_img = full_res
+
+                    if not thumbnail_img:
+                        img_match = re.search(r'class=["\']EmbeddedMediaImage["\'][^>]*src=["\']([^"\']+)["\']', html)
+                        if img_match:
+                            thumbnail_img = img_match.group(1).replace("&amp;", "&")
 
                     mp4_matches = re.findall(r'https?:\\?/\\?/[^"\'\\ ]+?(?:cdninstagram\.com|fbcdn\.net)[^"\'\\ ]*?\.mp4[^"\'\\ ]*', html)
                     if mp4_matches:
@@ -400,7 +457,8 @@ async def _scrape_instagram(url: str) -> dict:
                             "is_image": False,
                             "muted": True,
                         }
-                    elif thumbnail_img:
+                    elif thumbnail_img and not re.search(r'c\d+\.\d+', thumbnail_img):
+                        # Only return from Tier 1 if image is NOT a cropped thumbnail!
                         return {
                             "title": title or "Instagram Photo",
                             "image_url": thumbnail_img,
@@ -417,7 +475,7 @@ async def _scrape_instagram(url: str) -> dict:
             "User-Agent": "facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)",
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
         }
-        async with httpx.AsyncClient(follow_redirects=True, timeout=8.0, headers=crawler_headers) as client:
+        async with httpx.AsyncClient(follow_redirects=True, timeout=12.0, headers=crawler_headers) as client:
             resp = await client.get(url)
             html = resp.text
             
@@ -438,6 +496,18 @@ async def _scrape_instagram(url: str) -> dict:
                     "is_image": False,
                     "muted": True,
                 }
+
+            # Prioritize full-resolution uncropped image
+            full_res_img = _extract_full_res_instagram_image(html)
+            if full_res_img:
+                return {
+                    "title": title or "Instagram Photo",
+                    "image_url": full_res_img,
+                    "thumbnail": full_res_img,
+                    "is_image": True,
+                    "muted": False,
+                }
+
             if og_img:
                 img_url = og_img.group(1).replace("&amp;", "&")
                 if not any(img_url.endswith(e) for e in ("instagram_icon.png", "favicon.ico", "rsrc.php")):
@@ -1139,6 +1209,13 @@ async def extract_media_info(url: str, platform_name: str) -> MediaInfo:
             )
         
         if not has_video_formats and thumbnail:
+            if is_ig and re.search(r'c\d+\.\d+', thumbnail):
+                try:
+                    ig_data = await _scrape_instagram(url)
+                    if ig_data.get("image_url") and not re.search(r'c\d+\.\d+', ig_data["image_url"]):
+                        thumbnail = ig_data["image_url"]
+                except Exception:
+                    pass
             format_opts = build_image_format_options(thumbnail)
             formats = [f"{opt.ext} {opt.quality} ({opt.file_size_formatted})" for opt in format_opts]
             return MediaInfo(
@@ -1157,11 +1234,18 @@ async def extract_media_info(url: str, platform_name: str) -> MediaInfo:
 
         direct_download_url = info.get('url')
         if not direct_download_url and info.get('formats'):
-            best_fmt = [f for f in info['formats'] if f.get('url') and f.get('vcodec') != 'none']
-            if best_fmt:
-                direct_download_url = best_fmt[-1].get('url')
+            best_with_audio = [
+                f for f in info['formats']
+                if f.get('url') and f.get('vcodec') != 'none' and f.get('acodec') != 'none'
+            ]
+            if best_with_audio:
+                direct_download_url = best_with_audio[-1].get('url')
             else:
-                direct_download_url = info['formats'][-1].get('url')
+                best_fmt = [f for f in info['formats'] if f.get('url') and f.get('vcodec') != 'none']
+                if best_fmt:
+                    direct_download_url = best_fmt[-1].get('url')
+                else:
+                    direct_download_url = info['formats'][-1].get('url')
 
         format_opts = build_format_options(
             duration_sec=duration,
