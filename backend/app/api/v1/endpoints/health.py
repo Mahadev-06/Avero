@@ -2,6 +2,7 @@ from __future__ import annotations
 import io
 import os
 import json
+import traceback
 import subprocess
 from fastapi import APIRouter
 import yt_dlp
@@ -13,7 +14,7 @@ router = APIRouter()
 @router.get("")
 @router.get("/")
 async def health_check():
-    return {"status": "ok", "version": "1.1.3"}
+    return {"status": "ok", "version": "1.1.4"}
 
 @router.get("/ready")
 async def readiness_check():
@@ -34,37 +35,49 @@ def debug_reel():
     u_carousel = "https://www.instagram.com/p/DemaLRKjlEZ/"
 
     res = {}
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        # 1. Reel
-        info_reel = ydl.extract_info(u_reel, download=False)
-        res["reel_title"] = info_reel.get("title")
-        res["reel_type"] = info_reel.get("_type")
-        res["reel_formats"] = [
-            {
-                "id": f.get("format_id"),
-                "ext": f.get("ext"),
-                "vcodec": f.get("vcodec"),
-                "acodec": f.get("acodec"),
-                "note": f.get("format_note"),
-            }
-            for f in info_reel.get("formats", [])
-        ]
-        # 2. Carousel
-        info_car = ydl.extract_info(u_carousel, download=False, process=False)
-        res["car_type"] = info_car.get("_type")
-        entries = list(info_car.get("entries", []))
-        res["car_entries_count"] = len(entries)
-        # Process entry 1
-        info_e1 = ydl.extract_info(entries[0]["url"] if entries and "url" in entries[0] else u_carousel, download=False)
-        res["car_e1_formats"] = [
-            {
-                "id": f.get("format_id"),
-                "ext": f.get("ext"),
-                "vcodec": f.get("vcodec"),
-                "acodec": f.get("acodec"),
-                "note": f.get("format_note"),
-            }
-            for f in info_e1.get("formats", [])
-        ]
+    try:
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            # 1. Reel
+            try:
+                info_reel = ydl.extract_info(u_reel, download=False)
+                res["reel_title"] = info_reel.get("title")
+                res["reel_type"] = info_reel.get("_type")
+                res["reel_formats"] = [
+                    {
+                        "id": f.get("format_id"),
+                        "ext": f.get("ext"),
+                        "vcodec": f.get("vcodec"),
+                        "acodec": f.get("acodec"),
+                        "note": f.get("format_note"),
+                    }
+                    for f in info_reel.get("formats", [])
+                ]
+            except Exception as e:
+                res["reel_err"] = traceback.format_exc()
+
+            # 2. Carousel
+            try:
+                ydl_opts_slide1 = dict(ydl_opts)
+                ydl_opts_slide1["playlist_items"] = "1"
+                ydl_opts_slide1["noplaylist"] = False
+                with yt_dlp.YoutubeDL(ydl_opts_slide1) as ydl_s1:
+                    info_car = ydl_s1.extract_info(u_carousel, download=False)
+                    entries = list(info_car.get("entries", [])) if info_car.get("_type") == "playlist" else [info_car]
+                    res["car_entries_count"] = len(entries)
+                    if entries:
+                        res["car_s1_formats"] = [
+                            {
+                                "id": f.get("format_id"),
+                                "ext": f.get("ext"),
+                                "vcodec": f.get("vcodec"),
+                                "acodec": f.get("acodec"),
+                                "note": f.get("format_note"),
+                            }
+                            for f in entries[0].get("formats", [])
+                        ]
+            except Exception as e:
+                res["car_err"] = traceback.format_exc()
+    except Exception as e:
+        res["global_err"] = traceback.format_exc()
 
     return res
