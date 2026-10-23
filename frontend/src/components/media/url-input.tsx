@@ -862,9 +862,19 @@ export function UrlInput() {
     await handleAnalyzeUrls(validSocialUrls);
   };
 
-  const handleSpecificDownload = useCallback(async (item: VideoResultItem, ext: string, quality: string) => {
+  const handleSpecificDownload = useCallback(async (item: VideoResultItem, ext: string, quality: string, mediaCategory?: string) => {
+    // Determine category from explicit argument, matching format_option, or item media_type
+    const matchedOpt = item.info.format_options?.find(
+      (opt) => opt.ext.toLowerCase() === ext.toLowerCase() && opt.quality.toLowerCase() === quality.toLowerCase()
+    );
+    const resolvedCategory = mediaCategory || matchedOpt?.media_category || (
+      ['jpg', 'jpeg', 'png', 'webp'].includes(ext.toLowerCase()) || item.info.media_type === 'image'
+        ? 'image'
+        : (['mp3', 'wav', 'm4a', 'audio'].includes(ext.toLowerCase()) ? 'audio' : 'video')
+    );
+
     const isInstagram = item.info.platform === 'instagram' || item.info.url?.includes('instagram.com') || item.info.url?.includes('instagr.am');
-    const isImageFormat = ['jpg', 'jpeg', 'png', 'webp'].includes(ext.toLowerCase()) || item.info.media_type === 'image';
+    const isImageFormat = resolvedCategory === 'image' || ['jpg', 'jpeg', 'png', 'webp'].includes(ext.toLowerCase()) || item.info.media_type === 'image';
 
     // If a direct media/stream URL was extracted (e.g. cdninstagram, fbcdn, v.redd.it, pinimg, or direct media extension), prefer it
     const isDirectStream = Boolean(
@@ -895,7 +905,7 @@ export function UrlInput() {
     );
 
     try {
-      const { job_id } = await apiClient.startDownload(targetUrl, ext.toLowerCase(), quality.toLowerCase());
+      const { job_id } = await apiClient.startDownload(targetUrl, ext.toLowerCase(), quality.toLowerCase(), resolvedCategory);
 
       const subscription = apiClient.subscribeProgress(job_id, (progress) => {
         setResults((prev) =>
@@ -918,12 +928,13 @@ export function UrlInput() {
           .slice(0, 60);
 
         let fileExt = ext.toLowerCase();
-        if (fileExt === 'mp4' || fileExt === 'video' || quality.toLowerCase().includes('p')) {
-          fileExt = 'mp4';
-        } else if (fileExt === 'mp3' || fileExt === 'audio' || quality.toLowerCase().includes('kbps')) {
-          fileExt = 'mp3';
-        } else if (!['jpg', 'jpeg', 'png', 'webp'].includes(fileExt)) {
-          fileExt = 'mp4';
+        if (resolvedCategory === 'image') {
+          // For image options, the extension must be the option's own ext (jpg, png, webp), lowercased
+          fileExt = ['jpg', 'jpeg', 'png', 'webp'].includes(fileExt) ? fileExt : 'jpg';
+        } else if (resolvedCategory === 'audio') {
+          fileExt = fileExt === 'wav' ? 'wav' : 'mp3';
+        } else {
+          fileExt = fileExt === 'webm' ? 'webm' : 'mp4';
         }
 
         const filename = `${cleanTitle}_${quality.replace(/\s+/g, '_')}.${fileExt}`;
@@ -2343,7 +2354,7 @@ export function UrlInput() {
                                 <button
                                   type="button"
                                   className="pill-btn nm-format-btn"
-                                  onClick={() => handleSpecificDownload(item, opt.ext, opt.quality)}
+                                  onClick={() => handleSpecificDownload(item, opt.ext, opt.quality, opt.media_category)}
                                   disabled={item.downloadState === 'downloading'}
                                 >
                                   {item.downloadState === 'downloading' && item.activeQuality === `${opt.ext} ${opt.quality}` ? (
@@ -2505,7 +2516,7 @@ export function UrlInput() {
                                     <button
                                       type="button"
                                       className="pill-btn nm-format-btn"
-                                      onClick={() => handleSpecificDownload(item, opt.ext, opt.quality)}
+                                      onClick={() => handleSpecificDownload(item, opt.ext, opt.quality, opt.media_category)}
                                       disabled={item.downloadState === 'downloading'}
                                     >
                                       {item.downloadState === 'downloading' && item.activeQuality === `${opt.ext} ${opt.quality}` ? (
@@ -2579,7 +2590,7 @@ export function UrlInput() {
                                         cursor: 'pointer',
                                         whiteSpace: 'nowrap',
                                       }}
-                                      onClick={() => handleSpecificDownload(item, opt.ext, opt.quality)}
+                                      onClick={() => handleSpecificDownload(item, opt.ext, opt.quality, opt.media_category)}
                                       disabled={item.downloadState === 'downloading'}
                                     >
                                       {item.downloadState === 'downloading' && item.activeQuality === `${opt.ext} ${opt.quality}` ? (

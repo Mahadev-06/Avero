@@ -665,25 +665,51 @@ def _resolve_video_url(url: str) -> str | None:
     return None
 
 
-def _download_image_sync(job_id: str, url: str, fmt: str) -> str:
-    """Download image directly with SSRF verification, Content-Type validation, and minimum size check."""
+
+def _probe_content_type(url: str) -> str:
+    """Probe the Content-Type header of a direct stream URL to distinguish images from video/audio."""
     import httpx
+    try:
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+        }
+        with httpx.Client(follow_redirects=True, timeout=5.0, headers=headers) as client:
+            resp = client.head(url)
+            ct = resp.headers.get("content-type", "").lower()
+            if ct:
+                return ct
+            with client.stream("GET", url) as stream_resp:
+                return stream_resp.headers.get("content-type", "").lower()
+    except Exception:
+        return ""
+
+
+def _download_image_sync(job_id: str, url: str, fmt: str) -> str:
+    """Download image directly with SSRF verification, real format conversion (JPG/PNG/WEBP via FFmpeg), and strict magic bytes verification."""
+    import httpx
+
     # Ensure any escaped entities in image URL are cleaned
     url = url.replace("&amp;", "&")
     parsed = urlparse(url)
     if parsed.hostname:
         resolve_and_check(parsed.hostname)
 
-    fmt_lower = fmt.lower()
-    ext = "jpg"
+    fmt_lower = fmt.lower().strip()
+    target_ext = "jpg"
     if "png" in fmt_lower:
-        ext = "png"
+        target_ext = "png"
     elif "webp" in fmt_lower:
-        ext = "webp"
+        target_ext = "webp"
+    elif "jpg" in fmt_lower or "jpeg" in fmt_lower or "original" in fmt_lower:
+        target_ext = "jpg"
     elif any(url.lower().endswith(e) for e in (".png", ".webp", ".gif", ".jpg", ".jpeg")):
-        ext = url.split("?")[0].split(".")[-1].lower()
+        raw_ext = url.split("?")[0].split(".")[-1].lower()
+        if raw_ext in ("jpg", "jpeg"):
+            target_ext = "jpg"
+        elif raw_ext in ("png", "webp"):
+            target_ext = raw_ext
 
-    unique_name = f"image_{uuid.uuid4().hex[:12]}.{ext}"
+    unique_name = f"image_{uuid.uuid4().hex[:12]}.{target_ext}"
     output_file = str(TEMP_DOWNLOAD_DIR / unique_name)
 
     headers = {
@@ -709,11 +735,14 @@ def _download_image_sync(job_id: str, url: str, fmt: str) -> str:
         if is_html_or_xml:
             raise ValueError("Received HTML/XML error payload instead of valid image")
 
-        # Validate magic bytes
+        # Validate source magic bytes
+        is_jpeg = body[:2] == b"\xff\xd8"
+        is_png = body[:8] == b"\x89PNG\r\n\x1a\n"
+        is_webp = body[:4] == b"RIFF" and b"WEBP" in body[:16]
         is_valid_magic = (
-            body[:2] == b"\xff\xd8"  # JPEG
-            or body[:8] == b"\x89PNG\r\n\x1a\n"  # PNG
-            or (body[:4] == b"RIFF" and b"WEBP" in body[:16])  # WEBP
+            is_jpeg
+            or is_png
+            or is_webp
             or body[:4] in (b"GIF8", b"II*\x00", b"MM\x00*")  # GIF / TIFF
         )
 
@@ -724,8 +753,60 @@ def _download_image_sync(job_id: str, url: str, fmt: str) -> str:
         if body_len < 1024 or (body_len < 5120 and not is_valid_magic):
             raise ValueError(f"Downloaded image is suspiciously small ({body_len} bytes) or corrupted")
 
-        with open(output_file, "wb") as f:
-            f.write(body)
+        # Format conversion logic:
+        # Keep original bytes if the source format already matches the requested target format
+        # or if the target format is "jpg" (the original format from Instagram/CDN) and source is JPEG
+        if target_ext == "jpg" and is_jpeg:
+            with open(output_file, "wb") as f:
+                f.write(body)
+        elif target_ext == "png" and is_png:
+            with open(output_file, "wb") as f:
+                f.write(body)
+        elif target_ext == "webp" and is_webp:
+            with open(output_file, "wb") as f:
+                f.write(body)
+        else:
+            # Transcode image using ffmpeg to the requested format (PNG / WEBP / JPG)
+            temp_src = str(TEMP_DOWNLOAD_DIR / f"src_{uuid.uuid4().hex[:12]}.tmp")
+            try:
+                with open(temp_src, "wb") as f:
+                    f.write(body)
+
+                cmd = ["ffmpeg", "-y", "-i", temp_src, output_file]
+                res = subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, timeout=25)
+                if res.returncode != 0 or not os.path.exists(output_file) or os.path.getsize(output_file) == 0:
+                    err_msg = res.stderr.decode("utf-8", errors="ignore")[:200] if res.stderr else "Conversion failed"
+                    raise ValueError(f"Image conversion to {target_ext.upper()} failed: {err_msg}")
+            finally:
+                if os.path.exists(temp_src):
+                    try:
+                        os.remove(temp_src)
+                    except OSError:
+                        pass
+
+        # Strict verification of magic bytes: Never save mislabeled bytes!
+        if not os.path.exists(output_file) or os.path.getsize(output_file) == 0:
+            raise ValueError(f"Failed to generate {target_ext.upper()} image file.")
+
+        with open(output_file, "rb") as f:
+            header = f.read(16)
+
+        is_correct_magic = False
+        if target_ext == "jpg" and header[:2] == b"\xff\xd8":
+            is_correct_magic = True
+        elif target_ext == "png" and header[:8] == b"\x89PNG\r\n\x1a\n":
+            is_correct_magic = True
+        elif target_ext == "webp" and (header[:4] == b"RIFF" and b"WEBP" in header[:16]):
+            is_correct_magic = True
+
+        if not is_correct_magic:
+            try:
+                os.remove(output_file)
+            except OSError:
+                pass
+            raise ValueError(
+                f"Image conversion check failed: Output file does not have valid {target_ext.upper()} magic bytes (header: {header[:8].hex()})"
+            )
 
     file_size = os.path.getsize(output_file)
     raw_filename = os.path.basename(output_file)
@@ -741,8 +822,9 @@ def _download_image_sync(job_id: str, url: str, fmt: str) -> str:
         filename=clean_filename,
     )
     _file_store[job_id] = output_file
-    logger.info("image_download_completed", job_id=job_id, size=file_size)
+    logger.info("image_download_completed", job_id=job_id, format=target_ext, size=file_size)
     return output_file
+
 
 
 def _download_video_direct_sync(job_id: str, video_url: str, is_audio: bool = False, audio_quality: str = "320") -> str:
@@ -808,7 +890,7 @@ def _download_video_direct_sync(job_id: str, video_url: str, is_audio: bool = Fa
     return final_file
 
 
-def _download_sync(job_id: str, url: str, fmt: str, quality: str) -> str:
+def _download_sync(job_id: str, url: str, fmt: str, quality: str, media_type: str | None = None) -> str:
     """
     Synchronous download function run in a thread pool.
     Validates hostnames for SSRF before downloading.
@@ -817,16 +899,19 @@ def _download_sync(job_id: str, url: str, fmt: str, quality: str) -> str:
     if parsed.hostname:
         resolve_and_check(parsed.hostname)
 
-    fmt_lower = fmt.lower()
+    fmt_lower = fmt.lower().strip()
+    media_type_lower = (media_type or "").lower().strip()
+
     is_image = (
-        fmt_lower.startswith("jpg")
+        media_type_lower == "image"
+        or fmt_lower in ("jpg", "jpeg", "png", "webp", "image", "photo")
+        or fmt_lower.startswith("jpg")
         or fmt_lower.startswith("png")
         or fmt_lower.startswith("webp")
         or "image" in fmt_lower
         or "photo" in fmt_lower
         or "pin" in fmt_lower
-        or "lossless" in quality.lower()
-        or any(url.lower().endswith(ext) or f"{ext}?" in url.lower() for ext in (".jpg", ".jpeg", ".png", ".webp", ".gif", ".svg"))
+        or any(url.lower().endswith(ext) or f"{ext}?" in url.lower() for ext in (".jpg", ".jpeg", ".png", ".webp", ".gif", ".svg", ".avif", ".heic"))
     )
 
     is_direct_img = (
@@ -834,46 +919,59 @@ def _download_sync(job_id: str, url: str, fmt: str, quality: str) -> str:
         or "preview.redd.it" in url
         or "pinimg.com" in url
         or "twimg.com" in url
-        or any(url.lower().endswith(ext) or f"{ext}?" in url.lower() for ext in (".jpg", ".jpeg", ".png", ".webp", ".gif", ".svg", ".avif"))
+        or any(url.lower().endswith(ext) or f"{ext}?" in url.lower() for ext in (".jpg", ".jpeg", ".png", ".webp", ".gif", ".svg", ".avif", ".heic"))
     )
 
-    if is_direct_img:
+    if is_direct_img and (is_image or not any(fmt_lower.startswith(v) for v in ("mp4", "mp3", "webm", "audio", "video"))):
         return _download_image_sync(job_id, url, fmt)
 
     is_video_or_audio_fmt = (
-        fmt.lower() in ("mp4", "webm", "mp3", "m4a", "wav", "360p", "480p", "720p", "1080p", "best")
-        or "mp4" in fmt.lower()
-        or "mp3" in fmt.lower()
-        or "video" in fmt.lower()
-        or "audio" in fmt.lower()
+        media_type_lower in ("video", "audio")
+        or fmt_lower in ("mp4", "webm", "mp3", "m4a", "wav", "360p", "480p", "720p", "1080p", "best")
+        or "mp4" in fmt_lower
+        or "mp3" in fmt_lower
+        or "video" in fmt_lower
+        or "audio" in fmt_lower
     )
 
-    if (is_image or "pinterest.com" in url or "pin.it" in url or "reddit.com" in url or "redd.it" in url or "threads.net" in url or "threads.com" in url) and not is_video_or_audio_fmt:
+    if (is_image or "pinterest.com" in url or "pin.it" in url or "reddit.com" in url or "redd.it" in url or "threads.net" in url or "threads.com" in url or "instagram.com" in url or "instagr.am" in url) and not is_video_or_audio_fmt:
         direct_img = _resolve_image_url(url)
         if direct_img:
             return _download_image_sync(job_id, direct_img, fmt)
 
-    is_audio = _is_audio_format(fmt, quality)
+    is_audio = _is_audio_format(fmt, quality) or media_type_lower == "audio"
     audio_quality = "320"
     if "192" in quality:
         audio_quality = "192"
     elif "128" in quality:
         audio_quality = "128"
 
-    is_direct_video = (
+    # For direct media stream hosts:
+    # Do NOT decide video vs image based on "cdninstagram.com" in url!
+    # An image/* response from cdninstagram or fbcdn MUST go down the image path.
+    is_direct_host = (
         "cdninstagram.com" in url
         or "fbcdn.net" in url
         or "lovethreads.net" in url
         or "v.pinimg.com" in url
         or "v1.pinimg.com" in url
-        or (any(url.lower().endswith(ext) or f"{ext}?" in url.lower() for ext in (".mp4", ".m4v", ".mov", ".webm")) and "youtube.com" not in url and "youtu.be" not in url)
+        or any(url.lower().endswith(ext) or f"{ext}?" in url.lower() for ext in (".mp4", ".m4v", ".mov", ".webm"))
     )
 
-    if is_direct_video:
-        try:
-            return _download_video_direct_sync(job_id, url, is_audio, audio_quality)
-        except Exception:
-            pass
+    if is_direct_host and ("youtube.com" not in url and "youtu.be" not in url):
+        # 1. If the user or analyze result classified this as an image:
+        if is_image and not is_video_or_audio_fmt:
+            return _download_image_sync(job_id, url, fmt)
+
+        # 2. Probe Content-Type to reliably route image vs video stream:
+        probed_ct = _probe_content_type(url)
+        if probed_ct.startswith("image/"):
+            return _download_image_sync(job_id, url, fmt)
+        elif probed_ct.startswith("video/") or probed_ct.startswith("application/"):
+            try:
+                return _download_video_direct_sync(job_id, url, is_audio, audio_quality)
+            except Exception:
+                pass
 
     if ("reddit.com" in url or "redd.it" in url or "threads.net" in url or "threads.com" in url) and is_video_or_audio_fmt:
         direct_vid = _resolve_video_url(url)
@@ -882,6 +980,7 @@ def _download_sync(job_id: str, url: str, fmt: str, quality: str) -> str:
                 return _download_video_direct_sync(job_id, direct_vid, is_audio, audio_quality)
             except Exception:
                 pass
+
     format_string = _build_ytdlp_format(fmt, quality)
 
     unique_name = f"media_{uuid.uuid4().hex[:12]}"
@@ -1146,7 +1245,13 @@ def _download_sync(job_id: str, url: str, fmt: str, quality: str) -> str:
         raise
 
 
-async def start_download(job_id: str, url: str, fmt: str = "mp4", quality: str = "best") -> str:
+async def start_download(
+    job_id: str,
+    url: str,
+    fmt: str = "mp4",
+    quality: str = "best",
+    media_type: str | None = None,
+) -> str:
     """Download media file with concurrency limiting and SSRF protection."""
     _timestamp_store[job_id] = time.time()
     _progress_store[job_id] = DownloadProgress(
@@ -1165,7 +1270,7 @@ async def start_download(job_id: str, url: str, fmt: str = "mp4", quality: str =
         loop = asyncio.get_event_loop()
         try:
             result = await asyncio.wait_for(
-                loop.run_in_executor(None, _download_sync, job_id, url, fmt, quality),
+                loop.run_in_executor(None, _download_sync, job_id, url, fmt, quality, media_type),
                 timeout=settings.DOWNLOAD_TIMEOUT_SECONDS,
             )
             return result

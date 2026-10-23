@@ -75,8 +75,24 @@ async def start_download(request: Request, req: DownloadRequest):
 
     fmt = req.format.lower().strip()
     quality = req.quality.lower().strip()
+    media_type = (req.media_type or "").lower().strip()
 
-    if "mp3" in fmt or "audio" in fmt or "kbps" in quality:
+    is_explicit_image = (
+        media_type == "image"
+        or fmt in ("jpg", "jpeg", "png", "webp", "image")
+        or "image" in fmt
+        or "photo" in fmt
+        or any(fmt.startswith(ext) for ext in ("jpg", "jpeg", "png", "webp"))
+    )
+
+    if is_explicit_image:
+        if "png" in fmt:
+            fmt = "png"
+        elif "webp" in fmt:
+            fmt = "webp"
+        else:
+            fmt = "jpg"
+    elif "mp3" in fmt or "audio" in fmt or "kbps" in quality or media_type == "audio":
         fmt = "mp3"
         quality = req.quality.lower().replace("mp3", "").strip() or "320kbps"
     elif "mp4" in fmt or "video" in fmt or any(q in quality for q in ("360", "480", "720", "1080", "1440", "2160", "4k", "best")):
@@ -92,7 +108,7 @@ async def start_download(request: Request, req: DownloadRequest):
         quality = parts[1].lower().strip()
 
     # Launch download as a background asyncio task
-    asyncio.create_task(_run_download(job_id, req.url, fmt, quality))
+    asyncio.create_task(_run_download(job_id, req.url, fmt, quality, media_type))
 
     return DownloadStartResponse(
         job_id=job_id,
@@ -101,10 +117,10 @@ async def start_download(request: Request, req: DownloadRequest):
     )
 
 
-async def _run_download(job_id: str, url: str, fmt: str, quality: str):
+async def _run_download(job_id: str, url: str, fmt: str, quality: str, media_type: str | None = None):
     """Background task that runs the actual download."""
     try:
-        await media_service.start_download(job_id, url, fmt, quality)
+        await media_service.start_download(job_id, url, fmt, quality, media_type)
     except Exception:
         pass
 

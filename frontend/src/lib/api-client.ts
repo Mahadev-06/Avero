@@ -188,10 +188,10 @@ class ApiClient {
 
   // --- New Download Engine Methods ---
 
-  async startDownload(url: string, format: string = 'mp4', quality: string = 'best'): Promise<DownloadStartResponse> {
+  async startDownload(url: string, format: string = 'mp4', quality: string = 'best', media_type?: string): Promise<DownloadStartResponse> {
     return this.fetchJson('/download/start', {
       method: 'POST',
-      body: JSON.stringify({ url, format, quality }),
+      body: JSON.stringify({ url, format, quality, media_type }),
     });
   }
 

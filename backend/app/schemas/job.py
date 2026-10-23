@@ -66,6 +66,7 @@ class DownloadRequest(BaseModel):
     url: str = Field(..., min_length=7, max_length=2048)
     format: str = Field("mp4", max_length=50)
     quality: str = Field("best", max_length=50)
+    media_type: Optional[str] = Field(None, max_length=50)
 
     @field_validator("url")
     @classmethod
@@ -77,9 +78,11 @@ class DownloadRequest(BaseModel):
             raise ValueError("URL contains invalid control characters")
         return v_stripped
 
-    @field_validator("format", "quality")
+    @field_validator("format", "quality", "media_type")
     @classmethod
-    def sanitize_strings(cls, v: str) -> str:
+    def sanitize_strings(cls, v: str | None) -> str | None:
+        if v is None:
+            return None
         # Strip all unsafe chars, allow alphanumeric, spaces, and hyphens/underscores
         return re.sub(r"[^a-zA-Z0-9 _\-+]", "", v).strip()
 
