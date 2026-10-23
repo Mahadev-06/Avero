@@ -11,7 +11,13 @@ import { Video, Music, Download, Clock, Search, Loader2, Copy, Check, Plus, Play
 import { TextShimmerWave } from '@/components/core/text-shimmer-wave';
 import { motion, AnimatePresence } from 'motion/react';
 
-import { detectPlatform } from '@/lib/url-parser';
+import {
+  detectPlatform,
+  getSocialPlatform,
+  isSocialMediaUrl,
+  validateSocialMediaInput,
+  extractAndValidateSocialUrls,
+} from '@/lib/url-parser';
 import { useMediaQuery } from '@/hooks/use-media-query';
 
 interface PlatformIcon {
@@ -163,38 +169,32 @@ const PLATFORM_ICONS: PlatformIcon[] = [
 
 export function getSocialMediaPlatform(url: string): PlatformIcon | null {
   if (!url || typeof url !== 'string') return null;
-  const lower = url.trim().toLowerCase();
+  const platformName = getSocialPlatform(url);
+  if (!platformName) return null;
 
-  if (lower.includes('instagram.com') || lower.includes('instagr.am')) {
-    return PLATFORM_ICONS.find((p) => p.type === 'instagram') || null;
+  switch (platformName) {
+    case 'Instagram':
+      return PLATFORM_ICONS.find((p) => p.type === 'instagram') || null;
+    case 'TikTok':
+      return PLATFORM_ICONS.find((p) => p.type === 'tiktok') || null;
+    case 'YouTube':
+      return PLATFORM_ICONS.find((p) => p.type === 'youtube') || null;
+    case 'Pinterest':
+      return PLATFORM_ICONS.find((p) => p.type === 'pinterest') || null;
+    case 'Reddit':
+      return PLATFORM_ICONS.find((p) => p.type === 'reddit') || null;
+    case 'Threads':
+      return PLATFORM_ICONS.find((p) => p.type === 'threads') || null;
+    case 'Facebook':
+      return PLATFORM_ICONS.find((p) => p.type === 'facebook') || null;
+    case 'X / Twitter':
+      return PLATFORM_ICONS.find((p) => p.type === 'x_twitter') || null;
+    default:
+      return null;
   }
-  if (lower.includes('tiktok.com')) {
-    return PLATFORM_ICONS.find((p) => p.type === 'tiktok') || null;
-  }
-  if (lower.includes('youtube.com') || lower.includes('youtu.be')) {
-    return PLATFORM_ICONS.find((p) => p.type === 'youtube') || null;
-  }
-  if (lower.includes('pinterest.com') || lower.includes('pin.it') || lower.includes('pinimg.com')) {
-    return PLATFORM_ICONS.find((p) => p.type === 'pinterest') || null;
-  }
-  if (lower.includes('reddit.com') || lower.includes('redd.it') || lower.includes('v.redd.it') || lower.includes('i.redd.it')) {
-    return PLATFORM_ICONS.find((p) => p.type === 'reddit') || null;
-  }
-  if (lower.includes('threads.net') || lower.includes('threads.com')) {
-    return PLATFORM_ICONS.find((p) => p.type === 'threads') || null;
-  }
-  if (lower.includes('facebook.com') || lower.includes('fb.watch') || lower.includes('fb.com')) {
-    return PLATFORM_ICONS.find((p) => p.type === 'facebook') || null;
-  }
-  if (lower.includes('x.com') || lower.includes('twitter.com') || lower.includes('t.co')) {
-    return PLATFORM_ICONS.find((p) => p.type === 'x_twitter') || null;
-  }
-  return null;
 }
 
-export function isSocialMediaUrl(url: string): boolean {
-  return getSocialMediaPlatform(url) !== null;
-}
+export { isSocialMediaUrl };
 
 export function getCleanSocialDisplayLabel(url: string): string | null {
   const platform = getSocialMediaPlatform(url);
@@ -566,51 +566,48 @@ export function UrlInput() {
       const clipboard = (raw || '').trim();
       if (!clipboard) return;
 
-      const urlMatch = clipboard.match(/https?:\/\/[^\s<>"']+/i);
-      const targetUrl = urlMatch ? urlMatch[0] : clipboard;
-
-      if (isSocialMediaUrl(targetUrl) && !isSearchMode) {
-        if (isMultiMode) {
-          setInputValue((prev) => (prev ? `${prev}\n${targetUrl}` : targetUrl));
-          setDisplayValue('');
-        } else {
-          setInputValue(targetUrl);
-          const label = getCleanSocialDisplayLabel(targetUrl);
-          setDisplayValue(label || targetUrl);
-        }
+      if (isSearchMode) {
+        setInputValue(clipboard);
+        setDisplayValue(clipboard);
         return;
       }
 
-      const isHttpOrDomain =
-        clipboard.startsWith('http://') ||
-        clipboard.startsWith('https://') ||
-        clipboard.includes('http://') ||
-        clipboard.includes('https://') ||
-        ['.com', '.net', '.org', '.it', '.app', '.co'].some((ext) => clipboard.includes(ext));
-
-      if (isHttpOrDomain && !isSearchMode) {
-        const extracted = clipboard.match(/(https?:\/\/[^\s]+)/g) || [clipboard];
-        const validSocials = extracted.filter((u) => isSocialMediaUrl(u));
-
-        if (validSocials.length === 0) {
-          setStatusMsg('Only social media links (Instagram, TikTok, YouTube, X, Reddit, Threads, Pinterest, Facebook) are supported.');
+      if (isMultiMode) {
+        const result = extractAndValidateSocialUrls(clipboard);
+        if (result.hasHarmful) {
+          setStatusMsg(result.harmfulReason || 'Harmful or unsafe link blocked.');
           return;
         }
-
-        if (isMultiMode) {
-          setInputValue((prev) => (prev ? `${prev}\n${validSocials.join('\n')}` : validSocials.join('\n')));
-          setDisplayValue('');
-        } else {
-          const firstUrl = validSocials[0];
-          setInputValue(firstUrl);
-          const label = getCleanSocialDisplayLabel(firstUrl);
-          setDisplayValue(label || firstUrl);
+        if (result.validUrls.length === 0) {
+          setStatusMsg(
+            result.skippedCount > 0
+              ? 'Only social media links (Instagram, TikTok, YouTube, X, Reddit, Threads, Pinterest, Facebook) are supported.'
+              : 'Text detected. Only social media links can be pasted in this bar.'
+          );
+          return;
+        }
+        setInputValue((prev) => (prev ? `${prev}\n${result.validUrls.join('\n')}` : result.validUrls.join('\n')));
+        setDisplayValue('');
+        if (result.skippedCount > 0) {
+          setStatusMsg(`Added ${result.validUrls.length} social link(s). Skipped ${result.skippedCount} non-social or invalid item(s).`);
+        } else if (statusMsg && !analyzing && !searching) {
+          setStatusMsg(null);
         }
         return;
       }
 
-      setInputValue((prev) => (prev ? `${prev}\n${clipboard}` : clipboard));
-      setDisplayValue((prev) => (prev ? `${prev}\n${clipboard}` : clipboard));
+      // Single link mode:
+      const validation = validateSocialMediaInput(clipboard);
+      if (!validation.isValid) {
+        setStatusMsg(validation.errorMessage || 'Only social media links are supported.');
+        return;
+      }
+
+      const targetUrl = validation.cleanUrl || clipboard;
+      setInputValue(targetUrl);
+      const label = getCleanSocialDisplayLabel(targetUrl);
+      setDisplayValue(label || targetUrl);
+      if (statusMsg && !analyzing && !searching) setStatusMsg(null);
     } catch (err) {
       console.error('Clipboard error', err);
     }
@@ -618,24 +615,93 @@ export function UrlInput() {
 
   const handleInputPaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
     if (isSearchMode) return;
+    e.preventDefault();
     const pastedText = e.clipboardData.getData('text').trim();
     if (!pastedText) return;
 
-    if (isSocialMediaUrl(pastedText)) {
-      e.preventDefault();
-      setInputValue(pastedText);
-      const label = getCleanSocialDisplayLabel(pastedText);
-      setDisplayValue(label || pastedText);
-      if (statusMsg && !analyzing && !searching) setStatusMsg(null);
-    } else if (
-      pastedText.startsWith('http://') ||
-      pastedText.startsWith('https://') ||
-      pastedText.includes('.com') ||
-      pastedText.includes('.net') ||
-      pastedText.includes('.org')
-    ) {
-      e.preventDefault();
-      setStatusMsg('Only social media links (Instagram, TikTok, YouTube, X, Reddit, Threads, Pinterest, Facebook) are supported.');
+    const validation = validateSocialMediaInput(pastedText);
+    if (!validation.isValid) {
+      setStatusMsg(validation.errorMessage || 'Only social media links are supported.');
+      return;
+    }
+
+    const targetUrl = validation.cleanUrl || pastedText;
+    setInputValue(targetUrl);
+    const label = getCleanSocialDisplayLabel(targetUrl);
+    setDisplayValue(label || targetUrl);
+    if (statusMsg && !analyzing && !searching) setStatusMsg(null);
+  };
+
+  const handleInputDrop = (e: React.DragEvent<HTMLInputElement>) => {
+    if (isSearchMode) return;
+    e.preventDefault();
+    const droppedText = e.dataTransfer.getData('text').trim();
+    if (!droppedText) return;
+
+    const validation = validateSocialMediaInput(droppedText);
+    if (!validation.isValid) {
+      setStatusMsg(validation.errorMessage || 'Only social media links are supported.');
+      return;
+    }
+
+    const targetUrl = validation.cleanUrl || droppedText;
+    setInputValue(targetUrl);
+    const label = getCleanSocialDisplayLabel(targetUrl);
+    setDisplayValue(label || targetUrl);
+    if (statusMsg && !analyzing && !searching) setStatusMsg(null);
+  };
+
+  const handleTextareaPaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    e.preventDefault();
+    const pastedText = e.clipboardData.getData('text').trim();
+    if (!pastedText) return;
+
+    const result = extractAndValidateSocialUrls(pastedText);
+    if (result.hasHarmful) {
+      setStatusMsg(result.harmfulReason || 'Harmful or unsafe link blocked. Only valid social media links are allowed.');
+      return;
+    }
+    if (result.validUrls.length === 0) {
+      setStatusMsg(
+        result.skippedCount > 0
+          ? 'Only social media links (Instagram, TikTok, YouTube, X, Reddit, Threads, Pinterest, Facebook) are supported.'
+          : 'Text detected. Only social media links can be pasted in this bar.'
+      );
+      return;
+    }
+
+    setInputValue((prev) => (prev ? `${prev}\n${result.validUrls.join('\n')}` : result.validUrls.join('\n')));
+    if (result.skippedCount > 0) {
+      setStatusMsg(`Added ${result.validUrls.length} social link(s). Skipped ${result.skippedCount} non-social or invalid item(s).`);
+    } else if (statusMsg && !analyzing && !searching) {
+      setStatusMsg(null);
+    }
+  };
+
+  const handleTextareaDrop = (e: React.DragEvent<HTMLTextAreaElement>) => {
+    e.preventDefault();
+    const droppedText = e.dataTransfer.getData('text').trim();
+    if (!droppedText) return;
+
+    const result = extractAndValidateSocialUrls(droppedText);
+    if (result.hasHarmful) {
+      setStatusMsg(result.harmfulReason || 'Harmful or unsafe link blocked.');
+      return;
+    }
+    if (result.validUrls.length === 0) {
+      setStatusMsg(
+        result.skippedCount > 0
+          ? 'Only social media links (Instagram, TikTok, YouTube, X, Reddit, Threads, Pinterest, Facebook) are supported.'
+          : 'Text detected. Only social media links can be pasted in this bar.'
+      );
+      return;
+    }
+
+    setInputValue((prev) => (prev ? `${prev}\n${result.validUrls.join('\n')}` : result.validUrls.join('\n')));
+    if (result.skippedCount > 0) {
+      setStatusMsg(`Added ${result.validUrls.length} social link(s). Skipped ${result.skippedCount} non-social or invalid item(s).`);
+    } else if (statusMsg && !analyzing && !searching) {
+      setStatusMsg(null);
     }
   };
 
@@ -830,36 +896,32 @@ export function UrlInput() {
     }
 
     const trimmed = inputValue.trim();
-    const isHttp = trimmed.startsWith('http://') || trimmed.startsWith('https://') || detectedUrls.length > 0;
 
-    if (!isHttp) {
-      // Check if user typed a social domain like instagram.com/... without protocol
-      if (isSocialMediaUrl(`https://${trimmed}`)) {
-        await handleAnalyzeUrls([`https://${trimmed}`]);
+    if (isMultiMode) {
+      const result = extractAndValidateSocialUrls(trimmed);
+      if (result.hasHarmful) {
+        setStatusMsg(result.harmfulReason || 'Harmful or unsafe link blocked.');
         return;
       }
-      // If it looks like a generic non-social domain or search query
-      if (trimmed.includes('.') && !trimmed.includes(' ')) {
+      if (result.validUrls.length === 0) {
         setStatusMsg('Only social media links (Instagram, TikTok, YouTube, X, Reddit, Threads, Pinterest, Facebook) are supported.');
         return;
       }
-      await handleExecuteSearch(trimmed);
+      if (result.skippedCount > 0) {
+        setStatusMsg(`Skipped ${result.skippedCount} unsupported non-social link(s) or text.`);
+      }
+      await handleAnalyzeUrls(result.validUrls);
       return;
     }
 
-    // Filter strictly for supported social media platforms
-    const validSocialUrls = detectedUrls.filter((u) => isSocialMediaUrl(u));
-
-    if (validSocialUrls.length === 0) {
-      setStatusMsg('Only social media links (Instagram, TikTok, YouTube, X, Reddit, Threads, Pinterest, Facebook) are supported.');
+    // Single link mode:
+    const validation = validateSocialMediaInput(trimmed);
+    if (!validation.isValid) {
+      setStatusMsg(validation.errorMessage || 'Only social media links are supported.');
       return;
     }
 
-    if (validSocialUrls.length < detectedUrls.length) {
-      setStatusMsg(`Skipped ${detectedUrls.length - validSocialUrls.length} unsupported non-social link(s).`);
-    }
-
-    await handleAnalyzeUrls(validSocialUrls);
+    await handleAnalyzeUrls([validation.cleanUrl || trimmed]);
   };
 
   const handleSpecificDownload = useCallback(async (item: VideoResultItem, ext: string, quality: string, mediaCategory?: string) => {
@@ -1416,6 +1478,8 @@ export function UrlInput() {
               rows={4}
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
+              onPaste={handleTextareaPaste}
+              onDrop={handleTextareaDrop}
               onFocus={() => handleCheckClipboard(true)}
               placeholder="Paste multiple URLs (one per line)..."
               style={{
@@ -1674,6 +1738,7 @@ export function UrlInput() {
                 value={displayValue || inputValue}
                 onChange={handleInputChange}
                 onPaste={handleInputPaste}
+                onDrop={handleInputDrop}
                 onKeyDown={handleInputKeyDown}
                 onFocus={() => {
                   setIsInputFocused(true);
@@ -2017,7 +2082,7 @@ export function UrlInput() {
               maxWidth: '90vw',
             }}
           >
-            {statusMsg.toLowerCase().includes('failed') || statusMsg.toLowerCase().includes('error') ? (
+            {statusMsg.toLowerCase().includes('failed') || statusMsg.toLowerCase().includes('error') || statusMsg.toLowerCase().includes('blocked') || statusMsg.toLowerCase().includes('unsupported') || statusMsg.toLowerCase().includes('skipped') || statusMsg.toLowerCase().includes('detected') || statusMsg.toLowerCase().includes('invalid') || statusMsg.toLowerCase().includes('only social') ? (
               <AlertCircle className="w-4 h-4 text-rose-500 shrink-0" />
             ) : (
               <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '18px', height: '18px', borderRadius: '50%', backgroundColor: '#22c55e25', color: '#16a34a', flexShrink: 0 }}>
@@ -3133,7 +3198,7 @@ export function UrlInput() {
                           }}
                         >
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', minWidth: 0, flex: 1, overflow: 'hidden' }}>
-                            {statusMsg.toLowerCase().includes('failed') || statusMsg.toLowerCase().includes('error') ? (
+                            {statusMsg.toLowerCase().includes('failed') || statusMsg.toLowerCase().includes('error') || statusMsg.toLowerCase().includes('blocked') || statusMsg.toLowerCase().includes('unsupported') || statusMsg.toLowerCase().includes('skipped') || statusMsg.toLowerCase().includes('detected') || statusMsg.toLowerCase().includes('invalid') || statusMsg.toLowerCase().includes('only social') ? (
                               <AlertCircle className="w-4 h-4 text-rose-500 shrink-0" />
                             ) : (
                               <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '20px', height: '20px', borderRadius: '50%', backgroundColor: '#22c55e25', color: '#16a34a', flexShrink: 0 }}>
