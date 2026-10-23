@@ -1040,7 +1040,7 @@ def _download_sync(job_id: str, url: str, fmt: str, quality: str, media_type: st
             ydl_opts["playlist_items"] = str(slide_index)
             ydl_opts["noplaylist"] = False
         elif not is_audio and not is_image:
-            ydl_opts["format"] = "3/2/1/bestvideo[ext=mp4]+bestaudio[ext=m4a]/bestvideo+bestaudio/best"
+            ydl_opts["format"] = "bestvideo[vcodec^=avc1]+bestaudio[acodec^=mp4a]/bestvideo[ext=mp4]+bestaudio[ext=m4a]/bestvideo+bestaudio/[format_id$=-2]/[format_id$=-1]/[format_id$=-0]/[format_id$=-3]/3/2/1/0/best"
 
     if is_audio:
         audio_quality = "320"
@@ -1090,7 +1090,7 @@ def _download_sync(job_id: str, url: str, fmt: str, quality: str, media_type: st
                         ydl_opts_retry = dict(ydl_opts)
                         retry_output_path = f"{output_path}_prog"
                         ydl_opts_retry["outtmpl"] = retry_output_path
-                        ydl_opts_retry["format"] = "3/2/1/b/best"
+                        ydl_opts_retry["format"] = "[format_id$=-2]/[format_id$=-1]/[format_id$=-0]/[format_id$=-3]/3/2/1/0/best"
                         with yt_dlp.YoutubeDL(ydl_opts_retry) as ydl_retry:
                             ydl_retry.download([target_dl_url])
                         retry_file = _find_output_file(retry_output_path)
