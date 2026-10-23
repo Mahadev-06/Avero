@@ -1,20 +1,15 @@
 from __future__ import annotations
-import io
-import os
-import json
-import traceback
-import subprocess
+import re
+import httpx
 from fastapi import APIRouter
-import yt_dlp
 from app.core.redis import get_redis
-from app.services.media_service import _get_instagram_cookiefile
 
 router = APIRouter()
 
 @router.get("")
 @router.get("/")
 async def health_check():
-    return {"status": "ok", "version": "1.1.4"}
+    return {"status": "ok", "version": "1.1.5"}
 
 @router.get("/ready")
 async def readiness_check():
@@ -23,61 +18,43 @@ async def readiness_check():
     return {"status": "ready"}
 
 @router.get("/debug_reel")
-def debug_reel():
-    ig_cookie_file = _get_instagram_cookiefile()
-    ydl_opts = {
-        "quiet": True,
-    }
-    if ig_cookie_file:
-        ydl_opts["cookiefile"] = ig_cookie_file
-
+async def debug_reel():
     u_reel = "https://www.instagram.com/reel/Demz7jFhX7y/?dlrf=NTc4MTIwNjQ2YQ=="
-    u_carousel = "https://www.instagram.com/p/DemaLRKjlEZ/"
+    embed_url = "https://www.instagram.com/reel/Demz7jFhX7y/embed/captioned/"
+    
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+        "Accept-Language": "en-US,en;q=0.9",
+    }
+    async with httpx.AsyncClient(timeout=15, follow_redirects=True, headers=headers) as client:
+        r = client.get(embed_url)
+        html = (await r).text
+    
+    # search for video_url in embed HTML
+    vids = re.findall(r'"video_url":"([^"]+)"', html)
+    og_vids = re.findall(r'<meta property="og:video" content="([^"]+)"', html)
+    
+    clean_vids = [v.replace("\\u0026", "&").replace("&amp;", "&") for v in (vids + og_vids)]
+    
+    # Probe each video URL to check audio with ffprobe
+    import subprocess, json, tempfile
+    results = []
+    for cv in clean_vids[:2]:
+        async with httpx.AsyncClient(timeout=15, follow_redirects=True) as dl_client:
+            resp = await dl_client.get(cv, headers={"Range": "bytes=0-1000000"})
+            with tempfile.NamedTemporaryFile(suffix=".mp4", delete=False) as tf:
+                tf.write(resp.content)
+                tf_path = tf.name
+        p = subprocess.run(["ffprobe", "-v", "error", "-show_entries", "stream=index,codec_type,codec_name", "-of", "json", tf_path], capture_output=True, text=True)
+        streams = json.loads(p.stdout).get("streams", []) if p.returncode == 0 else []
+        results.append({
+            "url": cv[:80],
+            "streams": streams,
+        })
+        try: os.remove(tf_path)
+        except OSError: pass
 
-    res = {}
-    try:
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            # 1. Reel
-            try:
-                info_reel = ydl.extract_info(u_reel, download=False)
-                res["reel_title"] = info_reel.get("title")
-                res["reel_type"] = info_reel.get("_type")
-                res["reel_formats"] = [
-                    {
-                        "id": f.get("format_id"),
-                        "ext": f.get("ext"),
-                        "vcodec": f.get("vcodec"),
-                        "acodec": f.get("acodec"),
-                        "note": f.get("format_note"),
-                    }
-                    for f in info_reel.get("formats", [])
-                ]
-            except Exception as e:
-                res["reel_err"] = traceback.format_exc()
-
-            # 2. Carousel
-            try:
-                ydl_opts_slide1 = dict(ydl_opts)
-                ydl_opts_slide1["playlist_items"] = "1"
-                ydl_opts_slide1["noplaylist"] = False
-                with yt_dlp.YoutubeDL(ydl_opts_slide1) as ydl_s1:
-                    info_car = ydl_s1.extract_info(u_carousel, download=False)
-                    entries = list(info_car.get("entries", [])) if info_car.get("_type") == "playlist" else [info_car]
-                    res["car_entries_count"] = len(entries)
-                    if entries:
-                        res["car_s1_formats"] = [
-                            {
-                                "id": f.get("format_id"),
-                                "ext": f.get("ext"),
-                                "vcodec": f.get("vcodec"),
-                                "acodec": f.get("acodec"),
-                                "note": f.get("format_note"),
-                            }
-                            for f in entries[0].get("formats", [])
-                        ]
-            except Exception as e:
-                res["car_err"] = traceback.format_exc()
-    except Exception as e:
-        res["global_err"] = traceback.format_exc()
-
-    return res
+    return {
+        "embed_video_count": len(clean_vids),
+        "results": results
+    }
