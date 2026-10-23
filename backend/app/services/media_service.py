@@ -1088,7 +1088,7 @@ def _download_sync(job_id: str, url: str, fmt: str, quality: str, media_type: st
                         ydl_opts_retry = dict(ydl_opts)
                         retry_output_path = f"{output_path}_prog"
                         ydl_opts_retry["outtmpl"] = retry_output_path
-                        ydl_opts_retry["format"] = "b/best"
+                        ydl_opts_retry["format"] = "3/2/1/b/best"
                         with yt_dlp.YoutubeDL(ydl_opts_retry) as ydl_retry:
                             ydl_retry.download([target_dl_url])
                         retry_file = _find_output_file(retry_output_path)
