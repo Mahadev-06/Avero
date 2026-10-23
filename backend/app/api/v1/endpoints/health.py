@@ -13,7 +13,7 @@ router = APIRouter()
 @router.get("")
 @router.get("/")
 async def health_check():
-    return {"status": "ok", "version": "1.1.2"}
+    return {"status": "ok", "version": "1.1.3"}
 
 @router.get("/ready")
 async def readiness_check():
@@ -24,59 +24,47 @@ async def readiness_check():
 @router.get("/debug_reel")
 def debug_reel():
     ig_cookie_file = _get_instagram_cookiefile()
-    url = "https://www.instagram.com/reel/Demz7jFhX7y/?dlrf=NTc4MTIwNjQ2YQ=="
-
-    # 1. With cookies
-    ydl_opts_with = {
+    ydl_opts = {
         "quiet": True,
-        "format": "bestvideo+bestaudio/best",
     }
     if ig_cookie_file:
-        ydl_opts_with["cookiefile"] = ig_cookie_file
-    
-    formats_with_cookies = []
-    selected_with = None
-    try:
-        with yt_dlp.YoutubeDL(ydl_opts_with) as ydl:
-            info_with = ydl.extract_info(url, download=False)
-            selected_with = info_with.get("format_id")
-            for f in info_with.get("formats", []):
-                formats_with_cookies.append({
-                    "format_id": f.get("format_id"),
-                    "ext": f.get("ext"),
-                    "vcodec": f.get("vcodec"),
-                    "acodec": f.get("acodec"),
-                    "tbr": f.get("tbr"),
-                })
-    except Exception as e:
-        formats_with_cookies = str(e)
+        ydl_opts["cookiefile"] = ig_cookie_file
 
-    # 2. Without cookies
-    ydl_opts_no = {
-        "quiet": True,
-        "format": "bestvideo+bestaudio/best",
-    }
-    formats_no_cookies = []
-    selected_no = None
-    try:
-        with yt_dlp.YoutubeDL(ydl_opts_no) as ydl:
-            info_no = ydl.extract_info(url, download=False)
-            selected_no = info_no.get("format_id")
-            for f in info_no.get("formats", []):
-                formats_no_cookies.append({
-                    "format_id": f.get("format_id"),
-                    "ext": f.get("ext"),
-                    "vcodec": f.get("vcodec"),
-                    "acodec": f.get("acodec"),
-                    "tbr": f.get("tbr"),
-                })
-    except Exception as e:
-        formats_no_cookies = str(e)
+    u_reel = "https://www.instagram.com/reel/Demz7jFhX7y/?dlrf=NTc4MTIwNjQ2YQ=="
+    u_carousel = "https://www.instagram.com/p/DemaLRKjlEZ/"
 
-    return {
-        "cookiefile_exists": bool(ig_cookie_file and os.path.exists(ig_cookie_file)),
-        "selected_with_cookies": selected_with,
-        "formats_with_cookies": formats_with_cookies,
-        "selected_no_cookies": selected_no,
-        "formats_no_cookies": formats_no_cookies,
-    }
+    res = {}
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        # 1. Reel
+        info_reel = ydl.extract_info(u_reel, download=False)
+        res["reel_title"] = info_reel.get("title")
+        res["reel_type"] = info_reel.get("_type")
+        res["reel_formats"] = [
+            {
+                "id": f.get("format_id"),
+                "ext": f.get("ext"),
+                "vcodec": f.get("vcodec"),
+                "acodec": f.get("acodec"),
+                "note": f.get("format_note"),
+            }
+            for f in info_reel.get("formats", [])
+        ]
+        # 2. Carousel
+        info_car = ydl.extract_info(u_carousel, download=False, process=False)
+        res["car_type"] = info_car.get("_type")
+        entries = list(info_car.get("entries", []))
+        res["car_entries_count"] = len(entries)
+        # Process entry 1
+        info_e1 = ydl.extract_info(entries[0]["url"] if entries and "url" in entries[0] else u_carousel, download=False)
+        res["car_e1_formats"] = [
+            {
+                "id": f.get("format_id"),
+                "ext": f.get("ext"),
+                "vcodec": f.get("vcodec"),
+                "acodec": f.get("acodec"),
+                "note": f.get("format_note"),
+            }
+            for f in info_e1.get("formats", [])
+        ]
+
+    return res
