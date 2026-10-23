@@ -67,6 +67,9 @@ class DownloadRequest(BaseModel):
     format: str = Field("mp4", max_length=50)
     quality: str = Field("best", max_length=50)
     media_type: Optional[str] = Field(None, max_length=50)
+    slide_index: Optional[int] = Field(None, ge=1, le=50)
+    is_carousel_zip: Optional[bool] = Field(False)
+    post_url: Optional[str] = Field(None, max_length=2048)
 
     @field_validator("url")
     @classmethod

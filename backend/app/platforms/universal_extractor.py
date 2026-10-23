@@ -6,7 +6,7 @@ import httpx
 import yt_dlp
 import structlog
 from app.core.security.ssrf import resolve_and_check, SSRFBlockedError
-from app.schemas.analyze import MediaInfo, FormatOption
+from app.schemas.analyze import MediaInfo, FormatOption, SlideItem
 
 logger = structlog.get_logger()
 
@@ -1050,62 +1050,6 @@ async def extract_media_info(url: str, platform_name: str) -> MediaInfo:
         except Exception:
             pass
 
-    # 6. Instagram handler: if cookies are NOT configured, use direct scraper fallback immediately
-    if "instagram.com" in url or "instagr.am" in url:
-        from app.services.media_service import _get_instagram_cookiefile
-        ig_cookie = _get_instagram_cookiefile()
-        if not ig_cookie:
-            try:
-                ig_data = await _scrape_instagram(url)
-                if ig_data.get("is_image") and ig_data.get("image_url"):
-                    format_opts = build_image_format_options(ig_data["image_url"])
-                    return MediaInfo(
-                        url=url,
-                        platform="instagram",
-                        title=ig_data.get("title", "Instagram Photo"),
-                        thumbnail_url=ig_data["image_url"],
-                        media_type="image",
-                        formats=[f"{opt.ext} {opt.quality} ({opt.file_size_formatted})" for opt in format_opts],
-                        format_options=format_opts,
-                        download_url=ig_data["image_url"],
-                        download_supported=True,
-                        embed_supported=True,
-                        muted=False,
-                    )
-                elif ig_data.get("video_url") and ig_data["video_url"] != url:
-                    format_opts = build_format_options(30)
-                    return MediaInfo(
-                        url=url,
-                        platform="instagram",
-                        title=ig_data.get("title", "Instagram Video"),
-                        thumbnail_url=ig_data.get("thumbnail"),
-                        duration=30,
-                        media_type="video",
-                        formats=[f"{opt.ext} {opt.quality} ({opt.file_size_formatted})" for opt in format_opts],
-                        format_options=format_opts,
-                        download_url=ig_data["video_url"],
-                        download_supported=True,
-                        embed_supported=True,
-                        muted=True,
-                    )
-                else:
-                    return MediaInfo(
-                        url=url,
-                        platform="instagram",
-                        title="Instagram Post",
-                        media_type="image",
-                        formats=[],
-                        format_options=[],
-                        download_url=url,
-                        download_supported=False,
-                        embed_supported=True,
-                        error="unsupported_instagram",
-                        error_message="Unable to extract media from this Instagram post. Please ensure the post is public and contains supported media.",
-                    )
-            except Exception:
-                pass
-        # If Instagram cookies ARE present, proceed to yt-dlp native extraction below
-
     # 6. Universal yt-dlp extraction for videos and rich media
     from app.services.media_service import (
         _get_youtube_cookiefile,
@@ -1167,6 +1111,15 @@ async def extract_media_info(url: str, platform_name: str) -> MediaInfo:
 
     def _extract():
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            if is_ig:
+                try:
+                    raw_info = ydl.extract_info(url, download=False, process=False)
+                    if raw_info and raw_info.get('_type') == 'playlist':
+                        return raw_info
+                    elif raw_info:
+                        return ydl.process_ie_result(raw_info, download=False)
+                except Exception:
+                    pass
             return ydl.extract_info(url, download=False)
 
     loop = asyncio.get_event_loop()
@@ -1177,6 +1130,79 @@ async def extract_media_info(url: str, platform_name: str) -> MediaInfo:
         thumbnail = info.get('thumbnail') or (info.get('thumbnails', [{}])[-1].get('url') if info.get('thumbnails') else None)
         duration = info.get('duration', 0)
         
+        # Check for Instagram Carousel (multi-slide playlist)
+        entries = list(info.get('entries', [])) if (info and info.get('_type') == 'playlist') else []
+        if is_ig and entries and len(entries) > 1:
+            slides: list[SlideItem] = []
+            for idx, e in enumerate(entries):
+                slide_index = idx + 1
+                slide_id = e.get('id') or f"slide_{slide_index}"
+                slide_formats = e.get('formats', [])
+                slide_has_video = bool(slide_formats and any(f.get('vcodec') != 'none' for f in slide_formats)) or bool(e.get('vcodec') and e.get('vcodec') != 'none')
+                slide_type = "video" if slide_has_video else "image"
+                
+                # Thumbnail
+                slide_thumb = e.get('thumbnail')
+                if not slide_thumb and e.get('thumbnails'):
+                    slide_thumb = e.get('thumbnails')[-1].get('url')
+                
+                if slide_has_video:
+                    slide_dl_url = f"{url}#slide={slide_index}"
+                    slide_fmt_opts = build_format_options(
+                        duration_sec=int(e.get('duration') or duration or 30),
+                        raw_formats=e.get('formats'),
+                        max_height=e.get('height'),
+                        max_width=e.get('width')
+                    )
+                else:
+                    # Image slide: highest resolution direct candidate
+                    slide_dl_url = (e.get('thumbnails', [{}])[-1].get('url') if e.get('thumbnails') else None) or e.get('url') or slide_thumb
+                    slide_fmt_opts = build_image_format_options(slide_dl_url)
+                
+                slide_formats_formatted = [f"{opt.ext} {opt.quality} ({opt.file_size_formatted})" for opt in slide_fmt_opts]
+                slides.append(SlideItem(
+                    id=slide_id,
+                    slide_index=slide_index,
+                    media_type=slide_type,
+                    title=f"Slide {slide_index}",
+                    thumbnail_url=slide_thumb,
+                    download_url=slide_dl_url,
+                    formats=slide_formats_formatted,
+                    format_options=slide_fmt_opts,
+                ))
+
+            cover_thumb = slides[0].thumbnail_url or thumbnail
+            cover_dl = slides[0].download_url
+            cover_fmt_opts = slides[0].format_options
+            cover_formats = slides[0].formats
+            has_videos = any(s.media_type == "video" for s in slides)
+            has_images = any(s.media_type == "image" for s in slides)
+            combined_type = "mixed" if (has_videos and has_images) else ("video" if has_videos else "image")
+
+            return MediaInfo(
+                url=url,
+                platform=platform_name,
+                title=title[:100],
+                thumbnail_url=cover_thumb,
+                duration=duration,
+                media_type=combined_type,
+                formats=cover_formats,
+                format_options=cover_fmt_opts,
+                download_url=cover_dl,
+                download_supported=True,
+                embed_supported=True,
+                is_carousel=True,
+                slide_count=len(slides),
+                slides=slides,
+            )
+
+        # If a playlist had only 1 entry, unpack it as the primary item
+        if entries and len(entries) == 1:
+            info = entries[0]
+            title = info.get('title') or info.get('description') or title
+            thumbnail = info.get('thumbnail') or (info.get('thumbnails', [{}])[-1].get('url') if info.get('thumbnails') else thumbnail)
+            duration = info.get('duration', duration)
+
         # Check if media is purely an image/photo post
         has_video_formats = bool(info.get('formats') and any(f.get('vcodec') != 'none' for f in info['formats']))
         has_audio_formats = bool(info.get('formats') and any(f.get('acodec') != 'none' for f in info['formats']))

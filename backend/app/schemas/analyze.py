@@ -12,6 +12,16 @@ class FormatOption(BaseModel):
     file_size_formatted: str
     media_category: str  # "video", "audio", or "image"
 
+class SlideItem(BaseModel):
+    id: str
+    slide_index: int  # 1-based index (1, 2, 3...)
+    media_type: str   # "image" or "video"
+    title: Optional[str] = None
+    thumbnail_url: Optional[str] = None
+    download_url: Optional[str] = None
+    formats: List[str] = []
+    format_options: List[FormatOption] = []
+
 class MediaInfo(BaseModel):
     url: str
     platform: str
@@ -28,6 +38,9 @@ class MediaInfo(BaseModel):
     embed_supported: bool
     limitations: List[str] = []
     muted: Optional[bool] = False
+    is_carousel: Optional[bool] = False
+    slide_count: Optional[int] = 1
+    slides: Optional[List[SlideItem]] = None
     error: Optional[str] = None
     error_message: Optional[str] = None
 

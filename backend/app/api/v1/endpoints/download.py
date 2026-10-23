@@ -62,7 +62,8 @@ async def start_download(request: Request, req: DownloadRequest):
     track progress via SSE and retrieve the completed file.
     """
     # SSRF verification on the requested URL
-    parsed = urlparse(req.url)
+    target_url = req.post_url if (req.is_carousel_zip and req.post_url) else req.url
+    parsed = urlparse(target_url)
     if not parsed.hostname:
         raise HTTPException(status_code=400, detail="Invalid target URL.")
     
@@ -77,38 +78,52 @@ async def start_download(request: Request, req: DownloadRequest):
     quality = req.quality.lower().strip()
     media_type = (req.media_type or "").lower().strip()
 
-    is_explicit_image = (
-        media_type == "image"
-        or fmt in ("jpg", "jpeg", "png", "webp", "image")
-        or "image" in fmt
-        or "photo" in fmt
-        or any(fmt.startswith(ext) for ext in ("jpg", "jpeg", "png", "webp"))
-    )
+    is_carousel_zip = bool(req.is_carousel_zip or fmt == "zip" or "zip" in fmt)
+    if is_carousel_zip:
+        fmt = "zip"
+    else:
+        is_explicit_image = (
+            media_type == "image"
+            or fmt in ("jpg", "jpeg", "png", "webp", "image")
+            or "image" in fmt
+            or "photo" in fmt
+            or any(fmt.startswith(ext) for ext in ("jpg", "jpeg", "png", "webp"))
+        )
 
-    if is_explicit_image:
-        if "png" in fmt:
-            fmt = "png"
-        elif "webp" in fmt:
-            fmt = "webp"
-        else:
-            fmt = "jpg"
-    elif "mp3" in fmt or "audio" in fmt or "kbps" in quality or media_type == "audio":
-        fmt = "mp3"
-        quality = req.quality.lower().replace("mp3", "").strip() or "320kbps"
-    elif "mp4" in fmt or "video" in fmt or any(q in quality for q in ("360", "480", "720", "1080", "1440", "2160", "4k", "best")):
-        fmt = "mp4"
-        quality = req.quality.lower().replace("mp4", "").strip() or "best"
-    elif " " in req.format:
-        parts = req.format.split(" ", 1)
-        fmt = parts[0].lower().strip()
-        quality = parts[1].lower().strip()
-    elif " " in req.quality:
-        parts = req.quality.split(" ", 1)
-        fmt = parts[0].lower().strip()
-        quality = parts[1].lower().strip()
+        if is_explicit_image:
+            if "png" in fmt:
+                fmt = "png"
+            elif "webp" in fmt:
+                fmt = "webp"
+            else:
+                fmt = "jpg"
+        elif "mp3" in fmt or "audio" in fmt or "kbps" in quality or media_type == "audio":
+            fmt = "mp3"
+            quality = req.quality.lower().replace("mp3", "").strip() or "320kbps"
+        elif "mp4" in fmt or "video" in fmt or any(q in quality for q in ("360", "480", "720", "1080", "1440", "2160", "4k", "best")):
+            fmt = "mp4"
+            quality = req.quality.lower().replace("mp4", "").strip() or "best"
+        elif " " in req.format:
+            parts = req.format.split(" ", 1)
+            fmt = parts[0].lower().strip()
+            quality = parts[1].lower().strip()
+        elif " " in req.quality:
+            parts = req.quality.split(" ", 1)
+            fmt = parts[0].lower().strip()
+            quality = parts[1].lower().strip()
 
     # Launch download as a background asyncio task
-    asyncio.create_task(_run_download(job_id, req.url, fmt, quality, media_type))
+    asyncio.create_task(
+        _run_download(
+            job_id,
+            target_url,
+            fmt,
+            quality,
+            media_type,
+            slide_index=req.slide_index,
+            is_carousel_zip=is_carousel_zip,
+        )
+    )
 
     return DownloadStartResponse(
         job_id=job_id,
@@ -117,10 +132,26 @@ async def start_download(request: Request, req: DownloadRequest):
     )
 
 
-async def _run_download(job_id: str, url: str, fmt: str, quality: str, media_type: str | None = None):
+async def _run_download(
+    job_id: str,
+    url: str,
+    fmt: str,
+    quality: str,
+    media_type: str | None = None,
+    slide_index: int | None = None,
+    is_carousel_zip: bool = False,
+):
     """Background task that runs the actual download."""
     try:
-        await media_service.start_download(job_id, url, fmt, quality, media_type)
+        await media_service.start_download(
+            job_id,
+            url,
+            fmt,
+            quality,
+            media_type,
+            slide_index=slide_index,
+            is_carousel_zip=is_carousel_zip,
+        )
     except Exception:
         pass
 
@@ -232,6 +263,11 @@ async def download_file(
             base = safe_filename.rsplit(".", 1)[0] if "." in safe_filename else safe_filename
             safe_filename = f"{base}.webp"
         media_type = "image/webp"
+    elif file_path.lower().endswith(".zip"):
+        if not safe_filename.lower().endswith(".zip"):
+            base = safe_filename.rsplit(".", 1)[0] if "." in safe_filename else safe_filename
+            safe_filename = f"{base}.zip"
+        media_type = "application/zip"
     else:
         # Default fallback for video files
         if not safe_filename.lower().endswith(".mp4"):
