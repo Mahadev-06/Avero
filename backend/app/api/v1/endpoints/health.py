@@ -13,7 +13,7 @@ router = APIRouter()
 @router.get("")
 @router.get("/")
 async def health_check():
-    return {"status": "ok", "version": "1.1.1"}
+    return {"status": "ok", "version": "1.1.2"}
 
 @router.get("/ready")
 async def readiness_check():
@@ -23,54 +23,60 @@ async def readiness_check():
 
 @router.get("/debug_reel")
 def debug_reel():
-    log_buf = io.StringIO()
-    class StringLogger:
-        def debug(self, msg): log_buf.write(f"[debug] {msg}\n")
-        def info(self, msg): log_buf.write(f"[info] {msg}\n")
-        def warning(self, msg): log_buf.write(f"[warning] {msg}\n")
-        def error(self, msg): log_buf.write(f"[error] {msg}\n")
-
     ig_cookie_file = _get_instagram_cookiefile()
-    ydl_opts = {
-        "outtmpl": "/tmp/debug_reel_test.%(ext)s",
+    url = "https://www.instagram.com/reel/Demz7jFhX7y/?dlrf=NTc4MTIwNjQ2YQ=="
+
+    # 1. With cookies
+    ydl_opts_with = {
+        "quiet": True,
         "format": "bestvideo+bestaudio/best",
-        "merge_output_format": "mp4",
-        "logger": StringLogger(),
-        "verbose": True,
-        "overwrites": True,
     }
     if ig_cookie_file:
-        ydl_opts["cookiefile"] = ig_cookie_file
+        ydl_opts_with["cookiefile"] = ig_cookie_file
     
-    url = "https://www.instagram.com/reel/Demz7jFhX7y/?dlrf=NTc4MTIwNjQ2YQ=="
-    
-    extract_error = None
+    formats_with_cookies = []
+    selected_with = None
     try:
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            ydl.download([url])
+        with yt_dlp.YoutubeDL(ydl_opts_with) as ydl:
+            info_with = ydl.extract_info(url, download=False)
+            selected_with = info_with.get("format_id")
+            for f in info_with.get("formats", []):
+                formats_with_cookies.append({
+                    "format_id": f.get("format_id"),
+                    "ext": f.get("ext"),
+                    "vcodec": f.get("vcodec"),
+                    "acodec": f.get("acodec"),
+                    "tbr": f.get("tbr"),
+                })
     except Exception as e:
-        extract_error = str(e)
-    
-    streams = []
-    size = None
-    ff_err = None
-    test_path = "/tmp/debug_reel_test.mp4"
-    if os.path.exists(test_path):
-        size = os.path.getsize(test_path)
-        p = subprocess.run(
-            ["ffprobe", "-v", "error", "-show_entries", "stream=index,codec_type,codec_name", "-of", "json", test_path],
-            capture_output=True, text=True
-        )
-        if p.returncode == 0:
-            streams = json.loads(p.stdout).get("streams", [])
-        else:
-            ff_err = p.stderr
+        formats_with_cookies = str(e)
+
+    # 2. Without cookies
+    ydl_opts_no = {
+        "quiet": True,
+        "format": "bestvideo+bestaudio/best",
+    }
+    formats_no_cookies = []
+    selected_no = None
+    try:
+        with yt_dlp.YoutubeDL(ydl_opts_no) as ydl:
+            info_no = ydl.extract_info(url, download=False)
+            selected_no = info_no.get("format_id")
+            for f in info_no.get("formats", []):
+                formats_no_cookies.append({
+                    "format_id": f.get("format_id"),
+                    "ext": f.get("ext"),
+                    "vcodec": f.get("vcodec"),
+                    "acodec": f.get("acodec"),
+                    "tbr": f.get("tbr"),
+                })
+    except Exception as e:
+        formats_no_cookies = str(e)
 
     return {
         "cookiefile_exists": bool(ig_cookie_file and os.path.exists(ig_cookie_file)),
-        "size": size,
-        "streams": streams,
-        "extract_error": extract_error,
-        "ff_err": ff_err,
-        "logs": log_buf.getvalue(),
+        "selected_with_cookies": selected_with,
+        "formats_with_cookies": formats_with_cookies,
+        "selected_no_cookies": selected_no,
+        "formats_no_cookies": formats_no_cookies,
     }
