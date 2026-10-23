@@ -1,13 +1,13 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { apiClient, MediaInfo, DownloadProgress, SearchResult } from '@/lib/api-client';
+import { apiClient, MediaInfo, SlideItem, FormatOption, DownloadProgress, SearchResult } from '@/lib/api-client';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { MediaPreview } from './media-preview';
 import { MediaPlayerCard } from './media-player-card';
 import { triggerFileDownload } from '@/lib/utils';
-import { Video, Music, Download, Clock, Search, Loader2, Copy, Check, Plus, Play, AlertCircle, Image as ImageIcon, Trash2, ArrowUpLeft, X, VolumeX, Clipboard } from 'lucide-react';
+import { Video, Music, Download, Clock, Search, Loader2, Copy, Check, Plus, Play, AlertCircle, Image as ImageIcon, Trash2, ArrowUpLeft, X, VolumeX, Clipboard, Layers, Archive } from 'lucide-react';
 import { TextShimmerWave } from '@/components/core/text-shimmer-wave';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -1055,6 +1055,180 @@ export function UrlInput() {
         }, 5000);
         setStatusMsg('Download error. Please retry or choose another format.');
       }
+    }
+  }, []);
+
+  const handleSlideDownload = useCallback(
+    async (item: VideoResultItem, slide: SlideItem, opt: FormatOption) => {
+      const isVideo = slide.media_type === 'video';
+      const targetUrl = isVideo
+        ? (slide.download_url || `${item.info.url}#slide=${slide.slide_index}`)
+        : (slide.download_url || item.info.url);
+      const slideExt = opt.ext.toLowerCase();
+      const slideQuality = opt.quality.toLowerCase();
+      const slideCategory = opt.media_category;
+
+      const fullFormat = `Slide ${slide.slide_index} (${opt.ext} ${opt.quality})`;
+      setResults((prev) =>
+        prev.map((r) =>
+          r.id === item.id
+            ? { ...r, downloadState: 'downloading' as const, activeQuality: fullFormat, progress: null }
+            : r
+        )
+      );
+
+      try {
+        const { job_id } = await apiClient.startDownload(
+          targetUrl,
+          slideExt,
+          slideQuality,
+          slideCategory,
+          slide.slide_index,
+          false,
+          item.info.url
+        );
+
+        const subscription = apiClient.subscribeProgress(job_id, (progress) => {
+          setResults((prev) =>
+            prev.map((r) => (r.id === item.id ? { ...r, progress } : r))
+          );
+        });
+
+        activeSubscriptions.current.set(item.id, subscription);
+        const finalProgress = await subscription.done;
+        activeSubscriptions.current.delete(item.id);
+
+        if (finalProgress.status === 'COMPLETED') {
+          const cleanTitle = (item.info.title || 'instagram_carousel')
+            .replace(/[^a-zA-Z0-9_\- ]/g, '')
+            .trim()
+            .replace(/\s+/g, '_')
+            .slice(0, 40);
+
+          let fileExt = opt.ext.toLowerCase();
+          if (slideCategory === 'image') {
+            fileExt = ['jpg', 'jpeg', 'png', 'webp'].includes(fileExt) ? fileExt : 'jpg';
+          } else if (slideCategory === 'audio') {
+            fileExt = fileExt === 'wav' ? 'wav' : 'mp3';
+          } else {
+            fileExt = fileExt === 'webm' ? 'webm' : 'mp4';
+          }
+
+          const filename = `${cleanTitle}_slide_${String(slide.slide_index).padStart(2, '0')}.${fileExt}`;
+          const fileUrl = apiClient.getDownloadFileUrl(job_id, filename);
+          await triggerFileDownload(fileUrl, filename);
+
+          setResults((prev) =>
+            prev.map((r) => (r.id === item.id ? { ...r, downloadState: 'completed' as const } : r))
+          );
+          setTimeout(() => {
+            setResults((prev) =>
+              prev.map((r) => (r.id === item.id && r.downloadState === 'completed' ? { ...r, downloadState: 'idle' as const } : r))
+            );
+          }, 5000);
+          setStatusMsg(`Downloaded Slide ${slide.slide_index} (${opt.ext} ${opt.quality})`);
+        } else {
+          setResults((prev) =>
+            prev.map((r) => (r.id === item.id ? { ...r, downloadState: 'failed' as const, progress: finalProgress } : r))
+          );
+          setTimeout(() => {
+            setResults((prev) =>
+              prev.map((r) => (r.id === item.id && r.downloadState === 'failed' ? { ...r, downloadState: 'idle' as const } : r))
+            );
+          }, 5000);
+          const errText = finalProgress.error || 'Download failed. Please retry.';
+          setStatusMsg(errText.startsWith('This') || errText.startsWith('Unable') ? errText : `Download failed: ${errText}`);
+        }
+      } catch (err) {
+        console.error('Slide download error:', err);
+        setResults((prev) =>
+          prev.map((r) => (r.id === item.id ? { ...r, downloadState: 'failed' as const } : r))
+        );
+        setTimeout(() => {
+          setResults((prev) =>
+            prev.map((r) => (r.id === item.id && r.downloadState === 'failed' ? { ...r, downloadState: 'idle' as const } : r))
+          );
+        }, 5000);
+        setStatusMsg('Download error. Please check link and try again.');
+      }
+    },
+    []
+  );
+
+  const handleCarouselZipDownload = useCallback(async (item: VideoResultItem) => {
+    const targetUrl = item.info.url;
+    setResults((prev) =>
+      prev.map((r) =>
+        r.id === item.id
+          ? { ...r, downloadState: 'downloading' as const, activeQuality: 'All Slides (ZIP)', progress: null }
+          : r
+      )
+    );
+
+    try {
+      const { job_id } = await apiClient.startDownload(
+        targetUrl,
+        'zip',
+        'best',
+        'carousel_zip',
+        undefined,
+        true,
+        item.info.url
+      );
+
+      const subscription = apiClient.subscribeProgress(job_id, (progress) => {
+        setResults((prev) =>
+          prev.map((r) => (r.id === item.id ? { ...r, progress } : r))
+        );
+      });
+
+      activeSubscriptions.current.set(item.id, subscription);
+      const finalProgress = await subscription.done;
+      activeSubscriptions.current.delete(item.id);
+
+      if (finalProgress.status === 'COMPLETED') {
+        const cleanTitle = (item.info.title || 'instagram_carousel')
+          .replace(/[^a-zA-Z0-9_\- ]/g, '')
+          .trim()
+          .replace(/\s+/g, '_')
+          .slice(0, 40);
+
+        const filename = finalProgress.filename || `${cleanTitle}_all_slides.zip`;
+        const fileUrl = apiClient.getDownloadFileUrl(job_id, filename);
+        await triggerFileDownload(fileUrl, filename);
+
+        setResults((prev) =>
+          prev.map((r) => (r.id === item.id ? { ...r, downloadState: 'completed' as const } : r))
+        );
+        setTimeout(() => {
+          setResults((prev) =>
+            prev.map((r) => (r.id === item.id && r.downloadState === 'completed' ? { ...r, downloadState: 'idle' as const } : r))
+          );
+        }, 5000);
+        setStatusMsg(`Downloaded All Slides ZIP (${item.info.slide_count} slides)`);
+      } else {
+        setResults((prev) =>
+          prev.map((r) => (r.id === item.id ? { ...r, downloadState: 'failed' as const, progress: finalProgress } : r))
+        );
+        setTimeout(() => {
+          setResults((prev) =>
+            prev.map((r) => (r.id === item.id && r.downloadState === 'failed' ? { ...r, downloadState: 'idle' as const } : r))
+          );
+        }, 5000);
+        const errText = finalProgress.error || 'ZIP packaging failed.';
+        setStatusMsg(errText);
+      }
+    } catch (err) {
+      console.error('ZIP download error:', err);
+      setResults((prev) =>
+        prev.map((r) => (r.id === item.id ? { ...r, downloadState: 'failed' as const } : r))
+      );
+      setTimeout(() => {
+        setResults((prev) =>
+          prev.map((r) => (r.id === item.id && r.downloadState === 'failed' ? { ...r, downloadState: 'idle' as const } : r))
+        );
+      }, 5000);
+      setStatusMsg('Download error. Please check connection and try again.');
     }
   }, []);
 
@@ -2139,6 +2313,327 @@ export function UrlInput() {
             ];
 
             const isUnsupported = item.info.error === 'unsupported_video' || (item.info.download_supported === false && item.info.platform === 'youtube');
+
+            if (item.info.is_carousel && item.info.slides && item.info.slides.length > 1) {
+              const slides = item.info.slides;
+              const isDownloadingZip = item.downloadState === 'downloading' && item.activeQuality === 'All Slides (ZIP)';
+              return (
+                <div
+                  key={item.id}
+                  className="nm-result-card"
+                  style={{
+                    backgroundColor: 'var(--bg-color)',
+                    border: '1px solid rgba(255, 255, 255, 0.65)',
+                    borderRadius: '24px',
+                    overflow: 'hidden',
+                    padding: '1.75rem',
+                    boxShadow: '8px 8px 20px var(--neumorph-dark), -8px -8px 20px var(--neumorph-light)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '1.25rem',
+                  }}
+                >
+                  {/* Top Header */}
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      flexWrap: 'wrap',
+                      gap: '0.75rem',
+                      paddingBottom: '1rem',
+                      borderBottom: '1px solid rgba(0, 0, 0, 0.06)',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', minWidth: 0 }}>
+                      <div
+                        style={{
+                          width: '36px',
+                          height: '36px',
+                          borderRadius: '10px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          backgroundColor: 'var(--bg-color)',
+                          boxShadow: '2px 2px 5px var(--neumorph-dark), -2px -2px 5px var(--neumorph-light)',
+                        }}
+                      >
+                        <Layers className="w-5 h-5 text-pink-500" />
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <span
+                            style={{
+                              fontSize: '1rem',
+                              fontWeight: 800,
+                              color: 'var(--text-color)',
+                              whiteSpace: 'nowrap',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              maxWidth: '380px',
+                            }}
+                          >
+                            {decodeHtmlEntities(item.info.title) || 'Instagram Carousel'}
+                          </span>
+                          <span
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              padding: '0.15rem 0.55rem',
+                              borderRadius: 'var(--radius-full)',
+                              fontSize: '0.72rem',
+                              fontWeight: 800,
+                              backgroundColor: 'rgba(236, 72, 153, 0.1)',
+                              color: '#ec4899',
+                              border: '1px solid rgba(236, 72, 153, 0.25)',
+                            }}
+                          >
+                            {slides.length} slides
+                          </span>
+                        </div>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                          Download individual photos/videos or download all at once
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Download All (ZIP) Button */}
+                    <button
+                      type="button"
+                      className="pill-btn"
+                      onClick={() => handleCarouselZipDownload(item)}
+                      disabled={item.downloadState === 'downloading'}
+                      style={{
+                        height: '42px',
+                        padding: '0 1.25rem',
+                        fontSize: '0.82rem',
+                        fontWeight: 800,
+                        color: 'var(--text-color)',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        cursor: item.downloadState === 'downloading' ? 'wait' : 'pointer',
+                        borderRadius: 'var(--radius-full)',
+                        border: '1px solid rgba(16, 185, 129, 0.5)',
+                        backgroundColor: 'var(--bg-color)',
+                        boxShadow: '3px 3px 8px var(--neumorph-dark), -3px -3px 8px var(--neumorph-light)',
+                      }}
+                    >
+                      {isDownloadingZip ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin text-emerald-600" />
+                          <span>
+                            {item.progress && item.progress.eta
+                              ? item.progress.eta
+                              : 'Packaging ZIP archive...'}
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          <Archive className="w-4 h-4 text-emerald-600" />
+                          <span>Download All (ZIP)</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+
+                  {/* Active Download Progress Bar */}
+                  {item.downloadState === 'downloading' && item.progress && (
+                    <div style={{ width: '100%', padding: '0.5rem 0' }}>
+                      <div className="nm-progress-track">
+                        <div
+                          className="nm-progress-fill"
+                          style={{
+                            width: `${Math.max(item.progress.percent, 3)}%`,
+                          }}
+                        />
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '0.5rem' }}>
+                        <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#0D74CE' }}>
+                          {item.progress.eta || item.activeQuality || 'Downloading...'}
+                        </span>
+                        <span style={{ fontSize: '0.75rem', fontWeight: 900, color: '#0D74CE' }} className="tabular-nums">
+                          {item.progress.percent.toFixed(1)}%
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Slide Grid */}
+                  <div
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
+                      gap: '1.15rem',
+                      width: '100%',
+                    }}
+                  >
+                    {slides.map((slide) => {
+                      const isSlideVideo = slide.media_type === 'video';
+                      const slideOpts = slide.format_options && slide.format_options.length > 0
+                        ? slide.format_options
+                        : isSlideVideo
+                        ? [
+                            { format_id: 'mp4_hd', ext: 'MP4', quality: 'HD Video', file_size_formatted: '', media_category: 'video' as const },
+                            { format_id: 'mp3_audio', ext: 'MP3', quality: 'Audio', file_size_formatted: '', media_category: 'audio' as const },
+                          ]
+                        : [
+                            { format_id: 'jpg_orig', ext: 'JPG', quality: 'Original', file_size_formatted: '', media_category: 'image' as const },
+                            { format_id: 'png_hd', ext: 'PNG', quality: 'HD Lossless', file_size_formatted: '', media_category: 'image' as const },
+                            { format_id: 'webp_hd', ext: 'WEBP', quality: 'Web-Optimized', file_size_formatted: '', media_category: 'image' as const },
+                          ];
+
+                      return (
+                        <div
+                          key={slide.id || slide.slide_index}
+                          style={{
+                            backgroundColor: 'var(--bg-color)',
+                            border: '1px solid rgba(255, 255, 255, 0.65)',
+                            borderRadius: '16px',
+                            overflow: 'hidden',
+                            padding: '0.75rem',
+                            boxShadow: '3px 3px 10px var(--neumorph-dark), -3px -3px 10px var(--neumorph-light)',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '0.65rem',
+                          }}
+                        >
+                          {/* Slide Media Thumbnail Container */}
+                          <div
+                            style={{
+                              position: 'relative',
+                              width: '100%',
+                              aspectRatio: '1 / 1',
+                              borderRadius: '12px',
+                              overflow: 'hidden',
+                              backgroundColor: '#111',
+                            }}
+                          >
+                            {slide.thumbnail_url ? (
+                              <img
+                                src={slide.thumbnail_url}
+                                alt={`Slide ${slide.slide_index}`}
+                                style={{
+                                  width: '100%',
+                                  height: '100%',
+                                  objectFit: 'cover',
+                                }}
+                              />
+                            ) : (
+                              <div
+                                style={{
+                                  width: '100%',
+                                  height: '100%',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  color: '#666',
+                                }}
+                              >
+                                {isSlideVideo ? <Video className="w-8 h-8" /> : <ImageIcon className="w-8 h-8" />}
+                              </div>
+                            )}
+
+                            {/* Top Left: Slide Index Badge */}
+                            <div
+                              style={{
+                                position: 'absolute',
+                                top: '8px',
+                                left: '8px',
+                                padding: '0.2rem 0.55rem',
+                                borderRadius: 'var(--radius-full)',
+                                backgroundColor: 'rgba(0, 0, 0, 0.65)',
+                                backdropFilter: 'blur(4px)',
+                                color: '#ffffff',
+                                fontSize: '0.72rem',
+                                fontWeight: 800,
+                              }}
+                            >
+                              Slide {slide.slide_index}
+                            </div>
+
+                            {/* Top Right: Photo / Video Badge */}
+                            <div
+                              style={{
+                                position: 'absolute',
+                                top: '8px',
+                                right: '8px',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '0.25rem',
+                                padding: '0.2rem 0.55rem',
+                                borderRadius: 'var(--radius-full)',
+                                backgroundColor: isSlideVideo ? 'rgba(16, 185, 129, 0.85)' : 'rgba(245, 158, 11, 0.85)',
+                                backdropFilter: 'blur(4px)',
+                                color: '#ffffff',
+                                fontSize: '0.72rem',
+                                fontWeight: 800,
+                              }}
+                            >
+                              {isSlideVideo ? (
+                                <>
+                                  <Video className="w-3 h-3 text-white" />
+                                  <span>Video</span>
+                                </>
+                              ) : (
+                                <>
+                                  <ImageIcon className="w-3 h-3 text-white" />
+                                  <span>Photo</span>
+                                </>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Format Options List for Slide */}
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                            {slideOpts.map((opt) => {
+                              const isThisDownloading =
+                                item.downloadState === 'downloading' &&
+                                item.activeQuality === `Slide ${slide.slide_index} (${opt.ext} ${opt.quality})`;
+
+                              return (
+                                <button
+                                  key={opt.format_id || `${opt.ext}_${opt.quality}`}
+                                  type="button"
+                                  className="pill-btn nm-format-btn"
+                                  onClick={() => handleSlideDownload(item, slide, opt)}
+                                  disabled={item.downloadState === 'downloading'}
+                                  style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                    padding: '0.35rem 0.65rem',
+                                    borderRadius: '8px',
+                                    fontSize: '0.75rem',
+                                    fontWeight: 700,
+                                    width: '100%',
+                                    backgroundColor: 'var(--bg-color)',
+                                    border: '1px solid rgba(255, 255, 255, 0.6)',
+                                    boxShadow: '1px 1px 3px var(--neumorph-dark), -1px -1px 3px var(--neumorph-light)',
+                                    cursor: item.downloadState === 'downloading' ? 'not-allowed' : 'pointer',
+                                  }}
+                                >
+                                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
+                                    <span style={{ fontWeight: 800, color: 'var(--text-color)' }}>{opt.ext}</span>
+                                    <span style={{ color: 'var(--text-muted)', fontSize: '0.7rem' }}>{opt.quality}</span>
+                                  </span>
+
+                                  {isThisDownloading ? (
+                                    <Loader2 className="w-3 h-3 animate-spin text-blue-500" />
+                                  ) : (
+                                    <Download className="w-3 h-3 text-emerald-600" />
+                                  )}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            }
 
             return (
               <div

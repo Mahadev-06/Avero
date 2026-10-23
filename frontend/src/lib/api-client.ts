@@ -19,6 +19,17 @@ export interface FormatOption {
   media_category: 'video' | 'audio' | 'image';
 }
 
+export interface SlideItem {
+  id: string;
+  slide_index: number;
+  media_type: 'video' | 'image';
+  title?: string;
+  thumbnail_url?: string;
+  download_url?: string;
+  formats?: string[];
+  format_options?: FormatOption[];
+}
+
 export interface MediaInfo {
   url: string;
   platform: string;
@@ -35,6 +46,9 @@ export interface MediaInfo {
   embed_supported: boolean;
   limitations?: string[];
   muted?: boolean;
+  is_carousel?: boolean;
+  slide_count?: number;
+  slides?: SlideItem[];
   error?: string;
   error_message?: string;
 }
@@ -188,10 +202,26 @@ class ApiClient {
 
   // --- New Download Engine Methods ---
 
-  async startDownload(url: string, format: string = 'mp4', quality: string = 'best', media_type?: string): Promise<DownloadStartResponse> {
+  async startDownload(
+    url: string,
+    format: string = 'mp4',
+    quality: string = 'best',
+    media_type?: string,
+    slide_index?: number,
+    is_carousel_zip?: boolean,
+    post_url?: string,
+  ): Promise<DownloadStartResponse> {
     return this.fetchJson('/download/start', {
       method: 'POST',
-      body: JSON.stringify({ url, format, quality, media_type }),
+      body: JSON.stringify({
+        url,
+        format,
+        quality,
+        media_type,
+        slide_index,
+        is_carousel_zip,
+        post_url,
+      }),
     });
   }
 
