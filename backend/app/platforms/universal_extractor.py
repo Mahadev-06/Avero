@@ -1258,7 +1258,16 @@ async def extract_media_info(url: str, platform_name: str) -> MediaInfo:
                 embed_supported=True,
             )
 
-        direct_download_url = info.get('url')
+        direct_download_url = None
+        if is_ig and info.get('formats'):
+            best_with_audio = [
+                f for f in info['formats']
+                if f.get('url') and f.get('vcodec') != 'none' and f.get('acodec') != 'none'
+            ]
+            if best_with_audio:
+                direct_download_url = best_with_audio[-1].get('url')
+        if not direct_download_url:
+            direct_download_url = info.get('url')
         if not direct_download_url and info.get('formats'):
             best_with_audio = [
                 f for f in info['formats']

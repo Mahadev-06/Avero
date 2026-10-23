@@ -1039,6 +1039,8 @@ def _download_sync(job_id: str, url: str, fmt: str, quality: str, media_type: st
         if slide_index:
             ydl_opts["playlist_items"] = str(slide_index)
             ydl_opts["noplaylist"] = False
+        elif not is_audio and not is_image:
+            ydl_opts["format"] = "3/2/1/bestvideo[ext=mp4]+bestaudio[ext=m4a]/bestvideo+bestaudio/best"
 
     if is_audio:
         audio_quality = "320"
