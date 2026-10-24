@@ -556,98 +556,170 @@ async def _scrape_threads(url: str) -> dict:
             "is_image": False,
         }
 
-    from app.services.media_service import _get_threads_cookiefile, _load_cookiejar
-    threads_cookie = _get_threads_cookiefile()
-    threads_jar = _load_cookiejar(threads_cookie) if threads_cookie else None
+    # 1. Resolve share links hop-by-hop with resolve_and_check (max 5 hops, host must be threads.net or threads.com)
+    current_url = url
+    for _ in range(5):
+        parsed_hop = urlparse(current_url)
+        hostname = (parsed_hop.hostname or "").lower()
+        if not hostname or not (
+            hostname == "threads.net" or hostname.endswith(".threads.net") or
+            hostname == "threads.com" or hostname.endswith(".threads.com")
+        ):
+            raise SSRFBlockedError(f"Hop to non-Threads host blocked: {hostname}")
+        resolve_and_check(hostname)
 
-    if threads_jar:
-        headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/124.0.0.0",
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
-            "Accept-Language": "en-US,en;q=0.9",
-        }
-    else:
-        headers = {
+        if "error=invalid_post" in current_url:
+            return {"error": "invalid_post", "canonical_url": current_url}
+
+        async with httpx.AsyncClient(follow_redirects=False, timeout=10.0) as hop_client:
+            try:
+                r_hop = await hop_client.get(current_url, headers={"User-Agent": "Mozilla/5.0"})
+                if r_hop.is_redirect:
+                    next_loc = r_hop.headers.get("location")
+                    if not next_loc:
+                        break
+                    if next_loc.startswith("/"):
+                        next_loc = f"{parsed_hop.scheme}://{parsed_hop.netloc}{next_loc}"
+                    current_url = next_loc
+                    if "error=invalid_post" in current_url:
+                        return {"error": "invalid_post", "canonical_url": current_url}
+                else:
+                    break
+            except Exception:
+                break
+
+    m = re.search(r'@([^/]+)/post/([^/?]+)', current_url)
+    author = m.group(1) if m else None
+    post_id = m.group(2) if m else None
+
+    import html as html_module
+    title = None
+    caption_text = None
+
+    # 2. Tier 1: Embed Page Scraping (https://www.threads.net/@user/post/POST_ID/embed)
+    embed_video_src = None
+    embed_imgs: list[str] = []
+    if author and post_id:
+        embed_url = f"https://www.threads.net/@{author}/post/{post_id}/embed"
+        try:
+            parsed_emb = urlparse(embed_url)
+            if parsed_emb.hostname:
+                resolve_and_check(parsed_emb.hostname)
+            async with httpx.AsyncClient(follow_redirects=True, timeout=8.0) as emb_client:
+                emb_resp = await emb_client.get(embed_url, headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"})
+                if emb_resp.status_code == 200:
+                    embed_html = emb_resp.text
+                    cap_m = re.search(r'class="BodyText[^"]*"[^>]*>(.*?)</div>', embed_html, re.DOTALL)
+                    if cap_m:
+                        clean_cap = re.sub(r'<[^>]+>', '', cap_m.group(1)).strip()
+                        if clean_cap:
+                            caption_text = html_module.unescape(clean_cap)
+
+                    v_src = re.findall(r'<source[^>]+src="([^">]+)"', embed_html)
+                    if v_src:
+                        embed_video_src = v_src[0].replace("&amp;", "&")
+
+                    all_imgs = re.findall(r'<img[^>]+src="([^">]+)"', embed_html)
+                    for img in all_imgs:
+                        # Exclude avatar and community icon
+                        if not any(k in img for k in ("t51.82787-19", "rsrc.php", "favicon", "t1.6435-9")):
+                            embed_imgs.append(img.replace("&amp;", "&"))
+        except Exception:
+            pass
+
+    # 3. Tier 2: Social Crawler / OpenGraph Scraping (facebookexternalhit/1.1)
+    og_vid_url = None
+    og_img_url = None
+    try:
+        from app.services.media_service import _get_threads_cookiefile, _load_cookiejar
+        threads_cookie = _get_threads_cookiefile()
+        threads_jar = _load_cookiejar(threads_cookie) if threads_cookie else None
+
+        crawl_headers = {
             "User-Agent": "facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)",
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
         }
-    
-    title = "Threads Photo"
-    thumbnail_img = None
+        async with httpx.AsyncClient(follow_redirects=True, timeout=8.0, headers=crawl_headers, cookies=threads_jar) as crawl_client:
+            crawl_resp = await crawl_client.get(current_url)
+            if crawl_resp.status_code == 200:
+                html = crawl_resp.text
+                og_vid = re.search(r'<meta\s+(?:property|name)=["\'](?:og:video(?::secure_url)?|twitter:player:stream)["\']\s+content=["\']([^"\']+)["\']', html)
+                if not og_vid:
+                    og_vid = re.search(r'<meta\s+content=["\']([^"\']+)["\']\s+(?:property|name)=["\'](?:og:video(?::secure_url)?|twitter:player:stream)["\']', html)
+                if og_vid:
+                    og_vid_url = og_vid.group(1).replace("&amp;", "&")
 
+                og_img = re.search(r'<meta\s+(?:property|name)=["\'](?:og:image(?::secure_url)?|twitter:image(?::src)?)["\']\s+content=["\']([^"\']+)["\']', html)
+                if not og_img:
+                    og_img = re.search(r'<meta\s+content=["\']([^"\']+)["\']\s+(?:property|name)=["\'](?:og:image(?::secure_url)?|twitter:image(?::src)?)["\']', html)
+                if og_img:
+                    cand_img = og_img.group(1).replace("&amp;", "&")
+                    if not any(e in cand_img.lower() for e in ("favicon.ico", "threads_logo.png", "khwimm5b8pw", "rsrc.php")):
+                        og_img_url = cand_img
+
+                if not caption_text:
+                    og_desc = re.search(r'<meta\s+(?:property|name)=["\'](?:og:description|twitter:description)["\']\s+content=["\']([^"\']+)["\']', html)
+                    if not og_desc:
+                        og_desc = re.search(r'<meta\s+content=["\']([^"\']+)["\']\s+(?:property|name)=["\'](?:og:description|twitter:description)["\']', html)
+                    if og_desc:
+                        clean_desc = html_module.unescape(og_desc.group(1).replace("&amp;", "&")).strip()
+                        if clean_desc and not any(k in clean_desc.lower() for k in ("log in to threads", "join threads")):
+                            caption_text = clean_desc
+
+                if not author:
+                    og_title = re.search(r'<meta\s+(?:property|name)=["\'](?:og:title|twitter:title)["\']\s+content=["\']([^"\']+)["\']', html)
+                    if not og_title:
+                        og_title = re.search(r'<meta\s+content=["\']([^"\']+)["\']\s+(?:property|name)=["\'](?:og:title|twitter:title)["\']', html)
+                    if og_title:
+                        raw_title = html_module.unescape(og_title.group(1).replace("&amp;", "&"))
+                        m_auth = re.search(r'@([A-Za-z0-9._]+)', raw_title)
+                        if m_auth:
+                            author = m_auth.group(1)
+    except Exception:
+        pass
+
+    # Build display title according to approved plan
+    if caption_text:
+        single_line_cap = re.sub(r'\s+', ' ', caption_text).strip()
+        cap_snippet = single_line_cap[:80] + ("..." if len(single_line_cap) > 80 else "")
+        if author:
+            title = f"@{author}: {cap_snippet}"
+        else:
+            title = cap_snippet
+    elif author:
+        title = f"Threads post by @{author}"
+
+    # Return if video found via Embed or OpenGraph
+    final_video = embed_video_src or og_vid_url
+    if final_video:
+        return {
+            "title": title or (f"Threads video by @{author}" if author else "Threads Video"),
+            "video_url": final_video,
+            "thumbnail": og_img_url or (embed_imgs[0] if embed_imgs else None),
+            "is_image": False,
+            "canonical_url": current_url,
+            "author": author,
+            "post_id": post_id,
+        }
+
+    # Return if direct image found via Embed or OpenGraph
+    final_img = (embed_imgs[0] if embed_imgs else None) or og_img_url
+    if final_img:
+        return {
+            "title": title or (f"Threads photo by @{author}" if author else "Threads Photo"),
+            "image_url": final_img,
+            "thumbnail": og_img_url or final_img,
+            "is_image": True,
+            "canonical_url": current_url,
+            "author": author,
+            "post_id": post_id,
+        }
+
+    # 4. Tier 3: lovethreads.net API fallback
     try:
-        # 1. Social Crawler / Logged-in OpenGraph & Embedded Script Scraping
-        async with httpx.AsyncClient(follow_redirects=True, timeout=10.0, headers=headers, cookies=threads_jar) as client:
-            resp = await client.get(url)
-            html = resp.text
-            
-            og_vid = re.search(r'<meta\s+(?:property|name)=["\'](?:og:video(?::secure_url)?|twitter:player:stream)["\']\s+content=["\']([^"\']+)["\']', html)
-            if not og_vid:
-                og_vid = re.search(r'<meta\s+content=["\']([^"\']+)["\']\s+(?:property|name)=["\'](?:og:video(?::secure_url)?|twitter:player:stream)["\']', html)
-
-            og_img = re.search(r'<meta\s+(?:property|name)=["\'](?:og:image(?::secure_url)?|twitter:image(?::src)?)["\']\s+content=["\']([^"\']+)["\']', html)
-            if not og_img:
-                og_img = re.search(r'<meta\s+content=["\']([^"\']+)["\']\s+(?:property|name)=["\'](?:og:image(?::secure_url)?|twitter:image(?::src)?)["\']', html)
-
-            og_title = re.search(r'<meta\s+(?:property|name)=["\'](?:og:title|twitter:title)["\']\s+content=["\']([^"\']+)["\']', html)
-            if not og_title:
-                og_title = re.search(r'<meta\s+content=["\']([^"\']+)["\']\s+(?:property|name)=["\'](?:og:title|twitter:title)["\']', html)
-            
-            if og_title:
-                import html as html_module
-                raw_title = html_module.unescape(og_title.group(1).replace("&amp;", "&"))
-                cleaned_title = re.sub(r'[\s•·|]+Threads.*$', '', raw_title, flags=re.IGNORECASE).strip()
-                if cleaned_title and not any(k.lower() in cleaned_title.lower() for k in ("log in", "login")):
-                    title = f"{cleaned_title} on Threads" if not cleaned_title.endswith("on Threads") else cleaned_title
-            
-            if og_vid:
-                return {
-                    "title": title if title != "Threads Photo" else "Threads Video",
-                    "video_url": og_vid.group(1).replace("&amp;", "&"),
-                    "thumbnail": og_img.group(1).replace("&amp;", "&") if og_img else None,
-                    "is_image": False,
-                }
-
-            # Search for embedded video in HTML or JSON script tags
-            mp4_matches = re.findall(r'https?:\\?/\\?/[^"\'\\ ]+?(?:cdninstagram\.com|fbcdn\.net)[^"\'\\ ]*?\.mp4[^"\'\\ ]*', html)
-            if mp4_matches:
-                clean_url = mp4_matches[0].replace(r"\u0026", "&").replace(r"\/", "/")
-                return {
-                    "title": title if title != "Threads Photo" else "Threads Video",
-                    "video_url": clean_url,
-                    "thumbnail": og_img.group(1).replace("&amp;", "&") if og_img else None,
-                    "is_image": False,
-                }
-
-            if og_img:
-                img_url = og_img.group(1).replace("&amp;", "&")
-                base_img = img_url.split("?")[0].lower()
-                is_junk = any(e in base_img for e in ("favicon.ico", "threads_logo.png", "khwimm5b8pw", "rsrc.php"))
-                if not is_junk:
-                    thumbnail_img = img_url
-                    return {
-                        "title": title or "Threads Photo",
-                        "image_url": img_url,
-                        "thumbnail": img_url,
-                        "is_image": True,
-                    }
-
-            # Search for direct scontent CDN image URLs in HTML/JSON body
-            scontent_imgs = re.findall(r'https?://[^"\'\\ ]+?scontent[^"\'\\ ]+?\.(?:jpg|jpeg|png|webp|heic)[^"\'\\ ]*', html)
-            if scontent_imgs:
-                clean_img = scontent_imgs[0].replace(r"\u0026", "&").replace(r"\/", "/")
-                if not any(e in clean_img.lower() for e in ("favicon.ico", "threads_logo.png", "khwimm5b8pw", "rsrc.php")):
-                    return {
-                        "title": title or "Threads Photo",
-                        "image_url": clean_img,
-                        "thumbnail": clean_img,
-                        "is_image": True,
-                    }
-
-        # 2. lovethreads.net API fallback
         async with httpx.AsyncClient(follow_redirects=True, timeout=8.0) as client:
             endpoint = "https://lovethreads.net/api/ajaxSearch"
-            data = {"q": url, "t": "media", "lang": "en"}
+            data = {"q": current_url, "t": "media", "lang": "en"}
             lt_headers = {
                 "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
                 "origin": "https://lovethreads.net",
@@ -665,40 +737,39 @@ async def _scrape_threads(url: str) -> dict:
                     photo_dl = re.search(r'href=["\'](https?://[^"\']+)["\'][^>]*title=["\']Download Photo["\']', data_html)
                     if v_match:
                         return {
-                            "title": title or "Threads Video",
+                            "title": title or (f"Threads video by @{author}" if author else "Threads Video"),
                             "video_url": v_match.group(1),
-                            "thumbnail": p_match.group(1) if p_match else thumbnail_img,
+                            "thumbnail": p_match.group(1) if p_match else og_img_url,
                             "is_image": False,
+                            "canonical_url": current_url,
+                            "author": author,
+                            "post_id": post_id,
                         }
                     elif photo_dl:
                         return {
-                            "title": title or "Threads Photo",
+                            "title": title or (f"Threads photo by @{author}" if author else "Threads Photo"),
                             "image_url": photo_dl.group(1),
                             "thumbnail": p_match.group(1) if p_match else photo_dl.group(1),
                             "is_image": True,
+                            "canonical_url": current_url,
+                            "author": author,
+                            "post_id": post_id,
                         }
                     elif p_match:
                         return {
-                            "title": title or "Threads Photo",
+                            "title": title or (f"Threads photo by @{author}" if author else "Threads Photo"),
                             "image_url": p_match.group(1),
                             "thumbnail": p_match.group(1),
                             "is_image": True,
+                            "canonical_url": current_url,
+                            "author": author,
+                            "post_id": post_id,
                         }
     except Exception:
         pass
 
-    if thumbnail_img and not any(thumbnail_img.endswith(e) for e in ("favicon.ico", "threads_logo.png", "khwimm5b8pw", "rsrc.php")):
-        return {
-            "title": title or "Threads Photo",
-            "image_url": thumbnail_img,
-            "thumbnail": thumbnail_img,
-            "is_image": True,
-        }
-
-    # If no real CDN media was found, return empty dict to trigger graceful failure
-    return {}
-
-
+    # If no media was found, return canonical info
+    return {"canonical_url": current_url, "author": author, "post_id": post_id}
 async def _scrape_x(url: str) -> dict:
     """Extract X / Twitter post metadata and media (photo, gallery, or video)."""
     parsed = urlparse(url)
@@ -948,13 +1019,29 @@ async def extract_media_info(url: str, platform_name: str) -> MediaInfo:
     if "threads.net" in url or "threads.com" in url:
         try:
             th_data = await _scrape_threads(url)
+            if th_data.get("error") == "invalid_post":
+                return MediaInfo(
+                    url=url,
+                    platform="threads",
+                    title="Threads Post",
+                    media_type="image",
+                    formats=[],
+                    format_options=[],
+                    download_url=url,
+                    download_supported=False,
+                    embed_supported=True,
+                    error="unsupported_threads",
+                    error_message="This Threads post is invalid, private, or has been removed.",
+                )
+
+            canonical = th_data.get("canonical_url") or url
             if th_data.get("is_image") and th_data.get("image_url") and th_data["image_url"] != url:
                 target_img = th_data["image_url"]
                 format_opts = build_image_format_options(target_img)
                 return MediaInfo(
-                    url=url,
+                    url=canonical,
                     platform="threads",
-                    title=th_data.get("title", "Threads Photo"),
+                    title=th_data.get("title") or "Threads Photo",
                     thumbnail_url=th_data.get("thumbnail") or target_img,
                     media_type="image",
                     duration=0,
@@ -969,9 +1056,9 @@ async def extract_media_info(url: str, platform_name: str) -> MediaInfo:
                 thumbnail = th_data.get("thumbnail") or th_data.get("image_url")
                 format_opts = build_format_options(30)
                 return MediaInfo(
-                    url=url,
+                    url=canonical,
                     platform="threads",
-                    title=th_data.get("title", "Threads Video"),
+                    title=th_data.get("title") or "Threads Video",
                     thumbnail_url=thumbnail,
                     duration=30,
                     media_type="video",
@@ -984,7 +1071,7 @@ async def extract_media_info(url: str, platform_name: str) -> MediaInfo:
             else:
                 # Graceful failure for Threads when extraction returns empty or no CDN media
                 return MediaInfo(
-                    url=url,
+                    url=canonical,
                     platform="threads",
                     title="Threads Post",
                     media_type="image",
@@ -998,7 +1085,6 @@ async def extract_media_info(url: str, platform_name: str) -> MediaInfo:
                 )
         except Exception:
             pass
-
     # 5. X / Twitter handler
     if "x.com" in url or "twitter.com" in url or "t.co" in url:
         try:
