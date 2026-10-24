@@ -1303,7 +1303,6 @@ def _download_carousel_zip_sync(job_id: str, post_url: str) -> str:
             loop.close()
 
             post_id = th_data.get("post_id") or post_id
-        zip_output_path = str(TEMP_DOWNLOAD_DIR / f"{post_id}_all_slides_{job_id[:8]}.zip")
             th_slides = th_data.get("slides") or []
             if not th_slides:
                 raise ValueError("Could not extract carousel slides from Threads post.")
@@ -1339,6 +1338,7 @@ def _download_carousel_zip_sync(job_id: str, post_url: str) -> str:
                 else:
                     raise ValueError("Could not extract carousel slides from Instagram post.")
 
+        zip_output_path = str(TEMP_DOWNLOAD_DIR / f"{post_id}_all_slides_{job_id[:8]}.zip")
         entries = entries[:MAX_SLIDES]
         total_slides = len(entries)
         total_downloaded_bytes = 0
