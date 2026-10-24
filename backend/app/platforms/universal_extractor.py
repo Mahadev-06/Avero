@@ -619,11 +619,24 @@ async def _scrape_threads(url: str) -> dict:
                     if v_src:
                         embed_video_src = v_src[0].replace("&amp;", "&")
 
-                    all_imgs = re.findall(r'<img[^>]+src="([^">]+)"', embed_html)
-                    for img in all_imgs:
-                        # Exclude avatar and community icon
-                        if not any(k in img for k in ("t51.82787-19", "rsrc.php", "favicon", "t1.6435-9")):
-                            embed_imgs.append(img.replace("&amp;", "&"))
+                    # Embed tier: take images ONLY from inside MediaScrollImageContainer, in order.
+                    # Exclude avatars, emoji, icons and any other <img>.
+                    scroll_matches = re.findall(
+                        r'<div[^>]*class="[^"]*MediaScrollImageContainer[^"]*"[^>]*>(.*?)</div>',
+                        embed_html,
+                        re.DOTALL,
+                    )
+                    for sm in scroll_matches:
+                        img_m = re.search(r'<img[^>]+src="([^">]+)"', sm)
+                        if img_m:
+                            c_url = img_m.group(1).replace("&amp;", "&")
+                            p_host = (urlparse(c_url).hostname or "").lower()
+                            if p_host.endswith("cdninstagram.com") or p_host.endswith("fbcdn.net"):
+                                try:
+                                    resolve_and_check(p_host)
+                                    embed_imgs.append(c_url)
+                                except Exception:
+                                    pass
         except Exception:
             pass
 
@@ -689,6 +702,30 @@ async def _scrape_threads(url: str) -> dict:
     elif author:
         title = f"Threads post by @{author}"
 
+    # Check if embed tier yielded carousel slides (>= 2 images)
+    if len(embed_imgs) >= 2:
+        slides: list[dict] = []
+        for idx, slide_url in enumerate(embed_imgs):
+            slide_idx = idx + 1
+            slides.append({
+                "id": f"slide_{slide_idx}",
+                "slide_index": slide_idx,
+                "media_type": "image",
+                "thumbnail_url": slide_url,
+                "download_url": slide_url,
+            })
+        return {
+            "title": title or (f"Threads post by @{author}" if author else "Threads Carousel"),
+            "thumbnail": embed_imgs[0],
+            "is_image": True,
+            "is_carousel": True,
+            "slide_count": len(slides),
+            "slides": slides,
+            "canonical_url": current_url,
+            "author": author,
+            "post_id": post_id,
+        }
+
     # Return if video found via Embed or OpenGraph
     final_video = embed_video_src or og_vid_url
     if final_video:
@@ -732,6 +769,43 @@ async def _scrape_threads(url: str) -> dict:
                 res = r.json()
                 if res.get("status") == "ok":
                     data_html = res.get("data", "")
+                    # Check for carousel items in LoveThreads fallback only if embed tier yielded < 2 slides
+                    lt_items = re.findall(r'<div class="download-items"[^>]*>(.*?)</div>\s*</li>', data_html, re.DOTALL)
+                    if len(lt_items) >= 2 and len(embed_imgs) < 2:
+                        lt_slides = []
+                        for idx, it in enumerate(lt_items):
+                            photo_m = re.search(r'href=["\'](https?://[^"\']+)["\'][^>]*title=["\']Download Photo["\']', it)
+                            img_m = re.search(r'<img[^>]+src=["\'](https?://[^"\']+)["\']', it)
+                            cand = (photo_m.group(1) if photo_m else None) or (img_m.group(1) if img_m else None)
+                            if cand:
+                                cand_clean = cand.replace("&amp;", "&")
+                                cand_host = (urlparse(cand_clean).hostname or "").lower()
+                                if cand_host.endswith("cdninstagram.com") or cand_host.endswith("fbcdn.net") or cand_host.endswith("snapcdn.app"):
+                                    try:
+                                        resolve_and_check(cand_host)
+                                        s_idx = idx + 1
+                                        lt_slides.append({
+                                            "id": f"slide_{s_idx}",
+                                            "slide_index": s_idx,
+                                            "media_type": "image",
+                                            "thumbnail_url": cand_clean,
+                                            "download_url": cand_clean,
+                                        })
+                                    except Exception:
+                                        pass
+                        if len(lt_slides) >= 2:
+                            return {
+                                "title": title or (f"Threads post by @{author}" if author else "Threads Carousel"),
+                                "thumbnail": lt_slides[0]["thumbnail_url"],
+                                "is_image": True,
+                                "is_carousel": True,
+                                "slide_count": len(lt_slides),
+                                "slides": lt_slides,
+                                "canonical_url": current_url,
+                                "author": author,
+                                "post_id": post_id,
+                            }
+
                     v_match = re.search(r'href=["\'](https?://[^"\']+)["\'][^>]*title=["\']Download Video["\']', data_html)
                     p_match = re.search(r'<img[^>]+src=["\'](https?://[^"\']+)["\']', data_html)
                     photo_dl = re.search(r'href=["\'](https?://[^"\']+)["\'][^>]*title=["\']Download Photo["\']', data_html)
@@ -1035,6 +1109,42 @@ async def extract_media_info(url: str, platform_name: str) -> MediaInfo:
                 )
 
             canonical = th_data.get("canonical_url") or url
+            if th_data.get("is_carousel") and th_data.get("slides") and len(th_data["slides"]) > 1:
+                slides_list: list[SlideItem] = []
+                for s in th_data["slides"]:
+                    s_idx = s["slide_index"]
+                    s_url = s["download_url"]
+                    s_fmt_opts = build_image_format_options(s_url)
+                    s_formats = [f"{opt.ext} {opt.quality} ({opt.file_size_formatted})" for opt in s_fmt_opts]
+                    slides_list.append(SlideItem(
+                        id=s.get("id") or f"slide_{s_idx}",
+                        slide_index=s_idx,
+                        media_type="image",
+                        title=f"Slide {s_idx}",
+                        thumbnail_url=s.get("thumbnail_url") or s_url,
+                        download_url=s_url,
+                        formats=s_formats,
+                        format_options=s_fmt_opts,
+                    ))
+
+                cover_slide = slides_list[0]
+                return MediaInfo(
+                    url=canonical,
+                    platform="threads",
+                    title=th_data.get("title") or "Threads Carousel",
+                    thumbnail_url=cover_slide.thumbnail_url,
+                    media_type="image",
+                    duration=0,
+                    formats=cover_slide.formats,
+                    format_options=cover_slide.format_options,
+                    download_url=cover_slide.download_url,
+                    download_supported=True,
+                    embed_supported=True,
+                    is_carousel=True,
+                    slide_count=len(slides_list),
+                    slides=slides_list,
+                )
+
             if th_data.get("is_image") and th_data.get("image_url") and th_data["image_url"] != url:
                 target_img = th_data["image_url"]
                 format_opts = build_image_format_options(target_img)

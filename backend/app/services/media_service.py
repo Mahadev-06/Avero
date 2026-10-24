@@ -1285,7 +1285,7 @@ def _download_carousel_zip_sync(job_id: str, post_url: str) -> str:
         resolve_and_check(parsed.hostname)
 
     clean_post_url = post_url.split("#")[0]
-    shortcode_match = re.search(r"/(?:p|reel)/([A-Za-z0-9_-]+)", clean_post_url)
+    shortcode_match = re.search(r"/(?:p|reel|post)/([A-Za-z0-9_-]+)", clean_post_url)
     post_id = shortcode_match.group(1) if shortcode_match else "carousel"
 
     MAX_SLIDES = 20
@@ -1293,30 +1293,51 @@ def _download_carousel_zip_sync(job_id: str, post_url: str) -> str:
 
     slide_temp_dir = TEMP_DOWNLOAD_DIR / f"zip_tmp_{job_id}"
     slide_temp_dir.mkdir(parents=True, exist_ok=True)
-    zip_output_path = str(TEMP_DOWNLOAD_DIR / f"{post_id}_all_slides_{job_id[:8]}.zip")
 
     try:
-        ig_cookie_file = _get_instagram_cookiefile()
-        ydl_opts = {
-            "quiet": True,
-            "no_warnings": True,
-            "socket_timeout": 30,
-        }
-        if ig_cookie_file:
-            ydl_opts["cookiefile"] = ig_cookie_file
+        is_threads = "threads.net" in clean_post_url or "threads.com" in clean_post_url
+        if is_threads:
+            from app.platforms.universal_extractor import _scrape_threads
+            loop = asyncio.new_event_loop()
+            th_data = loop.run_until_complete(_scrape_threads(clean_post_url))
+            loop.close()
 
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            try:
-                info = ydl.extract_info(clean_post_url, download=False, process=False)
-            except Exception:
-                info = ydl.extract_info(clean_post_url, download=False)
+            post_id = th_data.get("post_id") or post_id
+        zip_output_path = str(TEMP_DOWNLOAD_DIR / f"{post_id}_all_slides_{job_id[:8]}.zip")
+            th_slides = th_data.get("slides") or []
+            if not th_slides:
+                raise ValueError("Could not extract carousel slides from Threads post.")
 
-        entries = list(info.get("entries", [])) if (info and info.get("_type") == "playlist") else []
-        if not entries:
-            if info:
-                entries = [info]
-            else:
-                raise ValueError("Could not extract carousel slides from Instagram post.")
+            entries = []
+            for s in th_slides:
+                entries.append({
+                    "url": s.get("download_url") or s.get("thumbnail_url"),
+                    "thumbnails": [{"url": s.get("thumbnail_url") or s.get("download_url")}],
+                    "formats": [],
+                    "vcodec": "none",
+                })
+        else:
+            ig_cookie_file = _get_instagram_cookiefile()
+            ydl_opts = {
+                "quiet": True,
+                "no_warnings": True,
+                "socket_timeout": 30,
+            }
+            if ig_cookie_file:
+                ydl_opts["cookiefile"] = ig_cookie_file
+
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                try:
+                    info = ydl.extract_info(clean_post_url, download=False, process=False)
+                except Exception:
+                    info = ydl.extract_info(clean_post_url, download=False)
+
+            entries = list(info.get("entries", [])) if (info and info.get("_type") == "playlist") else []
+            if not entries:
+                if info:
+                    entries = [info]
+                else:
+                    raise ValueError("Could not extract carousel slides from Instagram post.")
 
         entries = entries[:MAX_SLIDES]
         total_slides = len(entries)
@@ -1381,8 +1402,18 @@ def _download_carousel_zip_sync(job_id: str, post_url: str) -> str:
                     if resp.status_code != 200:
                         raise ValueError(f"Image host returned HTTP status {resp.status_code}")
                     body = resp.content
-                    with open(slide_out_file, "wb") as f:
-                        f.write(body)
+                    if body[:4] == b"RIFF" and b"WEBP" in body[:16]:
+                        temp_webp = str(slide_temp_dir / f"slide_{slide_num}.webp")
+                        with open(temp_webp, "wb") as f_webp:
+                            f_webp.write(body)
+                        cmd = ["ffmpeg", "-y", "-i", temp_webp, slide_out_file]
+                        subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, timeout=25)
+                        if not os.path.exists(slide_out_file):
+                            with open(slide_out_file, "wb") as f:
+                                f.write(body)
+                    else:
+                        with open(slide_out_file, "wb") as f:
+                            f.write(body)
                 downloaded_file = slide_out_file
                 file_ext = "jpg"
 
