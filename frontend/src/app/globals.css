@@ -584,17 +584,29 @@ button {
   border-radius: var(--radius-full);
   background: linear-gradient(
     90deg,
-    #0D74CE 0%,
-    #5EB1EF 50%,
-    #0D74CE 100%
+    #18181b 0%,
+    #3f3f46 50%,
+    #18181b 100%
   );
   background-size: 200% 100%;
   box-shadow:
-    0 2px 6px rgba(13, 116, 206, 0.4),
-    inset 0 1px 1px rgba(255, 255, 255, 0.75);
+    0 2px 6px rgba(0, 0, 0, 0.35),
+    inset 0 1px 1px rgba(255, 255, 255, 0.5);
   animation: nmShimmerSweep 2s infinite linear;
   transition: width 0.35s cubic-bezier(0.2, 0, 0, 1);
   position: relative;
+}
+
+[data-theme='dark'] .nm-progress-fill {
+  background: linear-gradient(
+    90deg,
+    #fafafa 0%,
+    #a1a1aa 50%,
+    #fafafa 100%
+  );
+  box-shadow:
+    0 2px 6px rgba(255, 255, 255, 0.25),
+    inset 0 1px 1px rgba(0, 0, 0, 0.3);
 }
 
 .nm-progress-fill::after {
@@ -607,7 +619,7 @@ button {
   background: linear-gradient(
     90deg,
     transparent 0%,
-    rgba(255, 255, 255, 0.4) 50%,
+    rgba(255, 255, 255, 0.35) 50%,
     transparent 100%
   );
   animation: nmGlowSweep 1.6s infinite ease-in-out;
@@ -661,6 +673,36 @@ button {
 .uiverse-spinner.spinner-emerald div {
   background-color: #16a34a !important;
   box-shadow: 0 0 3px rgba(22, 163, 74, 0.6) !important;
+}
+
+.spinner-mono div,
+.uiverse-spinner.spinner-mono div {
+  background-color: var(--text-color) !important;
+  box-shadow: 0 0 2px rgba(0, 0, 0, 0.25) !important;
+}
+
+[data-theme='dark'] .spinner-mono div,
+[data-theme='dark'] .uiverse-spinner.spinner-mono div {
+  background-color: #ffffff !important;
+  box-shadow: 0 0 2px rgba(255, 255, 255, 0.35) !important;
+}
+
+.uiverse-spinner-sm {
+  transform: scale(0.72) !important;
+  transform-origin: center center !important;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite !important;
 }
 
 .spinner div:nth-child(1),

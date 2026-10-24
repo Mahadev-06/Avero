@@ -314,6 +314,17 @@ function decodeHtmlEntities(str?: string): string {
     .replace(/&apos;/g, "'");
 }
 
+function ButtonSpinner({ className = 'spinner-mono', size = 'normal' }: { className?: string; size?: 'sm' | 'normal' }) {
+  return (
+    <div
+      className={`uiverse-spinner ${className} ${size === 'sm' ? 'uiverse-spinner-sm' : ''}`}
+      style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
+    >
+      <div /><div /><div /><div /><div /><div /><div /><div /><div /><div />
+    </div>
+  );
+}
+
 export function UrlInput() {
   const [inputValue, setInputValue] = useState('');
   const [displayValue, setDisplayValue] = useState('');
@@ -2381,7 +2392,7 @@ export function UrlInput() {
                 >
                   {isBatchDownloading ? (
                     <>
-                      <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-600" />
+                      <ButtonSpinner className="spinner-mono" size="sm" />
                       <span>
                         Downloading {batchDownloadIndex !== null ? `${batchDownloadIndex + 1}/${results.length}` : '...'}
                       </span>
@@ -2502,7 +2513,7 @@ export function UrlInput() {
                           boxShadow: '2px 2px 5px var(--neumorph-dark), -2px -2px 5px var(--neumorph-light)',
                         }}
                       >
-                        <Layers className="w-5 h-5 text-pink-500" />
+                        <Layers className="w-5 h-5" style={{ color: "var(--text-color)" }} />
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -2523,13 +2534,17 @@ export function UrlInput() {
                             style={{
                               display: 'inline-flex',
                               alignItems: 'center',
+                              justifyContent: 'center',
                               padding: '0.15rem 0.55rem',
                               borderRadius: 'var(--radius-full)',
                               fontSize: '0.72rem',
                               fontWeight: 800,
-                              backgroundColor: 'rgba(236, 72, 153, 0.1)',
-                              color: '#ec4899',
-                              border: '1px solid rgba(236, 72, 153, 0.25)',
+                              backgroundColor: 'var(--bg-color)',
+                              color: 'var(--text-color)',
+                              border: '1px solid rgba(255, 255, 255, 0.65)',
+                              boxShadow: 'inset 1px 1px 3px var(--neumorph-dark), inset -1px -1px 3px var(--neumorph-light)',
+                              flexShrink: 0,
+                              lineHeight: 1.2,
                             }}
                           >
                             {slides.length} slides
@@ -2548,24 +2563,26 @@ export function UrlInput() {
                       onClick={() => handleCarouselZipDownload(item)}
                       disabled={item.downloadState === 'downloading'}
                       style={{
-                        height: '42px',
+                        height: '40px',
                         padding: '0 1.25rem',
                         fontSize: '0.82rem',
                         fontWeight: 800,
                         color: 'var(--text-color)',
                         display: 'inline-flex',
                         alignItems: 'center',
+                        justifyContent: 'center',
                         gap: '0.5rem',
                         cursor: item.downloadState === 'downloading' ? 'wait' : 'pointer',
                         borderRadius: 'var(--radius-full)',
-                        border: '1px solid rgba(16, 185, 129, 0.5)',
+                        border: '1px solid rgba(255, 255, 255, 0.65)',
                         backgroundColor: 'var(--bg-color)',
                         boxShadow: '3px 3px 8px var(--neumorph-dark), -3px -3px 8px var(--neumorph-light)',
+                        flexShrink: 0,
                       }}
                     >
                       {isDownloadingZip ? (
                         <>
-                          <Loader2 className="w-4 h-4 animate-spin text-emerald-600" />
+                          <ButtonSpinner className="spinner-mono" />
                           <span>
                             {item.progress && item.progress.eta
                               ? item.progress.eta
@@ -2574,7 +2591,7 @@ export function UrlInput() {
                         </>
                       ) : (
                         <>
-                          <Archive className="w-4 h-4 text-emerald-600" />
+                          <Archive className="w-4 h-4" style={{ color: 'var(--text-color)' }} />
                           <span>Download All (ZIP)</span>
                         </>
                       )}
@@ -2593,10 +2610,10 @@ export function UrlInput() {
                         />
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '0.5rem' }}>
-                        <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#0D74CE' }}>
+                        <span style={{ fontSize: '0.78rem', fontWeight: 800, color: 'var(--text-color)' }}>
                           {item.progress.eta || item.activeQuality || 'Downloading...'}
                         </span>
-                        <span style={{ fontSize: '0.75rem', fontWeight: 900, color: '#0D74CE' }} className="tabular-nums">
+                        <span style={{ fontSize: '0.75rem', fontWeight: 900, color: 'var(--text-color)' }} className="tabular-nums">
                           {item.progress.percent.toFixed(1)}%
                         </span>
                       </div>
@@ -2688,9 +2705,13 @@ export function UrlInput() {
                                 borderRadius: 'var(--radius-full)',
                                 backgroundColor: 'rgba(0, 0, 0, 0.65)',
                                 backdropFilter: 'blur(4px)',
+                                border: '1px solid rgba(255, 255, 255, 0.25)',
                                 color: '#ffffff',
                                 fontSize: '0.72rem',
                                 fontWeight: 800,
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                lineHeight: 1,
                               }}
                             >
                               Slide {slide.slide_index}
@@ -2707,11 +2728,13 @@ export function UrlInput() {
                                 gap: '0.25rem',
                                 padding: '0.2rem 0.55rem',
                                 borderRadius: 'var(--radius-full)',
-                                backgroundColor: isSlideVideo ? 'rgba(16, 185, 129, 0.85)' : 'rgba(245, 158, 11, 0.85)',
+                                backgroundColor: 'rgba(0, 0, 0, 0.65)',
                                 backdropFilter: 'blur(4px)',
+                                border: '1px solid rgba(255, 255, 255, 0.25)',
                                 color: '#ffffff',
                                 fontSize: '0.72rem',
                                 fontWeight: 800,
+                                lineHeight: 1,
                               }}
                             >
                               {isSlideVideo ? (
@@ -2763,9 +2786,9 @@ export function UrlInput() {
                                   </span>
 
                                   {isThisDownloading ? (
-                                    <Loader2 className="w-3 h-3 animate-spin text-blue-500" />
+                                    <ButtonSpinner className="spinner-mono" size="sm" />
                                   ) : (
-                                    <Download className="w-3 h-3 text-emerald-600" />
+                                    <Download className="w-3.5 h-3.5" style={{ color: 'var(--text-color)' }} />
                                   )}
                                 </button>
                               );
@@ -2858,7 +2881,7 @@ export function UrlInput() {
 
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '0.55rem' }}>
                           <TextShimmerWave
-                            className="[--base-color:#0D74CE] [--base-gradient-color:#5EB1EF] text-xs font-extrabold"
+                            className="[--base-color:var(--text-color)] [--base-gradient-color:var(--text-muted)] text-xs font-extrabold"
                             duration={1}
                             spread={1}
                             zDistance={1}
@@ -2885,11 +2908,11 @@ export function UrlInput() {
                                 padding: '0.15rem 0.55rem',
                                 borderRadius: 'var(--radius-full)',
                                 backgroundColor: 'var(--bg-color)',
-                                border: '1px solid rgba(94, 177, 239, 0.45)',
+                                border: '1px solid rgba(255, 255, 255, 0.65)',
                                 boxShadow: '2px 2px 4px var(--neumorph-dark), -2px -2px 4px var(--neumorph-light)',
                                 fontSize: '0.75rem',
                                 fontWeight: 900,
-                                color: '#0D74CE',
+                                color: 'var(--text-color)',
                               }}
                             >
                               {item.progress.percent.toFixed(1)}%
@@ -2998,9 +3021,7 @@ export function UrlInput() {
                                 >
                                   {item.downloadState === 'downloading' && item.activeQuality === `${opt.ext} ${opt.quality}` ? (
                                     <>
-                                      <div className="uiverse-spinner spinner-emerald" style={{ color: '#16a34a', marginRight: '3px' }}>
-                                        <div /><div /><div /><div /><div /><div /><div /><div /><div /><div />
-                                      </div>
+                                      <ButtonSpinner className="spinner-mono" size="sm" />
                                       <span>Downloading...</span>
                                     </>
                                   ) : (
@@ -3160,7 +3181,7 @@ export function UrlInput() {
                                     >
                                       {item.downloadState === 'downloading' && item.activeQuality === `${opt.ext} ${opt.quality}` ? (
                                         <>
-                                          <div className="uiverse-spinner spinner-emerald" style={{ color: '#16a34a', marginRight: '3px' }}>
+                                          <div className="uiverse-spinner spinner-mono" style={{ marginRight: '3px' }}>
                                             <div /><div /><div /><div /><div /><div /><div /><div /><div /><div />
                                           </div>
                                           <span>Downloading...</span>
@@ -3234,7 +3255,7 @@ export function UrlInput() {
                                     >
                                       {item.downloadState === 'downloading' && item.activeQuality === `${opt.ext} ${opt.quality}` ? (
                                         <>
-                                          <div className="uiverse-spinner spinner-emerald" style={{ color: '#16a34a', marginRight: '3px' }}>
+                                          <div className="uiverse-spinner spinner-mono" style={{ marginRight: '3px' }}>
                                             <div /><div /><div /><div /><div /><div /><div /><div /><div /><div />
                                           </div>
                                           <span>Downloading...</span>

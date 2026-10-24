@@ -14,7 +14,7 @@ export function ProgressBar({ progress, status }: ProgressBarProps) {
       <div className="flex justify-between items-center text-xs font-bold">
         {isProcessing ? (
           <TextShimmerWave
-            className="[--base-color:#0D74CE] [--base-gradient-color:#5EB1EF]"
+            className="[--base-color:var(--text-color)] [--base-gradient-color:var(--text-muted)]"
             duration={1}
             spread={1}
             zDistance={1}
@@ -36,7 +36,7 @@ export function ProgressBar({ progress, status }: ProgressBarProps) {
             borderRadius: 'var(--radius-full)',
             backgroundColor: 'var(--bg-color)',
             boxShadow: '2px 2px 4px var(--neumorph-dark), -2px -2px 4px var(--neumorph-light)',
-            color: '#0D74CE', border: '1px solid rgba(94, 177, 239, 0.45)',
+            color: 'var(--text-color)', border: '1px solid rgba(255, 255, 255, 0.65)',
             fontSize: '0.75rem',
           }}
         >
