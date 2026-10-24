@@ -1204,12 +1204,6 @@ export function UrlInput() {
         activeSubscriptions.current.delete(item.id);
 
         if (finalProgress.status === 'COMPLETED') {
-          const cleanTitle = (item.info.title || 'instagram_carousel')
-            .replace(/[^a-zA-Z0-9_\- ]/g, '')
-            .trim()
-            .replace(/\s+/g, '_')
-            .slice(0, 40);
-
           let fileExt = opt.ext.toLowerCase();
           if (slideCategory === 'image') {
             fileExt = ['jpg', 'jpeg', 'png', 'webp'].includes(fileExt) ? fileExt : 'jpg';
@@ -1219,7 +1213,30 @@ export function UrlInput() {
             fileExt = fileExt === 'webm' ? 'webm' : 'mp4';
           }
 
-          const filename = `${cleanTitle}_slide_${String(slide.slide_index).padStart(2, '0')}.${fileExt}`;
+          let filename = '';
+          if (item.info.platform === 'threads' || item.info.url.includes('threads.net') || item.info.url.includes('threads.com')) {
+            let author = '';
+            let postId = '';
+            const match = item.info.url.match(/@([^/]+)\/post\/([^/?]+)/);
+            if (match) {
+              author = match[1];
+              postId = match[2];
+            } else {
+              const shareMatch = item.info.url.match(/share\/([^/?]+)/);
+              postId = shareMatch ? shareMatch[1] : 'post';
+              author = 'threads';
+            }
+            author = author.replace(/[^a-zA-Z0-9._-]/g, '') || 'threads';
+            postId = postId.replace(/[^a-zA-Z0-9._-]/g, '') || 'post';
+            filename = `threads_${author}_${postId}_slide_${String(slide.slide_index).padStart(2, '0')}.${fileExt}`;
+          } else {
+            const cleanTitle = (item.info.title || 'carousel')
+              .replace(/[^a-zA-Z0-9_\- ]/g, '')
+              .trim()
+              .replace(/\s+/g, '_')
+              .slice(0, 40);
+            filename = `${cleanTitle}_slide_${String(slide.slide_index).padStart(2, '0')}.${fileExt}`;
+          }
           const fileUrl = apiClient.getDownloadFileUrl(job_id, filename);
           await triggerFileDownload(fileUrl, filename);
 
@@ -1292,13 +1309,32 @@ export function UrlInput() {
       activeSubscriptions.current.delete(item.id);
 
       if (finalProgress.status === 'COMPLETED') {
-        const cleanTitle = (item.info.title || 'instagram_carousel')
-          .replace(/[^a-zA-Z0-9_\- ]/g, '')
-          .trim()
-          .replace(/\s+/g, '_')
-          .slice(0, 40);
-
-        const filename = finalProgress.filename || `${cleanTitle}_all_slides.zip`;
+        let filename = finalProgress.filename;
+        if (!filename) {
+          if (item.info.platform === 'threads' || item.info.url.includes('threads.net') || item.info.url.includes('threads.com')) {
+            let author = '';
+            let postId = '';
+            const match = item.info.url.match(/@([^/]+)\/post\/([^/?]+)/);
+            if (match) {
+              author = match[1];
+              postId = match[2];
+            } else {
+              const shareMatch = item.info.url.match(/share\/([^/?]+)/);
+              postId = shareMatch ? shareMatch[1] : 'post';
+              author = 'threads';
+            }
+            author = author.replace(/[^a-zA-Z0-9._-]/g, '') || 'threads';
+            postId = postId.replace(/[^a-zA-Z0-9._-]/g, '') || 'post';
+            filename = `threads_${author}_${postId}_all_slides.zip`;
+          } else {
+            const cleanTitle = (item.info.title || 'carousel')
+              .replace(/[^a-zA-Z0-9_\- ]/g, '')
+              .trim()
+              .replace(/\s+/g, '_')
+              .slice(0, 40);
+            filename = `${cleanTitle}_all_slides.zip`;
+          }
+        }
         const fileUrl = apiClient.getDownloadFileUrl(job_id, filename);
         await triggerFileDownload(fileUrl, filename);
 
@@ -2481,7 +2517,7 @@ export function UrlInput() {
                               maxWidth: '380px',
                             }}
                           >
-                            {decodeHtmlEntities(item.info.title) || 'Instagram Carousel'}
+                            {decodeHtmlEntities(item.info.title) || (item.info.platform === 'threads' ? 'Threads Carousel' : 'Instagram Carousel')}
                           </span>
                           <span
                             style={{
