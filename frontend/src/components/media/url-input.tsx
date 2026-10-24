@@ -935,6 +935,27 @@ export function UrlInput() {
     await handleAnalyzeUrls([validation.cleanUrl || trimmed]);
   };
 
+  const handleCancelDownload = useCallback((itemId: string) => {
+    const sub = activeSubscriptions.current.get(itemId);
+    if (sub) {
+      sub.cancel();
+      activeSubscriptions.current.delete(itemId);
+    }
+    setResults((prev) =>
+      prev.map((r) =>
+        r.id === itemId
+          ? {
+              ...r,
+              downloadState: 'idle' as const,
+              activeQuality: undefined,
+              progress: null,
+            }
+          : r
+      )
+    );
+    setStatusMsg('Download cancelled.');
+  }, []);
+
   const handleSpecificDownload = useCallback(async (item: VideoResultItem, ext: string, quality: string, mediaCategory?: string) => {
     // Determine category from explicit argument, matching format_option, or item media_type
     const matchedOpt = item.info.format_options?.find(
@@ -992,6 +1013,10 @@ export function UrlInput() {
 
       const finalProgress = await subscription.done;
       activeSubscriptions.current.delete(item.id);
+
+      if (finalProgress.error === 'Cancelled' || (finalProgress.status as string) === 'CANCELLED') {
+        return;
+      }
 
       if (finalProgress.status === 'COMPLETED') {
         let fileExt = ext.toLowerCase();
@@ -1214,6 +1239,10 @@ export function UrlInput() {
         const finalProgress = await subscription.done;
         activeSubscriptions.current.delete(item.id);
 
+        if (finalProgress.error === 'Cancelled' || (finalProgress.status as string) === 'CANCELLED') {
+          return;
+        }
+
         if (finalProgress.status === 'COMPLETED') {
           let fileExt = opt.ext.toLowerCase();
           if (slideCategory === 'image') {
@@ -1318,6 +1347,10 @@ export function UrlInput() {
       activeSubscriptions.current.set(item.id, subscription);
       const finalProgress = await subscription.done;
       activeSubscriptions.current.delete(item.id);
+
+      if (finalProgress.error === 'Cancelled' || (finalProgress.status as string) === 'CANCELLED') {
+        return;
+      }
 
       if (finalProgress.status === 'COMPLETED') {
         let filename = finalProgress.filename;
@@ -2613,9 +2646,34 @@ export function UrlInput() {
                         <span style={{ fontSize: '0.78rem', fontWeight: 800, color: 'var(--text-color)' }}>
                           {item.progress.eta || item.activeQuality || 'Downloading...'}
                         </span>
-                        <span style={{ fontSize: '0.75rem', fontWeight: 900, color: 'var(--text-color)' }} className="tabular-nums">
-                          {item.progress.percent.toFixed(1)}%
-                        </span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <span style={{ fontSize: '0.75rem', fontWeight: 900, color: 'var(--text-color)' }} className="tabular-nums">
+                            {item.progress.percent.toFixed(1)}%
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleCancelDownload(item.id)}
+                            title="Cancel download"
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '0.2rem',
+                              padding: '0.15rem 0.5rem',
+                              borderRadius: 'var(--radius-full)',
+                              backgroundColor: 'var(--bg-color)',
+                              border: '1px solid rgba(255, 255, 255, 0.65)',
+                              boxShadow: '2px 2px 4px var(--neumorph-dark), -2px -2px 4px var(--neumorph-light)',
+                              fontSize: '0.72rem',
+                              fontWeight: 800,
+                              color: 'var(--text-color)',
+                              cursor: 'pointer',
+                            }}
+                            className="pill-btn"
+                          >
+                            <X className="w-3 h-3" />
+                            <span>Cancel</span>
+                          </button>
+                        </div>
                       </div>
                     </div>
                   )}
@@ -2917,6 +2975,30 @@ export function UrlInput() {
                             >
                               {item.progress.percent.toFixed(1)}%
                             </div>
+
+                            <button
+                              type="button"
+                              onClick={() => handleCancelDownload(item.id)}
+                              title="Cancel download"
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '0.2rem',
+                                padding: '0.15rem 0.5rem',
+                                borderRadius: 'var(--radius-full)',
+                                backgroundColor: 'var(--bg-color)',
+                                border: '1px solid rgba(255, 255, 255, 0.65)',
+                                boxShadow: '2px 2px 4px var(--neumorph-dark), -2px -2px 4px var(--neumorph-light)',
+                                fontSize: '0.72rem',
+                                fontWeight: 800,
+                                color: 'var(--text-color)',
+                                cursor: 'pointer',
+                              }}
+                              className="pill-btn"
+                            >
+                              <X className="w-3 h-3" />
+                              <span>Cancel</span>
+                            </button>
                           </div>
                         </div>
                       </div>

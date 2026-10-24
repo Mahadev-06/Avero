@@ -780,7 +780,7 @@ button {
 /* --- Text Shimmer Wave Animation --- */
 .text-shimmer-char {
   display: inline-block;
-  color: var(--base-color, currentColor);
+  color: var(--base-color, var(--text-color));
   animation: textShimmerWaveAnimation 1.2s infinite ease-in-out;
   transform-style: preserve-3d;
   will-change: transform, color;
@@ -789,13 +789,17 @@ button {
 @keyframes textShimmerWaveAnimation {
   0%, 100% {
     transform: translateZ(0) scale(1) rotateY(0deg) translateY(0);
-    color: var(--base-color, #0D74CE);
+    color: var(--base-color, var(--text-color));
   }
   50% {
     transform: translateZ(var(--tsw-z, 6px)) scale(var(--tsw-scale, 1.1)) rotateY(var(--tsw-rot-y, 20deg)) translateY(var(--tsw-y, -2px));
-    color: var(--base-gradient-color, #5EB1EF);
-    text-shadow: 0 0 8px rgba(94, 177, 239, 0.5);
+    color: var(--base-gradient-color, var(--text-muted));
+    text-shadow: 0 0 6px rgba(0, 0, 0, 0.15);
   }
+}
+
+[data-theme='dark'] .text-shimmer-char {
+  color: var(--base-color, #ffffff);
 }
 
 @keyframes textFadeIn {

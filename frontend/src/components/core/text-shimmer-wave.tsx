@@ -41,6 +41,8 @@ export function TextShimmerWave({
         display: 'inline-flex',
         whiteSpace: 'pre',
         perspective: '500px',
+        '--base-color': 'var(--text-color)',
+        '--base-gradient-color': 'var(--text-muted)',
         '--tsw-z': `${zDistance * 6}px`,
         '--tsw-scale': scaleDistance,
         '--tsw-rot-y': `${rotateYDistance}deg`,
