@@ -280,7 +280,7 @@ class ApiClient {
             }
           } catch (err) {
             if (controller.signal.aborted) {
-              resolve(lastProgress || { job_id: jobId, status: 'FAILED', percent: 0, speed: '', eta: '', file_size: null, filename: null, error: 'Cancelled' });
+              resolve({ job_id: jobId, status: 'FAILED', percent: 0, speed: '', eta: '', file_size: null, filename: null, error: 'Cancelled' });
             } else {
               reject(err);
             }

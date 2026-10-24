@@ -563,6 +563,8 @@ export function UrlInput() {
   }, [statusMsg, analyzing, searching, isBatchDownloading]);
 
   const activeSubscriptions = useRef<Map<string, { cancel: () => void }>>(new Map());
+  const activeAbortControllers = useRef<Map<string, AbortController>>(new Map());
+  const cancelledItemIds = useRef<Set<string>>(new Set());
   const detectedUrls = inputValue.match(/(https?:\/\/[^\s]+)/g) || (inputValue.startsWith('http') ? [inputValue] : []);
 
   const handlePaste = async () => {
@@ -936,11 +938,20 @@ export function UrlInput() {
   };
 
   const handleCancelDownload = useCallback((itemId: string) => {
+    cancelledItemIds.current.add(itemId);
+
+    const abortCtrl = activeAbortControllers.current.get(itemId);
+    if (abortCtrl) {
+      abortCtrl.abort();
+      activeAbortControllers.current.delete(itemId);
+    }
+
     const sub = activeSubscriptions.current.get(itemId);
     if (sub) {
       sub.cancel();
       activeSubscriptions.current.delete(itemId);
     }
+
     setResults((prev) =>
       prev.map((r) =>
         r.id === itemId
@@ -998,6 +1009,10 @@ export function UrlInput() {
       )
     );
 
+    const abortCtrl = new AbortController();
+    activeAbortControllers.current.set(item.id, abortCtrl);
+    cancelledItemIds.current.delete(item.id);
+
     try {
       const { job_id } = await apiClient.startDownload(targetUrl, ext.toLowerCase(), quality.toLowerCase(), resolvedCategory);
 
@@ -1014,7 +1029,9 @@ export function UrlInput() {
       const finalProgress = await subscription.done;
       activeSubscriptions.current.delete(item.id);
 
-      if (finalProgress.error === 'Cancelled' || (finalProgress.status as string) === 'CANCELLED') {
+      if (cancelledItemIds.current.has(item.id) || abortCtrl.signal.aborted || finalProgress.error === 'Cancelled' || (finalProgress.status as string) === 'CANCELLED') {
+        cancelledItemIds.current.delete(item.id);
+        activeAbortControllers.current.delete(item.id);
         return;
       }
 
@@ -1059,8 +1076,15 @@ export function UrlInput() {
         }
         const fileUrl = apiClient.getDownloadFileUrl(job_id, filename);
 
+        if (cancelledItemIds.current.has(item.id) || abortCtrl.signal.aborted) {
+          cancelledItemIds.current.delete(item.id);
+          activeAbortControllers.current.delete(item.id);
+          return;
+        }
+
         // Reliable universal file download via Blob / triggerFileDownload
-        await triggerFileDownload(fileUrl, filename);
+        await triggerFileDownload(fileUrl, filename, abortCtrl.signal);
+        activeAbortControllers.current.delete(item.id);
 
         // Save to recent downloads storage locally in the browser
         const updatedRecents = saveRecentDownloadToStorage({
@@ -1218,6 +1242,10 @@ export function UrlInput() {
         )
       );
 
+      const abortCtrl = new AbortController();
+      activeAbortControllers.current.set(item.id, abortCtrl);
+      cancelledItemIds.current.delete(item.id);
+
       try {
         const { job_id } = await apiClient.startDownload(
           targetUrl,
@@ -1239,7 +1267,9 @@ export function UrlInput() {
         const finalProgress = await subscription.done;
         activeSubscriptions.current.delete(item.id);
 
-        if (finalProgress.error === 'Cancelled' || (finalProgress.status as string) === 'CANCELLED') {
+        if (cancelledItemIds.current.has(item.id) || abortCtrl.signal.aborted || finalProgress.error === 'Cancelled' || (finalProgress.status as string) === 'CANCELLED') {
+          cancelledItemIds.current.delete(item.id);
+          activeAbortControllers.current.delete(item.id);
           return;
         }
 
@@ -1278,7 +1308,13 @@ export function UrlInput() {
             filename = `${cleanTitle}_slide_${String(slide.slide_index).padStart(2, '0')}.${fileExt}`;
           }
           const fileUrl = apiClient.getDownloadFileUrl(job_id, filename);
-          await triggerFileDownload(fileUrl, filename);
+          if (cancelledItemIds.current.has(item.id) || abortCtrl.signal.aborted) {
+            cancelledItemIds.current.delete(item.id);
+            activeAbortControllers.current.delete(item.id);
+            return;
+          }
+          await triggerFileDownload(fileUrl, filename, abortCtrl.signal);
+          activeAbortControllers.current.delete(item.id);
 
           setResults((prev) =>
             prev.map((r) => (r.id === item.id ? { ...r, downloadState: 'completed' as const } : r))
@@ -1327,6 +1363,10 @@ export function UrlInput() {
       )
     );
 
+    const abortCtrl = new AbortController();
+    activeAbortControllers.current.set(item.id, abortCtrl);
+    cancelledItemIds.current.delete(item.id);
+
     try {
       const { job_id } = await apiClient.startDownload(
         targetUrl,
@@ -1348,7 +1388,9 @@ export function UrlInput() {
       const finalProgress = await subscription.done;
       activeSubscriptions.current.delete(item.id);
 
-      if (finalProgress.error === 'Cancelled' || (finalProgress.status as string) === 'CANCELLED') {
+      if (cancelledItemIds.current.has(item.id) || abortCtrl.signal.aborted || finalProgress.error === 'Cancelled' || (finalProgress.status as string) === 'CANCELLED') {
+        cancelledItemIds.current.delete(item.id);
+        activeAbortControllers.current.delete(item.id);
         return;
       }
 
@@ -1380,7 +1422,13 @@ export function UrlInput() {
           }
         }
         const fileUrl = apiClient.getDownloadFileUrl(job_id, filename);
-        await triggerFileDownload(fileUrl, filename);
+        if (cancelledItemIds.current.has(item.id) || abortCtrl.signal.aborted) {
+          cancelledItemIds.current.delete(item.id);
+          activeAbortControllers.current.delete(item.id);
+          return;
+        }
+        await triggerFileDownload(fileUrl, filename, abortCtrl.signal);
+        activeAbortControllers.current.delete(item.id);
 
         setResults((prev) =>
           prev.map((r) => (r.id === item.id ? { ...r, downloadState: 'completed' as const } : r))
@@ -1488,6 +1536,11 @@ export function UrlInput() {
   };
 
   const handleRemove = (id: string) => {
+    const abortCtrl = activeAbortControllers.current.get(id);
+    if (abortCtrl) {
+      abortCtrl.abort();
+      activeAbortControllers.current.delete(id);
+    }
     const sub = activeSubscriptions.current.get(id);
     if (sub) {
       sub.cancel();
@@ -1503,6 +1556,8 @@ export function UrlInput() {
   };
 
   const handleClearResults = () => {
+    activeAbortControllers.current.forEach((ctrl) => ctrl.abort());
+    activeAbortControllers.current.clear();
     activeSubscriptions.current.forEach((sub) => sub.cancel());
     activeSubscriptions.current.clear();
     setResults([]);
@@ -2657,20 +2712,33 @@ export function UrlInput() {
                             style={{
                               display: 'inline-flex',
                               alignItems: 'center',
-                              gap: '0.2rem',
-                              padding: '0.15rem 0.5rem',
+                              justifyContent: 'center',
+                              gap: '0.25rem',
+                              height: '22px',
+                              padding: '0 0.5rem',
                               borderRadius: 'var(--radius-full)',
                               backgroundColor: 'var(--bg-color)',
-                              border: '1px solid rgba(255, 255, 255, 0.65)',
-                              boxShadow: '2px 2px 4px var(--neumorph-dark), -2px -2px 4px var(--neumorph-light)',
-                              fontSize: '0.72rem',
-                              fontWeight: 800,
-                              color: 'var(--text-color)',
+                              border: '1px solid rgba(255, 255, 255, 0.7)',
+                              boxShadow: '1px 1px 3px var(--neumorph-dark), -1px -1px 3px var(--neumorph-light)',
+                              fontSize: '0.7rem',
+                              fontWeight: 700,
+                              color: 'var(--text-muted)',
                               cursor: 'pointer',
+                              transition: 'all 0.15s ease',
+                              lineHeight: 1,
+                              boxSizing: 'border-box',
+                              userSelect: 'none',
                             }}
-                            className="pill-btn"
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.color = 'var(--text-color)';
+                              e.currentTarget.style.boxShadow = 'inset 1px 1px 2px var(--neumorph-dark), inset -1px -1px 2px var(--neumorph-light)';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.color = 'var(--text-muted)';
+                              e.currentTarget.style.boxShadow = '1px 1px 3px var(--neumorph-dark), -1px -1px 3px var(--neumorph-light)';
+                            }}
                           >
-                            <X className="w-3 h-3" />
+                            <X className="w-2.5 h-2.5" strokeWidth={2.2} style={{ flexShrink: 0 }} />
                             <span>Cancel</span>
                           </button>
                         </div>
@@ -2983,20 +3051,33 @@ export function UrlInput() {
                               style={{
                                 display: 'inline-flex',
                                 alignItems: 'center',
-                                gap: '0.2rem',
-                                padding: '0.15rem 0.5rem',
+                                justifyContent: 'center',
+                                gap: '0.25rem',
+                                height: '22px',
+                                padding: '0 0.5rem',
                                 borderRadius: 'var(--radius-full)',
                                 backgroundColor: 'var(--bg-color)',
-                                border: '1px solid rgba(255, 255, 255, 0.65)',
-                                boxShadow: '2px 2px 4px var(--neumorph-dark), -2px -2px 4px var(--neumorph-light)',
-                                fontSize: '0.72rem',
-                                fontWeight: 800,
-                                color: 'var(--text-color)',
+                                border: '1px solid rgba(255, 255, 255, 0.7)',
+                                boxShadow: '1px 1px 3px var(--neumorph-dark), -1px -1px 3px var(--neumorph-light)',
+                                fontSize: '0.7rem',
+                                fontWeight: 700,
+                                color: 'var(--text-muted)',
                                 cursor: 'pointer',
+                                transition: 'all 0.15s ease',
+                                lineHeight: 1,
+                                boxSizing: 'border-box',
+                                userSelect: 'none',
                               }}
-                              className="pill-btn"
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.color = 'var(--text-color)';
+                                e.currentTarget.style.boxShadow = 'inset 1px 1px 2px var(--neumorph-dark), inset -1px -1px 2px var(--neumorph-light)';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.color = 'var(--text-muted)';
+                                e.currentTarget.style.boxShadow = '1px 1px 3px var(--neumorph-dark), -1px -1px 3px var(--neumorph-light)';
+                              }}
                             >
-                              <X className="w-3 h-3" />
+                              <X className="w-2.5 h-2.5" strokeWidth={2.2} style={{ flexShrink: 0 }} />
                               <span>Cancel</span>
                             </button>
                           </div>

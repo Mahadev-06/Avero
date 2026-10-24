@@ -10,13 +10,16 @@ export function cn(...inputs: ClassValue[]) {
  * Works across all browsers (Chrome, Edge, Safari, Firefox) for cross-origin APIs.
  * Converts response to a same-origin Blob URL so the `download` attribute is strictly respected.
  */
-export async function triggerFileDownload(url: string, suggestedFilename?: string) {
+export async function triggerFileDownload(url: string, suggestedFilename?: string, signal?: AbortSignal) {
+  if (signal?.aborted) return;
   const filename = suggestedFilename || 'mediaflow_download.mp4';
 
   try {
-    const res = await fetch(url, { mode: 'cors' });
+    const res = await fetch(url, { mode: 'cors', signal });
+    if (signal?.aborted) return;
     if (res.ok) {
       const blob = await res.blob();
+      if (signal?.aborted) return;
       const blobUrl = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.style.display = 'none';
@@ -37,9 +40,14 @@ export async function triggerFileDownload(url: string, suggestedFilename?: strin
       }, 60000);
       return;
     }
-  } catch (err) {
+  } catch (err: any) {
+    if (err?.name === 'AbortError' || signal?.aborted) {
+      return;
+    }
     console.warn('[triggerFileDownload] Blob fetch failed, falling back to direct navigation:', err);
   }
+
+  if (signal?.aborted) return;
 
   // Fallback 1: Direct anchor with download attribute
   const link = document.createElement('a');
