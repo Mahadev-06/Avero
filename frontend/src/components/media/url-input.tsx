@@ -983,12 +983,6 @@ export function UrlInput() {
       activeSubscriptions.current.delete(item.id);
 
       if (finalProgress.status === 'COMPLETED') {
-        const cleanTitle = (item.info.title || 'mediaflow_download')
-          .replace(/[^a-zA-Z0-9_\- ]/g, '')
-          .trim()
-          .replace(/\s+/g, '_')
-          .slice(0, 60);
-
         let fileExt = ext.toLowerCase();
         if (resolvedCategory === 'image') {
           // For image options, the extension must be the option's own ext (jpg, png, webp), lowercased
@@ -999,7 +993,34 @@ export function UrlInput() {
           fileExt = fileExt === 'webm' ? 'webm' : 'mp4';
         }
 
-        const filename = `${cleanTitle}_${quality.replace(/\s+/g, '_')}.${fileExt}`;
+        let filename: string;
+        const isThreads = item.info.platform === 'threads' || (item.info.url && (item.info.url.includes('threads.net') || item.info.url.includes('threads.com')));
+        if (isThreads) {
+          const urlToParse = item.info.url || '';
+          const canonMatch = urlToParse.match(/@([a-zA-Z0-9._]+)\/post\/([a-zA-Z0-9_-]+)/);
+          let author = canonMatch ? canonMatch[1] : '';
+          let postId = canonMatch ? canonMatch[2] : '';
+          if (!author && item.info.title) {
+            const titleMatch = item.info.title.match(/@([a-zA-Z0-9._]+)/);
+            if (titleMatch) author = titleMatch[1];
+          }
+          if (!postId && urlToParse) {
+            const shareMatch = urlToParse.match(/share\/([a-zA-Z0-9_-]+)/);
+            if (shareMatch) postId = shareMatch[1];
+          }
+          author = author.replace(/[^a-zA-Z0-9._-]/g, '') || (resolvedCategory === 'video' ? 'video' : 'photo');
+          postId = postId.replace(/[^a-zA-Z0-9._-]/g, '') || 'post';
+          const cleanQual = quality.replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
+          const baseName = `threads_${author}_${postId}_${cleanQual}`;
+          filename = `${baseName.slice(0, 55)}.${fileExt}`;
+        } else {
+          const cleanTitle = (item.info.title || 'mediaflow_download')
+            .replace(/[^a-zA-Z0-9_\- ]/g, '')
+            .trim()
+            .replace(/\s+/g, '_')
+            .slice(0, 60);
+          filename = `${cleanTitle}_${quality.replace(/\s+/g, '_')}.${fileExt}`;
+        }
         const fileUrl = apiClient.getDownloadFileUrl(job_id, filename);
 
         // Reliable universal file download via Blob / triggerFileDownload
@@ -1059,11 +1080,33 @@ export function UrlInput() {
       const isDirectMedia = /\.(mp4|webm|mp3|wav|m4a|ogg|flac|mov)(\?.*)?$/i.test(targetUrl);
       if (isDirectMedia) {
         try {
-          const cleanTitle = (item.info.title || 'mediaflow_download')
-            .replace(/[^a-zA-Z0-9_\- ]/g, '')
-            .trim()
-            .replace(/\s+/g, '_');
-          const filename = `${cleanTitle}_${quality}.${ext.toLowerCase()}`;
+          let filename: string;
+          const isThreadsDirect = item.info.platform === 'threads' || (item.info.url && (item.info.url.includes('threads.net') || item.info.url.includes('threads.com')));
+          if (isThreadsDirect) {
+            const urlToParse = item.info.url || '';
+            const canonMatch = urlToParse.match(/@([a-zA-Z0-9._]+)\/post\/([a-zA-Z0-9_-]+)/);
+            let author = canonMatch ? canonMatch[1] : '';
+            let postId = canonMatch ? canonMatch[2] : '';
+            if (!author && item.info.title) {
+              const titleMatch = item.info.title.match(/@([a-zA-Z0-9._]+)/);
+              if (titleMatch) author = titleMatch[1];
+            }
+            if (!postId && urlToParse) {
+              const shareMatch = urlToParse.match(/share\/([a-zA-Z0-9_-]+)/);
+              if (shareMatch) postId = shareMatch[1];
+            }
+            author = author.replace(/[^a-zA-Z0-9._-]/g, '') || (resolvedCategory === 'video' ? 'video' : 'photo');
+            postId = postId.replace(/[^a-zA-Z0-9._-]/g, '') || 'post';
+            const cleanQual = quality.replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
+            const baseName = `threads_${author}_${postId}_${cleanQual}`;
+            filename = `${baseName.slice(0, 55)}.${ext.toLowerCase()}`;
+          } else {
+            const cleanTitle = (item.info.title || 'mediaflow_download')
+              .replace(/[^a-zA-Z0-9_\- ]/g, '')
+              .trim()
+              .replace(/\s+/g, '_');
+            filename = `${cleanTitle}_${quality}.${ext.toLowerCase()}`;
+          }
           await triggerFileDownload(targetUrl, filename);
 
           // Save to recent downloads storage locally in the browser

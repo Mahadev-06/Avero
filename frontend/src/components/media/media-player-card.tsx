@@ -47,6 +47,8 @@ export function MediaPlayerCard({
       link.includes('preview.redd.it') ||
       link.includes('cdninstagram.com') ||
       link.includes('tiktokcdn.com') ||
+      link.includes('fbcdn.net') ||
+      link.includes('snapcdn.app') ||
       ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.svg', '.avif'].some((ext) => link.toLowerCase().includes(ext))
     );
   };
@@ -244,6 +246,7 @@ export function MediaPlayerCard({
           <img
             src={effectiveThumbnail}
             alt={cleanTitle}
+            referrerPolicy="no-referrer"
             onError={() => setImgError(true)}
             style={{
               position: 'absolute',

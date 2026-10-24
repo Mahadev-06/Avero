@@ -36,6 +36,8 @@ export function MediaPreview({ url, thumbnailUrl, title, platform, mediaType }: 
       link.includes('preview.redd.it') ||
       link.includes('cdninstagram.com') ||
       link.includes('tiktokcdn.com') ||
+      link.includes('fbcdn.net') ||
+      link.includes('snapcdn.app') ||
       ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.svg', '.avif'].some((ext) => link.toLowerCase().includes(ext))
     );
   };
@@ -66,7 +68,8 @@ export function MediaPreview({ url, thumbnailUrl, title, platform, mediaType }: 
             <img
               src={effectiveThumbnail}
               alt={title || 'Image preview'}
-              onError={() => setImgError(true)}
+              referrerPolicy="no-referrer"
+            onError={() => setImgError(true)}
               style={{ width: '100%', height: '100%', objectFit: 'contain' }}
             />
           ) : (
