@@ -1703,6 +1703,44 @@ html.lenis body {
   transform: translateX(2px) scale(0.92);
 }
 
+/* Remove hover state from black arrow submit button */
+.submit-action-btn:hover,
+.submit-action-btn:hover:not(:disabled) {
+  transform: none !important;
+  box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4), -2px -2px 6px rgba(255, 255, 255, 0.7) !important;
+}
+
+.submit-action-btn:hover::before,
+.submit-action-btn:hover::after {
+  transform: none !important;
+  opacity: inherit !important;
+}
+
+/* Equal sizing for input bar action buttons (Paste & Multi) */
+.input-bar-btn {
+  height: 38px !important;
+  min-height: 38px !important;
+  padding: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 0.82rem !important;
+  font-weight: 700 !important;
+  border-radius: var(--radius-full) !important;
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+  box-sizing: border-box !important;
+}
+
+@media (max-width: 640px) {
+  .input-bar-btn {
+    height: 32px !important;
+    min-height: 32px !important;
+    font-size: 0.74rem !important;
+  }
+}
+
+
 /* ==========================================================================
    Dedicated Downloader Tools Section (Polaroid Card Stack & Responsive Layout)
    ========================================================================== */

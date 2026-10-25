@@ -1823,14 +1823,22 @@ export function UrlInput() {
                   title="Switch to single URL mode"
                   data-toggle="tooltip"
                   data-placement="bottom"
-                  className="btn btn-primary btn-sm pill-btn input-action-btn text-dark"
+                  className="btn btn-primary btn-sm pill-btn input-action-btn input-bar-btn text-dark"
                   style={{
-                    padding: '0.35rem 0.85rem',
-                    fontSize: '0.78rem',
-                    fontWeight: 700,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
                     whiteSpace: 'nowrap',
-                    minHeight: '34px',
                     color: 'var(--text-color)',
+                    fontWeight: 700,
+                    fontSize: isMobile ? '0.72rem' : '0.78rem',
+                    minHeight: isMobile ? '30px' : '34px',
+                    height: isMobile ? '30px' : '34px',
+                    width: isMobile ? '56px' : '66px',
+                    minWidth: isMobile ? '56px' : '66px',
+                    padding: 0,
+                    flexShrink: 0,
+                    cursor: 'pointer',
                   }}
                 >
                   Single
@@ -2012,9 +2020,9 @@ export function UrlInput() {
                       title={clipboardPrompt ? `Click to paste detected ${clipboardPrompt.platformName} link` : "Paste from clipboard"}
                       data-toggle="tooltip"
                       data-placement="bottom"
-                      className="btn btn-primary btn-sm pill-btn input-action-btn paste-motion-btn text-dark"
+                      className="btn btn-primary btn-sm pill-btn input-action-btn input-bar-btn paste-motion-btn text-dark"
                       animate={{
-                        width: clipboardPrompt ? (isMobile ? 104 : 124) : (isMobile ? 54 : 66),
+                        width: clipboardPrompt ? (isMobile ? 104 : 124) : (isMobile ? 56 : 66),
                       }}
                       transition={{
                         duration: 0.38,
@@ -2093,14 +2101,22 @@ export function UrlInput() {
                   title={isMultiMode ? "Switch to single URL mode" : "Switch to multi-URL batch mode"}
                   data-toggle="tooltip"
                   data-placement="bottom"
-                  className="btn btn-primary btn-sm pill-btn input-action-btn text-dark"
+                  className="btn btn-primary btn-sm pill-btn input-action-btn input-bar-btn text-dark"
                   style={{
-                    padding: '0.45rem 0.95rem',
-                    fontSize: '0.82rem',
-                    fontWeight: 700,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
                     whiteSpace: 'nowrap',
-                    minHeight: '38px',
                     color: 'var(--text-color)',
+                    fontWeight: 700,
+                    fontSize: isMobile ? '0.74rem' : '0.82rem',
+                    minHeight: isMobile ? '32px' : '38px',
+                    height: isMobile ? '32px' : '38px',
+                    width: isMobile ? '56px' : '66px',
+                    minWidth: isMobile ? '56px' : '66px',
+                    padding: 0,
+                    flexShrink: 0,
+                    cursor: 'pointer',
                   }}
                 >
                   {isMultiMode ? 'Single' : 'Multi'}
@@ -2109,7 +2125,6 @@ export function UrlInput() {
 
               <motion.button
                 type="submit"
-                whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.90 }}
                 disabled={analyzing || searching}
                 aria-label="Process link or search"
