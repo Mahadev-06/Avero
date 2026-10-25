@@ -23,7 +23,9 @@ export function ThemeToggle() {
       onClick={toggle}
       aria-label="Toggle Theme"
       title={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
-      className="pill-btn text-dark"
+      data-toggle="tooltip"
+      data-placement="bottom"
+      className="btn btn-primary btn-sm pill-btn text-dark"
       style={{
         width: '38px',
         height: '38px',

@@ -193,6 +193,8 @@ export function SocialShareButton({
               type="button"
               onClick={handleCopy}
               title={copied ? "Copied to clipboard!" : "Copy website link"}
+              data-toggle="tooltip"
+              data-placement="bottom"
               aria-label="Copy website link"
               whileHover={{ scale: 1.18, rotate: -4 }}
               whileTap={{ scale: 0.88 }}
@@ -225,6 +227,8 @@ export function SocialShareButton({
                 rel="noopener noreferrer"
                 aria-label={iconLabel}
                 title={iconLabel}
+                data-toggle="tooltip"
+                data-placement="bottom"
                 initial={false}
                 transition={{
                   delay: hovered ? i * 0.04 : 0,

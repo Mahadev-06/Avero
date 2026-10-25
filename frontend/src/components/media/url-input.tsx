@@ -1724,7 +1724,9 @@ export function UrlInput() {
                     type="button"
                     onClick={handleClearInput}
                     title="Clear links"
-                    className="pill-btn input-action-btn"
+                    data-toggle="tooltip"
+                    data-placement="bottom"
+                    className="btn btn-primary btn-sm pill-btn input-action-btn text-dark"
                     style={{
                       padding: '0.35rem 0.85rem',
                       fontSize: '0.78rem',
@@ -1741,7 +1743,9 @@ export function UrlInput() {
                     type="button"
                     onClick={clipboardPrompt ? handleAcceptClipboardPrompt : handlePaste}
                     title={clipboardPrompt ? `Click to paste detected ${clipboardPrompt.platformName} link` : "Paste from clipboard"}
-                    className="pill-btn input-action-btn paste-motion-btn"
+                    data-toggle="tooltip"
+                    data-placement="bottom"
+                    className="btn btn-primary btn-sm pill-btn input-action-btn paste-motion-btn text-dark"
                     animate={{
                       width: clipboardPrompt ? (isMobile ? 104 : 124) : (isMobile ? 54 : 66),
                     }}
@@ -1817,7 +1821,9 @@ export function UrlInput() {
                   type="button"
                   onClick={() => setIsMultiMode(false)}
                   title="Switch to single URL mode"
-                  className="pill-btn input-action-btn"
+                  data-toggle="tooltip"
+                  data-placement="bottom"
+                  className="btn btn-primary btn-sm pill-btn input-action-btn text-dark"
                   style={{
                     padding: '0.35rem 0.85rem',
                     fontSize: '0.78rem',
@@ -1984,7 +1990,9 @@ export function UrlInput() {
                     type="button"
                     onClick={handleClearInput}
                     title="Clear link"
-                    className="pill-btn input-action-btn"
+                    data-toggle="tooltip"
+                    data-placement="bottom"
+                    className="btn btn-primary btn-sm pill-btn input-action-btn text-dark"
                     style={{
                       padding: '0.45rem 0.95rem',
                       fontSize: '0.82rem',
@@ -2002,7 +2010,9 @@ export function UrlInput() {
                       type="button"
                       onClick={clipboardPrompt ? handleAcceptClipboardPrompt : handlePaste}
                       title={clipboardPrompt ? `Click to paste detected ${clipboardPrompt.platformName} link` : "Paste from clipboard"}
-                      className="pill-btn input-action-btn paste-motion-btn"
+                      data-toggle="tooltip"
+                      data-placement="bottom"
+                      className="btn btn-primary btn-sm pill-btn input-action-btn paste-motion-btn text-dark"
                       animate={{
                         width: clipboardPrompt ? (isMobile ? 104 : 124) : (isMobile ? 54 : 66),
                       }}
@@ -2081,7 +2091,9 @@ export function UrlInput() {
                   type="button"
                   onClick={() => setIsMultiMode(!isMultiMode)}
                   title={isMultiMode ? "Switch to single URL mode" : "Switch to multi-URL batch mode"}
-                  className="pill-btn input-action-btn"
+                  data-toggle="tooltip"
+                  data-placement="bottom"
+                  className="btn btn-primary btn-sm pill-btn input-action-btn text-dark"
                   style={{
                     padding: '0.45rem 0.95rem',
                     fontSize: '0.82rem',
@@ -2271,6 +2283,8 @@ export function UrlInput() {
             <button
               type="button"
               onClick={() => setStatusMsg(null)}
+              data-toggle="tooltip"
+              data-placement="bottom"
               style={{
                 background: 'none',
                 border: 'none',
@@ -2697,6 +2711,9 @@ export function UrlInput() {
                           </span>
                           <button
                             type="button"
+                            className="btn btn-primary btn-sm text-dark"
+                            data-toggle="tooltip"
+                            data-placement="bottom"
                             onClick={() => handleCancelDownload(item.id)}
                             title="Cancel download"
                             style={{
@@ -2707,14 +2724,9 @@ export function UrlInput() {
                               height: '22px',
                               padding: '0 0.5rem',
                               borderRadius: 'var(--radius-full)',
-                              backgroundColor: 'var(--bg-color)',
-                              border: '1px solid rgba(255, 255, 255, 0.7)',
-                              boxShadow: '1px 1px 3px var(--neumorph-dark), -1px -1px 3px var(--neumorph-light)',
                               fontSize: '0.7rem',
                               fontWeight: 700,
-                              color: 'var(--text-muted)',
                               cursor: 'pointer',
-                              transition: 'all 0.15s ease',
                               lineHeight: 1,
                               boxSizing: 'border-box',
                               userSelect: 'none',
@@ -3021,6 +3033,9 @@ export function UrlInput() {
 
                             <button
                               type="button"
+                              className="btn btn-primary btn-sm text-dark"
+                              data-toggle="tooltip"
+                              data-placement="bottom"
                               onClick={() => handleCancelDownload(item.id)}
                               title="Cancel download"
                               style={{
@@ -3031,14 +3046,9 @@ export function UrlInput() {
                                 height: '22px',
                                 padding: '0 0.5rem',
                                 borderRadius: 'var(--radius-full)',
-                                backgroundColor: 'var(--bg-color)',
-                                border: '1px solid rgba(255, 255, 255, 0.7)',
-                                boxShadow: '1px 1px 3px var(--neumorph-dark), -1px -1px 3px var(--neumorph-light)',
                                 fontSize: '0.7rem',
                                 fontWeight: 700,
-                                color: 'var(--text-muted)',
                                 cursor: 'pointer',
-                                transition: 'all 0.15s ease',
                                 lineHeight: 1,
                                 boxSizing: 'border-box',
                                 userSelect: 'none',
@@ -3620,6 +3630,8 @@ export function UrlInput() {
                         setRecentDownloads(updated);
                       }}
                       title="Remove from history"
+                      data-toggle="tooltip"
+                      data-placement="bottom"
                       aria-label="Remove item"
                       style={{
                         width: '26px',

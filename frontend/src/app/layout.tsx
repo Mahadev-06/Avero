@@ -117,6 +117,7 @@ const jsonLd = {
 };
 
 import { SmoothScroll } from '@/components/layout/smooth-scroll';
+import { TooltipManager } from '@/components/ui/tooltip-manager';
 
 export default function RootLayout({
   children,
@@ -136,6 +137,7 @@ export default function RootLayout({
         />
       </head>
       <body>
+        <TooltipManager />
         <SmoothScroll>
           <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', position: 'relative', zIndex: 1 }}>
             <Header />
