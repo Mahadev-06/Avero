@@ -2692,7 +2692,7 @@ export function UrlInput() {
                           {item.progress.eta || item.activeQuality || 'Downloading...'}
                         </span>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                          <span style={{ fontSize: '0.75rem', fontWeight: 900, color: 'var(--text-color)' }} className="tabular-nums">
+                          <span className="badge badge-dark text-uppercase tabular-nums">
                             {item.progress.percent.toFixed(1)}%
                           </span>
                           <button
@@ -3015,24 +3015,9 @@ export function UrlInput() {
                                 ⚡ {item.progress.speed}
                               </span>
                             )}
-                            <div
-                              className="tabular-nums"
-                              style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '0.25rem',
-                                padding: '0.15rem 0.55rem',
-                                borderRadius: 'var(--radius-full)',
-                                backgroundColor: 'var(--bg-color)',
-                                border: '1px solid rgba(255, 255, 255, 0.65)',
-                                boxShadow: '2px 2px 4px var(--neumorph-dark), -2px -2px 4px var(--neumorph-light)',
-                                fontSize: '0.75rem',
-                                fontWeight: 900,
-                                color: 'var(--text-color)',
-                              }}
-                            >
+                            <span className="badge badge-dark text-uppercase tabular-nums">
                               {item.progress.percent.toFixed(1)}%
-                            </div>
+                            </span>
 
                             <button
                               type="button"

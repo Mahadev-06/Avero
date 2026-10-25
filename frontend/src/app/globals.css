@@ -338,6 +338,62 @@ button {
   border-radius: var(--radius-full) !important;
 }
 
+/* Themesberg Neumorphic Badges */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem 0.65rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1;
+  text-align: center;
+  white-space: nowrap;
+  vertical-align: baseline;
+  border-radius: var(--radius-full);
+  background-color: var(--bg-color);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  box-shadow: inset 2px 2px 5px #b8b9be, inset -3px -3px 7px #ffffff;
+  transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+  user-select: none;
+}
+
+.text-uppercase {
+  text-transform: uppercase !important;
+  letter-spacing: 0.04em !important;
+}
+
+.badge-dark {
+  color: #31344b !important;
+  border-color: rgba(255, 255, 255, 0.5) !important;
+  box-shadow: inset 2px 2px 5px #b8b9be, inset -3px -3px 7px #ffffff !important;
+}
+
+.badge-secondary {
+  color: #2D4CC8 !important;
+  border-color: rgba(45, 76, 200, 0.25) !important;
+  box-shadow: inset 2px 2px 5px #b8b9be, inset -3px -3px 7px #ffffff !important;
+}
+
+.badge-success {
+  color: #18634B !important;
+  border-color: rgba(24, 99, 75, 0.25) !important;
+  box-shadow: inset 2px 2px 5px #b8b9be, inset -3px -3px 7px #ffffff !important;
+}
+
+.badge-danger {
+  color: #A91E2C !important;
+  border-color: rgba(169, 30, 44, 0.25) !important;
+  box-shadow: inset 2px 2px 5px #b8b9be, inset -3px -3px 7px #ffffff !important;
+}
+
+.badge-info {
+  color: #0056B3 !important;
+  border-color: rgba(0, 86, 179, 0.25) !important;
+  box-shadow: inset 2px 2px 5px #b8b9be, inset -3px -3px 7px #ffffff !important;
+}
+
+
 .paste-motion-btn {
   padding: 0 !important;
   box-sizing: border-box !important;
@@ -673,6 +729,43 @@ button {
 [data-theme='dark'] .text-dark {
   color: #e2e8f0 !important;
 }
+
+[data-theme='dark'] .badge {
+  background-color: var(--bg-color);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: inset 2px 2px 5px #121214, inset -3px -3px 7px #26262b;
+}
+
+[data-theme='dark'] .badge-dark {
+  color: #e2e8f0 !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  box-shadow: inset 2px 2px 5px #121214, inset -3px -3px 7px #26262b !important;
+}
+
+[data-theme='dark'] .badge-secondary {
+  color: #818cf8 !important;
+  border-color: rgba(129, 140, 248, 0.25) !important;
+  box-shadow: inset 2px 2px 5px #121214, inset -3px -3px 7px #26262b !important;
+}
+
+[data-theme='dark'] .badge-success {
+  color: #34d399 !important;
+  border-color: rgba(52, 211, 153, 0.25) !important;
+  box-shadow: inset 2px 2px 5px #121214, inset -3px -3px 7px #26262b !important;
+}
+
+[data-theme='dark'] .badge-danger {
+  color: #f87171 !important;
+  border-color: rgba(248, 113, 113, 0.25) !important;
+  box-shadow: inset 2px 2px 5px #121214, inset -3px -3px 7px #26262b !important;
+}
+
+[data-theme='dark'] .badge-info {
+  color: #38bdf8 !important;
+  border-color: rgba(56, 189, 248, 0.25) !important;
+  box-shadow: inset 2px 2px 5px #121214, inset -3px -3px 7px #26262b !important;
+}
+
 
 [data-theme='dark'] .nm-progress-fill {
   background: linear-gradient(
@@ -1308,17 +1401,28 @@ button {
 }
 
 .nm-format-badge {
-  padding: 0.2rem 0.5rem !important;
-  border-radius: 6px !important;
+  padding: 0.2rem 0.55rem !important;
+  border-radius: var(--radius-full) !important;
   background-color: var(--bg-color) !important;
-  border: 1px solid rgba(255, 255, 255, 0.6) !important;
-  box-shadow: 1px 1px 3px var(--neumorph-dark), -1px -1px 3px var(--neumorph-light) !important;
-  color: var(--text-color) !important;
+  border: 1px solid rgba(255, 255, 255, 0.45) !important;
+  box-shadow: inset 1.5px 1.5px 3px #b8b9be, inset -2px -2px 4px #ffffff !important;
+  color: #31344b !important;
   font-size: 0.72rem !important;
-  font-weight: 900 !important;
-  letter-spacing: 0.02em !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.04em !important;
   white-space: nowrap !important;
   flex-shrink: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  line-height: 1 !important;
+}
+
+[data-theme='dark'] .nm-format-badge {
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: inset 1.5px 1.5px 3px #121214, inset -2px -2px 4px #26262b !important;
+  color: #e2e8f0 !important;
 }
 
 .nm-format-quality {

@@ -37,7 +37,7 @@ export function SearchCard({ result, onSelectMedia }: SearchCardProps) {
           />
         )}
         <div className="absolute bottom-2 right-2">
-          <Badge variant="secondary" className="bg-black/80 text-white border-none">
+          <Badge variant="secondary" className="bg-black/80 text-white border-none" style={{ boxShadow: 'none' }}>
             {formattedDuration}
           </Badge>
         </div>
