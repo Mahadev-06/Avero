@@ -244,53 +244,98 @@ button {
 .text-3xl { font-size: var(--text-3xl); }
 .text-4xl { font-size: var(--text-4xl); }
 
-/* From Uiverse.io by javierBarroso - Tactile Neumorphic Buttons for all white buttons */
+/* Themesberg Neumorphic Buttons (.btn.btn-primary.text-dark) for all white buttons */
 .pill-btn,
 .btn-white,
 .nm-btn,
-.btn-neumorph {
-  color: var(--text-color);
+.btn-primary,
+.btn-neumorph,
+.btn {
+  color: #31344b;
   padding: 0.6rem 1.4rem;
   font-size: 0.88rem;
-  font-weight: 700;
+  font-weight: 600;
   border-radius: var(--radius-full);
-  background: var(--bg-color);
+  background-color: var(--bg-color);
   cursor: pointer;
-  border: 1px solid rgba(255, 255, 255, 0.45);
-  transition: all 0.3s cubic-bezier(0.2, 0, 0, 1);
-  box-shadow:
-    6px 6px 12px var(--neumorph-dark),
-    -6px -6px 12px var(--neumorph-light);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  transition: all 0.2s ease;
+  box-shadow: 3px 3px 6px #b8b9be, -3px -3px 6px #ffffff;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
   min-height: 40px;
   user-select: none;
+  outline: none;
+  box-sizing: border-box;
 }
 
+.pill-btn svg,
+.btn-white svg,
+.nm-btn svg,
+.btn-primary svg,
+.btn-neumorph svg,
+.btn svg {
+  color: currentColor;
+}
+
+/* Remove hover state and glow behind: static 3px 3px 6px shadow, no float/transform/expansion */
 .pill-btn:hover,
 .btn-white:hover,
 .nm-btn:hover,
-.btn-neumorph:hover {
-  box-shadow:
-    8px 8px 16px var(--neumorph-dark),
-    -8px -8px 16px var(--neumorph-light);
-  color: var(--text-color);
+.btn-primary:hover,
+.btn-neumorph:hover,
+.btn:hover {
+  box-shadow: 3px 3px 6px #b8b9be, -3px -3px 6px #ffffff;
+  color: #31344b;
+  transform: none;
 }
 
+/* Active / Pressed state: Themesberg signature inset press */
 .pill-btn:active,
 .pill-btn.active,
 .btn-white:active,
+.btn-white.active,
+.btn-primary:active,
+.btn-primary.active,
 .nm-btn:active,
-.btn-neumorph:active {
-  color: var(--text-muted);
-  box-shadow:
-    0px 0px 0px var(--neumorph-dark),
-    0px 0px 0px var(--neumorph-light),
-    inset 4px 4px 12px var(--neumorph-dark),
-    inset -4px -4px 12px var(--neumorph-light);
+.nm-btn.active,
+.btn-neumorph:active,
+.btn-neumorph.active,
+.btn:active,
+.btn.active {
+  box-shadow: inset 2px 2px 5px #b8b9be, inset -3px -3px 7px #ffffff;
+  color: #31344b;
   transform: scale(0.98);
+}
+
+.pill-btn:focus-visible,
+.btn-white:focus-visible,
+.btn-primary:focus-visible,
+.btn:focus-visible {
+  outline: none;
+  box-shadow: 3px 3px 6px #b8b9be, -3px -3px 6px #ffffff, 0 0 0 2px rgba(49, 52, 75, 0.25);
+}
+
+.pill-btn:disabled,
+.btn-white:disabled,
+.btn-primary:disabled,
+.btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  box-shadow: 2px 2px 4px #b8b9be, -2px -2px 4px #ffffff;
+  transform: none;
+  pointer-events: none;
+}
+
+/* Themesberg Neumorphism UI Utility Classes */
+.text-dark {
+  color: #31344b !important;
+}
+
+.btn-pill {
+  border-radius: var(--radius-full) !important;
 }
 
 .paste-motion-btn {
@@ -595,6 +640,38 @@ button {
   animation: nmShimmerSweep 2s infinite linear;
   transition: width 0.35s cubic-bezier(0.2, 0, 0, 1);
   position: relative;
+}
+
+[data-theme='dark'] .pill-btn,
+[data-theme='dark'] .btn-white,
+[data-theme='dark'] .btn-primary,
+[data-theme='dark'] .btn {
+  color: #e2e8f0;
+  box-shadow: 3px 3px 6px #121214, -3px -3px 6px #26262b;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+[data-theme='dark'] .pill-btn:hover,
+[data-theme='dark'] .btn-white:hover,
+[data-theme='dark'] .btn-primary:hover,
+[data-theme='dark'] .btn:hover {
+  box-shadow: 3px 3px 6px #121214, -3px -3px 6px #26262b;
+  color: #e2e8f0;
+  transform: none;
+}
+
+[data-theme='dark'] .pill-btn:active,
+[data-theme='dark'] .pill-btn.active,
+[data-theme='dark'] .btn-white:active,
+[data-theme='dark'] .btn-primary:active,
+[data-theme='dark'] .btn:active {
+  box-shadow: inset 2px 2px 5px #121214, inset -3px -3px 7px #26262b;
+  color: #e2e8f0;
+  transform: scale(0.98);
+}
+
+[data-theme='dark'] .text-dark {
+  color: #e2e8f0 !important;
 }
 
 [data-theme='dark'] .nm-progress-fill {

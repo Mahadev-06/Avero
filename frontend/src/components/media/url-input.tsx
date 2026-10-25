@@ -2461,21 +2461,16 @@ export function UrlInput() {
                   type="button"
                   onClick={handleDownloadAllBestQuality}
                   disabled={isBatchDownloading}
-                  className="pill-btn"
+                  className="pill-btn text-dark"
                   style={{
                     height: '36px',
                     padding: '0 1.15rem',
                     fontSize: '0.8rem',
-                    fontWeight: 800,
-                    color: 'var(--text-color)',
+                    fontWeight: 700,
                     display: 'inline-flex',
                     alignItems: 'center',
                     gap: '0.45rem',
                     cursor: isBatchDownloading ? 'wait' : 'pointer',
-                    borderRadius: 'var(--radius-full)',
-                    border: '1px solid rgba(255, 255, 255, 0.75)',
-                    backgroundColor: 'var(--bg-color)',
-                    boxShadow: '3px 3px 8px var(--neumorph-dark), -3px -3px 8px var(--neumorph-light)',
                   }}
                 >
                   {isBatchDownloading ? (
@@ -2647,24 +2642,19 @@ export function UrlInput() {
                     {/* Download All (ZIP) Button */}
                     <button
                       type="button"
-                      className="pill-btn"
+                      className="pill-btn text-dark"
                       onClick={() => handleCarouselZipDownload(item)}
                       disabled={item.downloadState === 'downloading'}
                       style={{
                         height: '40px',
                         padding: '0 1.25rem',
                         fontSize: '0.82rem',
-                        fontWeight: 800,
-                        color: 'var(--text-color)',
+                        fontWeight: 700,
                         display: 'inline-flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                         gap: '0.5rem',
                         cursor: item.downloadState === 'downloading' ? 'wait' : 'pointer',
-                        borderRadius: 'var(--radius-full)',
-                        border: '1px solid rgba(255, 255, 255, 0.65)',
-                        backgroundColor: 'var(--bg-color)',
-                        boxShadow: '3px 3px 8px var(--neumorph-dark), -3px -3px 8px var(--neumorph-light)',
                         flexShrink: 0,
                       }}
                     >

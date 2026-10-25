@@ -23,16 +23,13 @@ export function ThemeToggle() {
       onClick={toggle}
       aria-label="Toggle Theme"
       title={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
-      className="pill-btn"
+      className="pill-btn text-dark"
       style={{
         width: '38px',
         height: '38px',
         minHeight: '38px',
         borderRadius: '50%',
         padding: 0,
-        backgroundColor: 'var(--card-bg)',
-        border: '1px solid var(--border-subtle)',
-        color: 'var(--text-color)',
         display: 'inline-flex',
         alignItems: 'center',
         justifyContent: 'center',
