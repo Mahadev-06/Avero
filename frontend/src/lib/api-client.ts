@@ -15,8 +15,14 @@ export interface FormatOption {
   format_id: string;
   ext: string;
   quality: string;
-  file_size_formatted: string;
+  file_size_formatted?: string | null;
   media_category: 'video' | 'audio' | 'image';
+  download_url?: string;
+  width?: number;
+  height?: number;
+  codec?: string;
+  is_preferred?: boolean;
+  compatibility_note?: string;
 }
 
 export interface SlideItem {
@@ -210,6 +216,7 @@ class ApiClient {
     slide_index?: number,
     is_carousel_zip?: boolean,
     post_url?: string,
+    format_id?: string,
   ): Promise<DownloadStartResponse> {
     return this.fetchJson('/download/start', {
       method: 'POST',
@@ -221,6 +228,7 @@ class ApiClient {
         slide_index,
         is_carousel_zip,
         post_url,
+        format_id,
       }),
     });
   }

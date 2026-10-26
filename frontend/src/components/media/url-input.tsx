@@ -967,9 +967,15 @@ export function UrlInput() {
     setStatusMsg('Download cancelled.');
   }, []);
 
-  const handleSpecificDownload = useCallback(async (item: VideoResultItem, ext: string, quality: string, mediaCategory?: string) => {
+  const handleSpecificDownload = useCallback(async (
+    item: VideoResultItem,
+    ext: string,
+    quality: string,
+    mediaCategory?: string,
+    optionOverride?: FormatOption
+  ) => {
     // Determine category from explicit argument, matching format_option, or item media_type
-    const matchedOpt = item.info.format_options?.find(
+    const matchedOpt = optionOverride || item.info.format_options?.find(
       (opt) => opt.ext.toLowerCase() === ext.toLowerCase() && opt.quality.toLowerCase() === quality.toLowerCase()
     );
     const resolvedCategory = mediaCategory || matchedOpt?.media_category || (
@@ -995,7 +1001,8 @@ export function UrlInput() {
       )
     );
 
-    const targetUrl = (isDirectStream ? item.info.download_url : item.info.url) || item.info.download_url || item.info.url;
+    // Always prefer the selected format option's dedicated download_url if present
+    const targetUrl = matchedOpt?.download_url || (isDirectStream ? item.info.download_url : item.info.url) || item.info.download_url || item.info.url;
 
     if (!targetUrl) return;
 
@@ -1014,7 +1021,16 @@ export function UrlInput() {
     cancelledItemIds.current.delete(item.id);
 
     try {
-      const { job_id } = await apiClient.startDownload(targetUrl, ext.toLowerCase(), quality.toLowerCase(), resolvedCategory);
+      const { job_id } = await apiClient.startDownload(
+        targetUrl,
+        ext.toLowerCase(),
+        quality.toLowerCase(),
+        resolvedCategory,
+        undefined,
+        undefined,
+        item.info.url,
+        matchedOpt?.format_id
+      );
 
       const subscription = apiClient.subscribeProgress(job_id, (progress) => {
         setResults((prev) =>
@@ -1047,8 +1063,11 @@ export function UrlInput() {
         }
 
         let filename: string;
-        const isThreads = item.info.platform === 'threads' || (item.info.url && (item.info.url.includes('threads.net') || item.info.url.includes('threads.com')));
-        if (isThreads) {
+        if (finalProgress.filename) {
+          filename = finalProgress.filename;
+        } else {
+          const isThreads = item.info.platform === 'threads' || (item.info.url && (item.info.url.includes('threads.net') || item.info.url.includes('threads.com')));
+          if (isThreads) {
           const urlToParse = item.info.url || '';
           const canonMatch = urlToParse.match(/@([a-zA-Z0-9._]+)\/post\/([a-zA-Z0-9_-]+)/);
           let author = canonMatch ? canonMatch[1] : '';
@@ -1073,6 +1092,7 @@ export function UrlInput() {
             .replace(/\s+/g, '_')
             .slice(0, 60);
           filename = `${cleanTitle}_${quality.replace(/\s+/g, '_')}.${fileExt}`;
+          }
         }
         const fileUrl = apiClient.getDownloadFileUrl(job_id, filename);
 
@@ -1467,6 +1487,11 @@ export function UrlInput() {
 
   const getBestFormatForItem = useCallback((item: VideoResultItem) => {
     const formatOpts = item.info.format_options || [];
+    const preferredOpt = formatOpts.find((f) => f.is_preferred);
+    if (preferredOpt) {
+      return { ext: preferredOpt.ext, quality: preferredOpt.quality, option: preferredOpt };
+    }
+
     const videoOpts = formatOpts.filter(
       (f) => f.media_category === 'video' || (!f.media_category && (f.ext.toLowerCase() === 'mp4' || f.quality.toLowerCase().includes('p')))
     );
@@ -1490,15 +1515,15 @@ export function UrlInput() {
         };
         return getScore(b.quality) - getScore(a.quality);
       });
-      return { ext: sorted[0].ext || 'MP4', quality: sorted[0].quality || 'Best' };
+      return { ext: sorted[0].ext || 'MP4', quality: sorted[0].quality || 'Best', option: sorted[0] };
     }
 
     const imageOpts = formatOpts.filter((f) => f.media_category === 'image');
     if (imageOpts.length > 0) {
-      return { ext: imageOpts[0].ext || 'JPG', quality: imageOpts[0].quality || 'Original' };
+      return { ext: imageOpts[0].ext || 'JPG', quality: imageOpts[0].quality || 'Original', option: imageOpts[0] };
     }
 
-    return { ext: 'MP4', quality: 'Best' };
+    return { ext: 'MP4', quality: 'Best', option: undefined };
   }, []);
 
   const handleDownloadAllBestQuality = async () => {
@@ -3179,7 +3204,7 @@ export function UrlInput() {
                                 <button
                                   type="button"
                                   className="pill-btn nm-format-btn"
-                                  onClick={() => handleSpecificDownload(item, opt.ext, opt.quality, opt.media_category)}
+                                  onClick={() => handleSpecificDownload(item, opt.ext, opt.quality, opt.media_category, opt)}
                                   disabled={item.downloadState === 'downloading'}
                                 >
                                   {item.downloadState === 'downloading' && item.activeQuality === `${opt.ext} ${opt.quality}` ? (
@@ -3339,7 +3364,7 @@ export function UrlInput() {
                                     <button
                                       type="button"
                                       className="pill-btn nm-format-btn"
-                                      onClick={() => handleSpecificDownload(item, opt.ext, opt.quality, opt.media_category)}
+                                      onClick={() => handleSpecificDownload(item, opt.ext, opt.quality, opt.media_category, opt)}
                                       disabled={item.downloadState === 'downloading'}
                                     >
                                       {item.downloadState === 'downloading' && item.activeQuality === `${opt.ext} ${opt.quality}` ? (
@@ -3413,7 +3438,7 @@ export function UrlInput() {
                                         cursor: 'pointer',
                                         whiteSpace: 'nowrap',
                                       }}
-                                      onClick={() => handleSpecificDownload(item, opt.ext, opt.quality, opt.media_category)}
+                                      onClick={() => handleSpecificDownload(item, opt.ext, opt.quality, opt.media_category, opt)}
                                       disabled={item.downloadState === 'downloading'}
                                     >
                                       {item.downloadState === 'downloading' && item.activeQuality === `${opt.ext} ${opt.quality}` ? (
