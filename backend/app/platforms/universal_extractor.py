@@ -7,6 +7,7 @@ import yt_dlp
 import structlog
 from app.core.security.ssrf import resolve_and_check, SSRFBlockedError
 from app.schemas.analyze import MediaInfo, FormatOption, SlideItem
+from app.platforms.format_builder import build_real_format_options
 
 logger = structlog.get_logger()
 
@@ -868,6 +869,70 @@ async def _scrape_x(url: str) -> dict:
     tweet_id_match = re.search(r'status/(\d+)', url)
     tweet_id = tweet_id_match.group(1) if tweet_id_match else None
 
+    # 1. Primary: Query fxtwitter API (gives exact variants, bitrates, dimensions, duration)
+    if tweet_id:
+        try:
+            async with httpx.AsyncClient(follow_redirects=True, timeout=8.0) as client:
+                r_fx = await client.get(f"https://api.fxtwitter.com/status/{tweet_id}", headers={"User-Agent": "Mozilla/5.0"})
+                if r_fx.status_code == 200:
+                    data = r_fx.json()
+                    tweet = data.get("tweet", {})
+                    t_text = tweet.get("text")
+                    title = t_text[:100] if t_text else "X Post"
+                    media = tweet.get("media", {})
+                    author_name = tweet.get("author", {}).get("screen_name")
+                    videos = media.get("videos", [])
+                    if videos:
+                        v0 = videos[0]
+                        raw_formats = v0.get("formats", []) or v0.get("variants", [])
+                        mp4_variants = []
+                        for f in raw_formats:
+                            ctype = (f.get("content_type") or f.get("container") or "").lower()
+                            f_url = f.get("url") or ""
+                            if ("mp4" in ctype or f_url.endswith(".mp4") or ".mp4?" in f_url) and f_url:
+                                m_dim = re.search(r"[/_](\d{3,4})x(\d{3,4})[/_.]", f_url)
+                                w_val = int(m_dim.group(1)) if m_dim else None
+                                h_val = int(m_dim.group(2)) if m_dim else None
+                                fmt_id = f"x_{w_val}x{h_val}" if (w_val and h_val) else f"x_{f.get('bitrate') or len(mp4_variants)}"
+                                mp4_variants.append({
+                                    "url": f_url,
+                                    "bitrate": f.get("bitrate"),
+                                    "codec": f.get("codec") or "h264",
+                                    "width": w_val,
+                                    "height": h_val,
+                                    "ext": "mp4",
+                                    "format_id": fmt_id,
+                                })
+                        if not mp4_variants and v0.get("url"):
+                            mp4_variants.append({
+                                "url": v0.get("url"),
+                                "ext": "mp4",
+                                "format_id": "x_default",
+                            })
+                        return {
+                            "title": title or "X Video",
+                            "author": author_name,
+                            "tweet_id": tweet_id,
+                            "video_url": v0.get("url"),
+                            "thumbnail": v0.get("thumbnail_url"),
+                            "duration": v0.get("duration", 0),
+                            "variants": mp4_variants,
+                            "is_image": False,
+                        }
+                    photos = media.get("photos", [])
+                    if photos:
+                        return {
+                            "title": title or "X Photo",
+                            "author": author_name,
+                            "tweet_id": tweet_id,
+                            "image_url": photos[0].get("url"),
+                            "thumbnail": photos[0].get("url"),
+                            "is_image": True,
+                        }
+        except Exception as e:
+            logger.debug(f"fxtwitter lookup failed for {tweet_id}: {e}")
+
+    # 2. Fallback: Social Crawler / Logged-in OpenGraph Fetch
     from app.services.media_service import _get_x_cookiefile, _load_cookiejar
     x_cookie = _get_x_cookiefile()
     x_jar = _load_cookiejar(x_cookie) if x_cookie else None
@@ -887,14 +952,13 @@ async def _scrape_x(url: str) -> dict:
     title = "X Post"
 
     try:
-        # 1. Social Crawler / Logged-in OpenGraph Fetch
         async with httpx.AsyncClient(follow_redirects=True, timeout=10.0, headers=headers, cookies=x_jar) as client:
             resp = await client.get(url)
             html = resp.text
 
-            og_vid = re.search(r'<meta\s+(?:property|name)=["\'](?:og:video(?::secure_url)?|twitter:player:stream)["\']\s+content=["\']([^"\']+)["\']', html)
-            og_img = re.search(r'<meta\s+(?:property|name)=["\'](?:og:image(?::secure_url)?|twitter:image(?::src)?)["\']\s+content=["\']([^"\']+)["\']', html)
-            og_title = re.search(r'<meta\s+(?:property|name)=["\'](?:og:title|twitter:title)["\']\s+content=["\']([^"\']+)["\']', html)
+            og_vid = re.search(r"""<meta\s+(?:property|name)=['"](?:og:video(?::secure_url)?|twitter:player:stream)['"]\s+content=['"]([^'"]+)['"]""", html)
+            og_img = re.search(r"""<meta\s+(?:property|name)=['"](?:og:image(?::secure_url)?|twitter:image(?::src)?)['"]\s+content=['"]([^'"]+)['"]""", html)
+            og_title = re.search(r"""<meta\s+(?:property|name)=['"](?:og:title|twitter:title)['"]\s+content=['"]([^'"]+)['"]""", html)
 
             if og_title:
                 import html as html_module
@@ -922,8 +986,7 @@ async def _scrape_x(url: str) -> dict:
                         "is_image": True,
                     }
 
-            # Search for pbs.twimg.com/media images in HTML
-            twimg_matches = re.findall(r'https?://pbs\.twimg\.com/media/[^"\'\\ ]+', html)
+            twimg_matches = re.findall(r"""https?://pbs\.twimg\.com/media/[^'"\s\\]+""", html)
             if twimg_matches:
                 clean_img = twimg_matches[0].replace("&amp;", "&").replace(r"\/", "/")
                 if "name=" in clean_img:
@@ -934,37 +997,6 @@ async def _scrape_x(url: str) -> dict:
                     "thumbnail": clean_img,
                     "is_image": True,
                 }
-        
-        # 2. Public API Fallback (fxtwitter)
-        if tweet_id:
-            try:
-                async with httpx.AsyncClient(follow_redirects=True, timeout=6.0) as client:
-                    r_fx = await client.get(f"https://api.fxtwitter.com/status/{tweet_id}", headers={"User-Agent": "Mozilla/5.0"})
-                    if r_fx.status_code == 200:
-                        data = r_fx.json()
-                        tweet = data.get("tweet", {})
-                        t_text = tweet.get("text")
-                        if t_text:
-                            title = t_text[:100]
-                        media = tweet.get("media", {})
-                        photos = media.get("photos", [])
-                        videos = media.get("videos", [])
-                        if videos:
-                            return {
-                                "title": title or "X Video",
-                                "video_url": videos[0].get("url"),
-                                "thumbnail": videos[0].get("thumbnail_url"),
-                                "is_image": False,
-                            }
-                        if photos:
-                            return {
-                                "title": title or "X Photo",
-                                "image_url": photos[0].get("url"),
-                                "thumbnail": photos[0].get("url"),
-                                "is_image": True,
-                            }
-            except Exception:
-                pass
     except Exception:
         pass
 
@@ -1215,17 +1247,30 @@ async def extract_media_info(url: str, platform_name: str) -> MediaInfo:
                     embed_supported=True,
                 )
             elif x_data.get("video_url") and x_data["video_url"] != url:
-                format_opts = build_format_options(30)
+                variants = x_data.get("variants") or [{"url": x_data["video_url"]}]
+                dur = x_data.get("duration") or 0
+                format_opts = build_real_format_options(
+                    variants,
+                    platform="x",
+                    duration_sec=dur,
+                    source_audio_bitrate_kbps=128,
+                )
+                preferred = next((opt for opt in format_opts if opt.is_preferred), format_opts[0] if format_opts else None)
+                main_dl_url = preferred.download_url if preferred and preferred.download_url else x_data["video_url"]
+                formats_list = [
+                    f"{opt.ext} {opt.quality}" + (f" ({opt.file_size_formatted})" if opt.file_size_formatted else "")
+                    for opt in format_opts
+                ]
                 return MediaInfo(
                     url=url,
                     platform="x_twitter",
                     title=x_data.get("title", "X Video"),
                     thumbnail_url=x_data.get("thumbnail"),
-                    duration=30,
+                    duration=dur,
                     media_type="video",
-                    formats=[f"{opt.ext} {opt.quality} ({opt.file_size_formatted})" for opt in format_opts],
+                    formats=formats_list,
                     format_options=format_opts,
-                    download_url=x_data["video_url"],
+                    download_url=main_dl_url,
                     download_supported=True,
                     embed_supported=True,
                 )
@@ -1482,13 +1527,50 @@ async def extract_media_info(url: str, platform_name: str) -> MediaInfo:
                 else:
                     direct_download_url = info['formats'][-1].get('url')
 
-        format_opts = build_format_options(
-            duration_sec=duration,
-            raw_formats=info.get('formats'),
-            max_height=info.get('height'),
-            max_width=info.get('width')
-        )
-        formats = [f"{opt.ext} {opt.quality} ({opt.file_size_formatted})" for opt in format_opts]
+        if platform_name == "x_twitter" or "x.com" in url or "twitter.com" in url:
+            raw_formats = info.get("formats") or []
+            prog_variants = []
+            for f in raw_formats:
+                proto = str(f.get("protocol", "")).lower()
+                ext = str(f.get("ext", "")).lower()
+                f_url = f.get("url") or ""
+                if ("http" in proto or ext == "mp4") and f.get("vcodec") != "none" and "m3u8" not in proto and "m3u8" not in f_url:
+                    prog_variants.append({
+                        "url": f_url,
+                        "format_id": f.get("format_id"),
+                        "width": f.get("width"),
+                        "height": f.get("height"),
+                        "bitrate": f.get("tbr") or f.get("vbr") or 0,
+                        "codec": f.get("vcodec") or "h264",
+                        "ext": "mp4",
+                        "filesize": f.get("filesize") or f.get("filesize_approx"),
+                    })
+            if prog_variants:
+                format_opts = build_real_format_options(
+                    prog_variants,
+                    platform="x",
+                    duration_sec=duration,
+                    source_audio_bitrate_kbps=128,
+                )
+            else:
+                format_opts = build_real_format_options(
+                    [{"url": direct_download_url or url, "ext": "mp4"}],
+                    platform="x",
+                    duration_sec=duration,
+                    source_audio_bitrate_kbps=128,
+                    is_single_file=True,
+                )
+        else:
+            format_opts = build_format_options(
+                duration_sec=duration,
+                raw_formats=info.get('formats'),
+                max_height=info.get('height'),
+                max_width=info.get('width')
+            )
+        formats = [
+            f"{opt.ext} {opt.quality}" + (f" ({opt.file_size_formatted})" if opt.file_size_formatted else "")
+            for opt in format_opts
+        ]
 
         return MediaInfo(
             url=url,
