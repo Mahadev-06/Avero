@@ -7,7 +7,7 @@ router = APIRouter()
 @router.get("")
 @router.get("/")
 async def health_check():
-    return {"status": "ok", "version": "1.2.2-threads-carousel"}
+    return {"status": "ok", "version": "1.3.0-stage-a"}
 
 @router.get("/ready")
 async def readiness_check():
