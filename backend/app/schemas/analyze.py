@@ -9,8 +9,14 @@ class FormatOption(BaseModel):
     format_id: str
     ext: str
     quality: str
-    file_size_formatted: str
+    file_size_formatted: Optional[str] = None
     media_category: str  # "video", "audio", or "image"
+    download_url: Optional[str] = None
+    width: Optional[int] = None
+    height: Optional[int] = None
+    codec: Optional[str] = None
+    is_preferred: Optional[bool] = False
+    compatibility_note: Optional[str] = None
 
 class SlideItem(BaseModel):
     id: str

@@ -122,6 +122,8 @@ async def start_download(request: Request, req: DownloadRequest):
             media_type,
             slide_index=req.slide_index,
             is_carousel_zip=is_carousel_zip,
+            post_url=req.post_url,
+            format_id=req.format_id,
         )
     )
 
@@ -140,6 +142,8 @@ async def _run_download(
     media_type: str | None = None,
     slide_index: int | None = None,
     is_carousel_zip: bool = False,
+    post_url: str | None = None,
+    format_id: str | None = None,
 ):
     """Background task that runs the actual download."""
     try:
@@ -151,6 +155,8 @@ async def _run_download(
             media_type,
             slide_index=slide_index,
             is_carousel_zip=is_carousel_zip,
+            post_url=post_url,
+            format_id=format_id,
         )
     except Exception:
         pass

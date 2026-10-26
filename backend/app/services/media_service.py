@@ -1,3 +1,5 @@
+from __future__ import annotations
+from app.platforms.format_builder import remux_mp4_faststart, build_truthful_filename
 """
 MediaFlow Media Download Service
 
@@ -7,7 +9,6 @@ concurrent media downloading with real-time progress tracking.
 No source code from external repositories was used.
 All functionality implemented independently with strict SSRF & error sanitization.
 """
-from __future__ import annotations
 import asyncio
 import os
 import uuid
@@ -351,7 +352,7 @@ def _make_progress_hook(job_id: str):
 
 
 def _inspect_media_codecs(file_path: str) -> dict:
-    """Inspect video codec, audio codec, and pixel format of a media file using ffprobe."""
+    """Inspect video codec, audio codec, resolution, and pixel format of a media file using ffprobe."""
     import json
     try:
         cmd = [
@@ -364,97 +365,73 @@ def _inspect_media_codecs(file_path: str) -> dict:
             v_codec = None
             a_codec = None
             pix_fmt = None
+            width = None
+            height = None
+            a_bitrate = None
             for s in data.get("streams", []):
                 if s.get("codec_type") == "video" and not v_codec:
                     v_codec = s.get("codec_name", "").lower()
                     pix_fmt = s.get("pix_fmt", "").lower()
+                    w = s.get("width")
+                    h = s.get("height")
+                    if w and h:
+                        width = int(w)
+                        height = int(h)
                 elif s.get("codec_type") == "audio" and not a_codec:
                     a_codec = s.get("codec_name", "").lower()
-            return {"v_codec": v_codec, "a_codec": a_codec, "pix_fmt": pix_fmt}
+                    br = s.get("bit_rate")
+                    if br:
+                        try:
+                            a_bitrate = int(br)
+                        except (ValueError, TypeError):
+                            pass
+            return {
+                "v_codec": v_codec,
+                "a_codec": a_codec,
+                "pix_fmt": pix_fmt,
+                "width": width,
+                "height": height,
+                "a_bitrate": a_bitrate,
+            }
     except Exception as e:
         logger.warning("ffprobe_inspection_error", error=str(e))
-    return {"v_codec": None, "a_codec": None, "pix_fmt": None}
+    return {"v_codec": None, "a_codec": None, "pix_fmt": None, "width": None, "height": None, "a_bitrate": None}
 
 
 def _ensure_mp4_video(input_path: str, target_mp4_path: str) -> str:
     """
-    Ensure any downloaded video is a valid MP4 file.
-    If the file is already an MP4, returns immediately without re-encoding.
-    If remuxing from another container is needed, performs fast stream copy.
+    Ensure any downloaded video is a valid MP4 file with standard ISO container brands and faststart.
     """
     if not input_path or not os.path.exists(input_path):
         return input_path
-
-    # If it is already an MP4 file with valid content, use it directly
-    if input_path.lower().endswith(".mp4") and os.path.getsize(input_path) > 0:
-        if input_path == target_mp4_path:
-            return target_mp4_path
-        try:
-            if os.path.exists(target_mp4_path):
-                os.remove(target_mp4_path)
-            os.replace(input_path, target_mp4_path)
-            return target_mp4_path
-        except OSError:
-            return input_path
-
-    # If it's a non-MP4 video container (e.g. webm/mkv/mov), remux quickly with ffmpeg stream copy
-    transcode_temp = f"{target_mp4_path}.{uuid.uuid4().hex[:6]}.tmp.mp4"
-    try:
-        cmd_copy = [
-            "ffmpeg", "-y", "-i", input_path,
-            "-c:v", "copy", "-c:a", "copy",
-            "-movflags", "+faststart",
-            transcode_temp
-        ]
-        result = subprocess.run(cmd_copy, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, timeout=20)
-        if result.returncode == 0 and os.path.exists(transcode_temp) and os.path.getsize(transcode_temp) > 0:
-            if os.path.exists(input_path) and os.path.abspath(input_path) != os.path.abspath(target_mp4_path):
-                try:
-                    os.remove(input_path)
-                except OSError:
-                    pass
-            if os.path.exists(target_mp4_path):
-                try:
-                    os.remove(target_mp4_path)
-                except OSError:
-                    pass
-            os.replace(transcode_temp, target_mp4_path)
-            return target_mp4_path
-    except Exception as err:
-        logger.warning("ffmpeg_fast_remux_failed", error=str(err))
-    finally:
-        if os.path.exists(transcode_temp):
-            try:
-                os.remove(transcode_temp)
-            except OSError:
-                pass
-
-    return input_path
+    return remux_mp4_faststart(input_path, target_mp4_path)
 
 
-def _ensure_mp3_audio(input_path: str, target_mp3_path: str, quality_kbps: str = "320") -> str:
+def _ensure_mp3_audio(input_path: str, target_mp3_path: str, quality_kbps: str = "128") -> str:
     """
     Ensure any downloaded audio is a clean, standard MP3 file.
+    Bitrate is strictly capped to the source audio bitrate to prevent fake upscaling.
     """
     if not input_path or not os.path.exists(input_path):
         return input_path
 
-    if input_path.lower().endswith(".mp3") and os.path.getsize(input_path) > 0:
-        if input_path == target_mp3_path:
-            return target_mp3_path
-        try:
-            if os.path.exists(target_mp3_path):
-                os.remove(target_mp3_path)
-            os.replace(input_path, target_mp3_path)
-            return target_mp3_path
-        except OSError:
-            return input_path
+    # Probe source audio bitrate to avoid upscaling
+    codecs = _inspect_media_codecs(input_path)
+    source_br = codecs.get("a_bitrate")
+    max_kbps = int(source_br // 1000) if source_br else 128
+
+    try:
+        req_kbps = int(re.sub(r"[^0-9]", "", quality_kbps)) if quality_kbps else 128
+    except ValueError:
+        req_kbps = 128
+
+    target_kbps = min(req_kbps, max(max_kbps, 48))
 
     transcode_temp = f"{target_mp3_path}.{uuid.uuid4().hex[:6]}.tmp.mp3"
     try:
         cmd = [
             "ffmpeg", "-y", "-i", input_path,
-            "-vn", "-c:a", "libmp3lame", "-b:a", f"{quality_kbps}k",
+            "-vn", "-c:a", "libmp3lame", "-b:a", f"{target_kbps}k",
             transcode_temp
         ]
         res = subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, timeout=30)
@@ -831,8 +808,14 @@ def _download_image_sync(job_id: str, url: str, fmt: str) -> str:
 
 
 
-def _download_video_direct_sync(job_id: str, video_url: str, is_audio: bool = False, audio_quality: str = "320") -> str:
-    """Download direct video stream using SSRF-safe streaming and convert to MP4/MP3."""
+def _download_video_direct_sync(
+    job_id: str,
+    video_url: str,
+    is_audio: bool = False,
+    audio_quality: str = "128",
+    post_url: str | None = None,
+) -> str:
+    """Download direct video stream using SSRF-safe streaming and convert/remux to playable MP4/MP3."""
     import httpx
     parsed = urlparse(video_url)
     if parsed.hostname:
@@ -872,15 +855,28 @@ def _download_video_direct_sync(job_id: str, video_url: str, is_audio: bool = Fa
                                 file_size=total_size,
                             )
 
-    # Convert/Remux to standard format
+    # Convert/Remux to standard format with faststart
+    ext = "mp3" if is_audio else "mp4"
     if is_audio:
         final_file = _ensure_mp3_audio(raw_path, target_mp3, audio_quality)
     else:
-        final_file = _ensure_mp4_video(raw_path, target_mp4)
+        final_file = remux_mp4_faststart(raw_path, target_mp4)
 
     file_size = os.path.getsize(final_file) if os.path.exists(final_file) else 0
-    raw_filename = os.path.basename(final_file)
-    clean_filename = sanitize_filename(raw_filename)
+
+    # Probe real dimensions
+    codecs = _inspect_media_codecs(final_file)
+    width = codecs.get("width")
+    height = codecs.get("height")
+
+    target_post = post_url or video_url
+    clean_filename = build_truthful_filename(
+        platform="x" if ("x.com" in target_post or "twitter.com" in target_post or "twimg.com" in video_url) else "media",
+        post_url=target_post,
+        width=width,
+        height=height,
+        ext=ext,
+    )
 
     _progress_store[job_id] = DownloadProgress(
         job_id=job_id,
@@ -896,7 +892,16 @@ def _download_video_direct_sync(job_id: str, video_url: str, is_audio: bool = Fa
     return final_file
 
 
-def _download_sync(job_id: str, url: str, fmt: str, quality: str, media_type: str | None = None, slide_index: int | None = None) -> str:
+def _download_sync(
+    job_id: str,
+    url: str,
+    fmt: str,
+    quality: str,
+    media_type: str | None = None,
+    slide_index: int | None = None,
+    post_url: str | None = None,
+    format_id: str | None = None,
+) -> str:
     """
     Synchronous download function run in a thread pool.
     Validates hostnames for SSRF before downloading.
@@ -982,7 +987,7 @@ def _download_sync(job_id: str, url: str, fmt: str, quality: str, media_type: st
             return _download_image_sync(job_id, url, fmt)
         elif probed_ct.startswith("video/") or probed_ct.startswith("application/"):
             try:
-                return _download_video_direct_sync(job_id, url, is_audio, audio_quality)
+                return _download_video_direct_sync(job_id, url, is_audio, audio_quality, post_url=post_url)
             except Exception:
                 pass
 
@@ -990,11 +995,14 @@ def _download_sync(job_id: str, url: str, fmt: str, quality: str, media_type: st
         direct_vid = _resolve_video_url(url)
         if direct_vid:
             try:
-                return _download_video_direct_sync(job_id, direct_vid, is_audio, audio_quality)
+                return _download_video_direct_sync(job_id, direct_vid, is_audio, audio_quality, post_url=post_url)
             except Exception:
                 pass
 
-    format_string = _build_ytdlp_format(fmt, quality)
+    if format_id and format_id not in ("best", "original", "default") and not format_id.startswith("mp3_"):
+        format_string = f"{format_id}+bestaudio/{format_id}/best"
+    else:
+        format_string = _build_ytdlp_format(fmt, quality)
 
     unique_name = f"media_{uuid.uuid4().hex[:12]}"
     output_path = str(TEMP_DOWNLOAD_DIR / unique_name)
@@ -1113,13 +1121,27 @@ def _download_sync(job_id: str, url: str, fmt: str, quality: str, media_type: st
             os.remove(actual_file)
             raise ValueError(f"File size exceeds allowable limit.")
 
-        raw_filename = os.path.basename(actual_file)
-        clean_filename = sanitize_filename(raw_filename)
+        codecs = _inspect_media_codecs(actual_file)
+        width = codecs.get("width")
+        height = codecs.get("height")
+        ext = "mp3" if is_audio else ("jpg" if is_image else "mp4")
+
+        target_post = post_url or clean_url
+        is_x = "x.com" in target_post or "twitter.com" in target_post
+        platform_name = "x" if is_x else ("instagram" if is_instagram else "media")
+
         if is_instagram and slide_index:
             shortcode_match = re.search(r"/(?:p|reel)/([A-Za-z0-9_-]+)", clean_url)
             post_id = shortcode_match.group(1) if shortcode_match else "instagram"
-            ext = clean_filename.rsplit(".", 1)[-1] if "." in clean_filename else ("mp3" if is_audio else "mp4")
             clean_filename = f"{post_id}_slide_{slide_index:02d}.{ext}"
+        else:
+            clean_filename = build_truthful_filename(
+                platform=platform_name,
+                post_url=target_post,
+                width=width,
+                height=height,
+                ext=ext,
+            )
 
         _progress_store[job_id] = DownloadProgress(
             job_id=job_id,
@@ -1481,6 +1503,8 @@ async def start_download(
     media_type: str | None = None,
     slide_index: int | None = None,
     is_carousel_zip: bool = False,
+    post_url: str | None = None,
+    format_id: str | None = None,
 ) -> str:
     """Download media file with concurrency limiting and SSRF protection."""
     _timestamp_store[job_id] = time.time()
@@ -1506,7 +1530,7 @@ async def start_download(
                 )
             else:
                 result = await asyncio.wait_for(
-                    loop.run_in_executor(None, _download_sync, job_id, url, fmt, quality, media_type, slide_index),
+                    loop.run_in_executor(None, _download_sync, job_id, url, fmt, quality, media_type, slide_index, post_url, format_id),
                     timeout=settings.DOWNLOAD_TIMEOUT_SECONDS,
                 )
             return result

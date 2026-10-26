@@ -66,6 +66,7 @@ class DownloadRequest(BaseModel):
     url: str = Field(..., min_length=7, max_length=2048)
     format: str = Field("mp4", max_length=50)
     quality: str = Field("best", max_length=50)
+    format_id: Optional[str] = Field(None, max_length=100)
     media_type: Optional[str] = Field(None, max_length=50)
     slide_index: Optional[int] = Field(None, ge=1, le=50)
     is_carousel_zip: Optional[bool] = Field(False)
@@ -81,7 +82,7 @@ class DownloadRequest(BaseModel):
             raise ValueError("URL contains invalid control characters")
         return v_stripped
 
-    @field_validator("format", "quality", "media_type")
+    @field_validator("format", "quality", "media_type", "format_id")
     @classmethod
     def sanitize_strings(cls, v: str | None) -> str | None:
         if v is None:
