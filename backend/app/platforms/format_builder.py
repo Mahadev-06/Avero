@@ -102,6 +102,7 @@ def build_real_format_options(
     duration_sec: Optional[float] = None,
     source_audio_bitrate_kbps: Optional[int] = None,
     is_single_file: bool = False,
+    has_audio: bool = True,
 ) -> list[FormatOption]:
     """
     Build truthful format options strictly from real source variants.
@@ -142,7 +143,7 @@ def build_real_format_options(
         options.append(opt)
 
         # Audio conversion option for single file if source audio exists
-        _append_truthful_mp3_options(options, source_audio_bitrate_kbps, entry.get("url"))
+        _append_truthful_mp3_options(options, source_audio_bitrate_kbps, entry.get("url"), has_audio=has_audio)
         return options
 
     # Multi-variant processing (e.g. X, Facebook, Pinterest)
@@ -246,7 +247,7 @@ def build_real_format_options(
 
     # Append truthful MP3 options capped at source audio bitrate
     sample_url = unique_variants[0]["url"] if unique_variants else None
-    _append_truthful_mp3_options(options, source_audio_bitrate_kbps, sample_url)
+    _append_truthful_mp3_options(options, source_audio_bitrate_kbps, sample_url, has_audio=has_audio)
 
     return options
 
@@ -255,11 +256,16 @@ def _append_truthful_mp3_options(
     options: list[FormatOption],
     source_audio_bitrate_kbps: Optional[int],
     download_url: Optional[str] = None,
+    has_audio: bool = True,
 ):
     """
     Append MP3 audio option strictly capped at source audio bitrate.
     Never offer 256k or 320k when source audio is 128k or lower.
+    Never offer MP3 when has_audio is False or bitrate <= 0.
     """
+    if not has_audio or (source_audio_bitrate_kbps is not None and source_audio_bitrate_kbps <= 0):
+        return
+
     effective_kbps = source_audio_bitrate_kbps or 128
     if effective_kbps > 320:
         effective_kbps = 320

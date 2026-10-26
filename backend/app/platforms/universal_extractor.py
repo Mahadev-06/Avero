@@ -909,8 +909,13 @@ async def _scrape_x(url: str) -> dict:
                                 "ext": "mp4",
                                 "format_id": "x_default",
                             })
+                        is_gif = (
+                            v0.get("type") == "gif"
+                            or tweet.get("twitter_card") == "animated_gif"
+                            or (v0.get("format") or "").lower() == "gif"
+                        )
                         return {
-                            "title": title or "X Video",
+                            "title": title or ("X GIF" if is_gif else "X Video"),
                             "author": author_name,
                             "tweet_id": tweet_id,
                             "video_url": v0.get("url"),
@@ -918,6 +923,7 @@ async def _scrape_x(url: str) -> dict:
                             "duration": v0.get("duration", 0),
                             "variants": mp4_variants,
                             "is_image": False,
+                            "is_gif": is_gif,
                         }
                     photos = media.get("photos", [])
                     if photos:
@@ -1249,11 +1255,13 @@ async def extract_media_info(url: str, platform_name: str) -> MediaInfo:
             elif x_data.get("video_url") and x_data["video_url"] != url:
                 variants = x_data.get("variants") or [{"url": x_data["video_url"]}]
                 dur = x_data.get("duration") or 0
+                is_gif = x_data.get("is_gif", False)
                 format_opts = build_real_format_options(
                     variants,
                     platform="x",
                     duration_sec=dur,
-                    source_audio_bitrate_kbps=128,
+                    source_audio_bitrate_kbps=128 if not is_gif else 0,
+                    has_audio=not is_gif,
                 )
                 preferred = next((opt for opt in format_opts if opt.is_preferred), format_opts[0] if format_opts else None)
                 main_dl_url = preferred.download_url if preferred and preferred.download_url else x_data["video_url"]
