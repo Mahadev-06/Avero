@@ -271,7 +271,7 @@ def _append_truthful_mp3_options(
         FormatOption(
             format_id=f"mp3_{effective_kbps}kbps",
             ext="MP3",
-            quality=f"MP3 Audio ({effective_kbps} kbps, converted)",
+            quality=f"Audio ({effective_kbps} kbps, converted)",
             file_size_formatted=None,
             media_category="audio",
             download_url=download_url,
