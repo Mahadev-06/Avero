@@ -327,7 +327,6 @@ function ButtonSpinner({ className = 'spinner-mono', size = 'normal' }: { classN
 
 export function UrlInput() {
   const [inputValue, setInputValue] = useState('');
-  const [displayValue, setDisplayValue] = useState('');
   const [selectedPlatform, setSelectedPlatform] = useState<PlatformIcon | null>(null);
   const [showAllPlatforms, setShowAllPlatforms] = useState(false);
   const [isMultiMode, setIsMultiMode] = useState(false);
@@ -411,7 +410,7 @@ export function UrlInput() {
       const candidateUrl = urlMatch ? urlMatch[0] : (text.startsWith('http') ? text : '');
 
       if (candidateUrl && isSocialMediaUrl(candidateUrl)) {
-        if (candidateUrl === lastDetectedClipboardUrl.current || inputValue.includes(candidateUrl)) {
+        if (inputValue.includes(candidateUrl) || clipboardPrompt?.url === candidateUrl) {
           return;
         }
 
@@ -437,7 +436,7 @@ export function UrlInput() {
     } catch {
       // Silently ignore permissions or background restrictions
     }
-  }, [analyzing, searching, isBatchDownloading, isSearchMode, inputValue]);
+  }, [analyzing, searching, isBatchDownloading, isSearchMode, inputValue, clipboardPrompt]);
 
   // Trigger clipboard auto-detection on focus, visibility change, and pointer entry
   useEffect(() => {
@@ -574,14 +573,28 @@ export function UrlInput() {
         return;
       }
 
-      if (typeof navigator === 'undefined' || !navigator.clipboard?.readText) return;
-      const raw = await navigator.clipboard.readText();
+      if (typeof navigator === 'undefined' || !navigator.clipboard?.readText) {
+        setStatusMsg('Clipboard is not supported in this browser. Please use Ctrl+V or right-click to paste.');
+        return;
+      }
+
+      let raw = '';
+      try {
+        raw = await navigator.clipboard.readText();
+      } catch (clipErr) {
+        console.error('Clipboard readText error', clipErr);
+        setStatusMsg('Clipboard access was blocked by browser. Please paste using Ctrl+V or right-click.');
+        return;
+      }
+
       const clipboard = (raw || '').trim();
-      if (!clipboard) return;
+      if (!clipboard) {
+        setStatusMsg('Clipboard is empty. Copy a social media link first.');
+        return;
+      }
 
       if (isSearchMode) {
         setInputValue(clipboard);
-        setDisplayValue(clipboard);
         return;
       }
 
@@ -600,7 +613,6 @@ export function UrlInput() {
           return;
         }
         setInputValue((prev) => (prev ? `${prev}\n${result.validUrls.join('\n')}` : result.validUrls.join('\n')));
-        setDisplayValue('');
         if (result.skippedCount > 0) {
           setStatusMsg(`Added ${result.validUrls.length} social link(s). Skipped ${result.skippedCount} non-social or invalid item(s).`);
         } else if (statusMsg && !analyzing && !searching) {
@@ -610,39 +622,39 @@ export function UrlInput() {
       }
 
       // Single link mode:
-      const validation = validateSocialMediaInput(clipboard);
+      const urlMatch = clipboard.match(/https?:\/\/[^\s<>"']+/i);
+      const candidateUrl = urlMatch ? urlMatch[0] : clipboard;
+
+      const validation = validateSocialMediaInput(candidateUrl);
       if (!validation.isValid) {
         setStatusMsg(validation.errorMessage || 'Only social media links are supported.');
         return;
       }
 
-      const targetUrl = validation.cleanUrl || clipboard;
+      const targetUrl = validation.cleanUrl || candidateUrl;
       setInputValue(targetUrl);
-      const label = getCleanSocialDisplayLabel(targetUrl);
-      setDisplayValue(label || targetUrl);
       if (statusMsg && !analyzing && !searching) setStatusMsg(null);
     } catch (err) {
       console.error('Clipboard error', err);
+      setStatusMsg('Unable to paste from clipboard. Please paste using Ctrl+V.');
     }
   };
 
   const handleInputPaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
     if (isSearchMode) return;
-    e.preventDefault();
     const pastedText = e.clipboardData.getData('text').trim();
     if (!pastedText) return;
 
-    const validation = validateSocialMediaInput(pastedText);
-    if (!validation.isValid) {
-      setStatusMsg(validation.errorMessage || 'Only social media links are supported.');
-      return;
-    }
+    const urlMatch = pastedText.match(/https?:\/\/[^\s<>"']+/i);
+    const candidateUrl = urlMatch ? urlMatch[0] : pastedText;
 
-    const targetUrl = validation.cleanUrl || pastedText;
-    setInputValue(targetUrl);
-    const label = getCleanSocialDisplayLabel(targetUrl);
-    setDisplayValue(label || targetUrl);
-    if (statusMsg && !analyzing && !searching) setStatusMsg(null);
+    if (isSocialMediaUrl(candidateUrl)) {
+      e.preventDefault();
+      const validation = validateSocialMediaInput(candidateUrl);
+      const targetUrl = validation.isValid && validation.cleanUrl ? validation.cleanUrl : candidateUrl;
+      setInputValue(targetUrl);
+      if (statusMsg && !analyzing && !searching) setStatusMsg(null);
+    }
   };
 
   const handleInputDrop = (e: React.DragEvent<HTMLInputElement>) => {
@@ -651,17 +663,17 @@ export function UrlInput() {
     const droppedText = e.dataTransfer.getData('text').trim();
     if (!droppedText) return;
 
-    const validation = validateSocialMediaInput(droppedText);
-    if (!validation.isValid) {
-      setStatusMsg(validation.errorMessage || 'Only social media links are supported.');
-      return;
-    }
+    const urlMatch = droppedText.match(/https?:\/\/[^\s<>"']+/i);
+    const candidateUrl = urlMatch ? urlMatch[0] : droppedText;
 
-    const targetUrl = validation.cleanUrl || droppedText;
-    setInputValue(targetUrl);
-    const label = getCleanSocialDisplayLabel(targetUrl);
-    setDisplayValue(label || targetUrl);
-    if (statusMsg && !analyzing && !searching) setStatusMsg(null);
+    if (isSocialMediaUrl(candidateUrl)) {
+      const validation = validateSocialMediaInput(candidateUrl);
+      const targetUrl = validation.isValid && validation.cleanUrl ? validation.cleanUrl : candidateUrl;
+      setInputValue(targetUrl);
+      if (statusMsg && !analyzing && !searching) setStatusMsg(null);
+    } else {
+      setInputValue(candidateUrl);
+    }
   };
 
   const handleTextareaPaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
@@ -719,28 +731,12 @@ export function UrlInput() {
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value;
+    setInputValue(e.target.value);
     if (statusMsg && !analyzing && !searching) setStatusMsg(null);
-
-    if (!val.trim()) {
-      setInputValue('');
-      setDisplayValue('');
-      return;
-    }
-
-    if (isSocialMediaUrl(val.trim())) {
-      setInputValue(val.trim());
-      const label = getCleanSocialDisplayLabel(val.trim());
-      setDisplayValue(label || val.trim());
-    } else {
-      setInputValue(val);
-      setDisplayValue(val);
-    }
   };
 
   const handleClearInput = () => {
     setInputValue('');
-    setDisplayValue('');
     setStatusMsg(null);
     setSuggestions([]);
     setShowSuggestions(false);
@@ -772,12 +768,10 @@ export function UrlInput() {
 
     if (isMultiMode) {
       setInputValue((prev) => (prev ? `${prev}\n${url}` : url));
-      setDisplayValue('');
     } else {
       setInputValue(url);
-      const label = getCleanSocialDisplayLabel(url);
-      setDisplayValue(label || url);
     }
+    if (statusMsg && !analyzing && !searching) setStatusMsg(null);
   };
 
   const handleDismissClipboardPrompt = () => {
@@ -797,14 +791,11 @@ export function UrlInput() {
 
   const handleDownloadAgain = async (recentItem: RecentDownloadItem) => {
     setInputValue(recentItem.url);
-    const label = getCleanSocialDisplayLabel(recentItem.url);
-    setDisplayValue(label || recentItem.url);
     await handleAnalyzeUrls([recentItem.url]);
   };
 
   const handleSelectSuggestion = (suggestion: string) => {
     setInputValue(suggestion);
-    setDisplayValue(suggestion);
     setShowSuggestions(false);
     handleExecuteSearch(suggestion);
   };
@@ -1751,14 +1742,22 @@ export function UrlInput() {
                     title="Clear links"
                     data-toggle="tooltip"
                     data-placement="bottom"
-                    className="btn btn-primary btn-sm pill-btn input-action-btn text-dark"
+                    className="btn btn-primary btn-sm pill-btn input-action-btn input-bar-btn text-dark"
                     style={{
-                      padding: '0.35rem 0.85rem',
-                      fontSize: '0.78rem',
-                      fontWeight: 700,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
                       whiteSpace: 'nowrap',
-                      minHeight: '34px',
                       color: 'var(--text-color)',
+                      fontWeight: 700,
+                      fontSize: isMobile ? '0.72rem' : '0.78rem',
+                      minHeight: isMobile ? '30px' : '34px',
+                      height: isMobile ? '30px' : '34px',
+                      width: isMobile ? '56px' : '66px',
+                      minWidth: isMobile ? '56px' : '66px',
+                      padding: 0,
+                      flexShrink: 0,
+                      cursor: 'pointer',
                     }}
                   >
                     Clear All
@@ -1952,7 +1951,7 @@ export function UrlInput() {
               <input
                 className="url-main-input"
                 type="text"
-                value={displayValue || inputValue}
+                value={inputValue}
                 onChange={handleInputChange}
                 onPaste={handleInputPaste}
                 onDrop={handleInputDrop}
@@ -2025,14 +2024,22 @@ export function UrlInput() {
                     title="Clear link"
                     data-toggle="tooltip"
                     data-placement="bottom"
-                    className="btn btn-primary btn-sm pill-btn input-action-btn text-dark"
+                    className="btn btn-primary btn-sm pill-btn input-action-btn input-bar-btn text-dark"
                     style={{
-                      padding: '0.45rem 0.95rem',
-                      fontSize: '0.82rem',
-                      fontWeight: 700,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
                       whiteSpace: 'nowrap',
-                      minHeight: '38px',
                       color: 'var(--text-color)',
+                      fontWeight: 700,
+                      fontSize: isMobile ? '0.74rem' : '0.82rem',
+                      minHeight: isMobile ? '32px' : '38px',
+                      height: isMobile ? '32px' : '38px',
+                      width: isMobile ? '56px' : '66px',
+                      minWidth: isMobile ? '56px' : '66px',
+                      padding: 0,
+                      flexShrink: 0,
+                      cursor: 'pointer',
                     }}
                   >
                     Clear
