@@ -327,6 +327,7 @@ function ButtonSpinner({ className = 'spinner-mono', size = 'normal' }: { classN
 
 export function UrlInput() {
   const [inputValue, setInputValue] = useState('');
+  const [displayValue, setDisplayValue] = useState('');
   const [selectedPlatform, setSelectedPlatform] = useState<PlatformIcon | null>(null);
   const [showAllPlatforms, setShowAllPlatforms] = useState(false);
   const [isMultiMode, setIsMultiMode] = useState(false);
@@ -595,6 +596,7 @@ export function UrlInput() {
 
       if (isSearchMode) {
         setInputValue(clipboard);
+        setDisplayValue(clipboard);
         return;
       }
 
@@ -613,6 +615,7 @@ export function UrlInput() {
           return;
         }
         setInputValue((prev) => (prev ? `${prev}\n${result.validUrls.join('\n')}` : result.validUrls.join('\n')));
+        setDisplayValue('');
         if (result.skippedCount > 0) {
           setStatusMsg(`Added ${result.validUrls.length} social link(s). Skipped ${result.skippedCount} non-social or invalid item(s).`);
         } else if (statusMsg && !analyzing && !searching) {
@@ -633,6 +636,8 @@ export function UrlInput() {
 
       const targetUrl = validation.cleanUrl || candidateUrl;
       setInputValue(targetUrl);
+      const label = getCleanSocialDisplayLabel(targetUrl);
+      setDisplayValue(label || targetUrl);
       if (statusMsg && !analyzing && !searching) setStatusMsg(null);
     } catch (err) {
       console.error('Clipboard error', err);
@@ -642,19 +647,24 @@ export function UrlInput() {
 
   const handleInputPaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
     if (isSearchMode) return;
+    e.preventDefault();
     const pastedText = e.clipboardData.getData('text').trim();
     if (!pastedText) return;
 
     const urlMatch = pastedText.match(/https?:\/\/[^\s<>"']+/i);
     const candidateUrl = urlMatch ? urlMatch[0] : pastedText;
 
-    if (isSocialMediaUrl(candidateUrl)) {
-      e.preventDefault();
-      const validation = validateSocialMediaInput(candidateUrl);
-      const targetUrl = validation.isValid && validation.cleanUrl ? validation.cleanUrl : candidateUrl;
-      setInputValue(targetUrl);
-      if (statusMsg && !analyzing && !searching) setStatusMsg(null);
+    const validation = validateSocialMediaInput(candidateUrl);
+    if (!validation.isValid) {
+      setStatusMsg(validation.errorMessage || 'Only social media links are supported.');
+      return;
     }
+
+    const targetUrl = validation.cleanUrl || candidateUrl;
+    setInputValue(targetUrl);
+    const label = getCleanSocialDisplayLabel(targetUrl);
+    setDisplayValue(label || targetUrl);
+    if (statusMsg && !analyzing && !searching) setStatusMsg(null);
   };
 
   const handleInputDrop = (e: React.DragEvent<HTMLInputElement>) => {
@@ -666,14 +676,17 @@ export function UrlInput() {
     const urlMatch = droppedText.match(/https?:\/\/[^\s<>"']+/i);
     const candidateUrl = urlMatch ? urlMatch[0] : droppedText;
 
-    if (isSocialMediaUrl(candidateUrl)) {
-      const validation = validateSocialMediaInput(candidateUrl);
-      const targetUrl = validation.isValid && validation.cleanUrl ? validation.cleanUrl : candidateUrl;
-      setInputValue(targetUrl);
-      if (statusMsg && !analyzing && !searching) setStatusMsg(null);
-    } else {
-      setInputValue(candidateUrl);
+    const validation = validateSocialMediaInput(candidateUrl);
+    if (!validation.isValid) {
+      setStatusMsg(validation.errorMessage || 'Only social media links are supported.');
+      return;
     }
+
+    const targetUrl = validation.cleanUrl || candidateUrl;
+    setInputValue(targetUrl);
+    const label = getCleanSocialDisplayLabel(targetUrl);
+    setDisplayValue(label || targetUrl);
+    if (statusMsg && !analyzing && !searching) setStatusMsg(null);
   };
 
   const handleTextareaPaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
@@ -731,12 +744,28 @@ export function UrlInput() {
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setInputValue(e.target.value);
+    const val = e.target.value;
     if (statusMsg && !analyzing && !searching) setStatusMsg(null);
+
+    if (!val.trim()) {
+      setInputValue('');
+      setDisplayValue('');
+      return;
+    }
+
+    if (isSocialMediaUrl(val.trim())) {
+      setInputValue(val.trim());
+      const label = getCleanSocialDisplayLabel(val.trim());
+      setDisplayValue(label || val.trim());
+    } else {
+      setInputValue(val);
+      setDisplayValue(val);
+    }
   };
 
   const handleClearInput = () => {
     setInputValue('');
+    setDisplayValue('');
     setStatusMsg(null);
     setSuggestions([]);
     setShowSuggestions(false);
@@ -768,8 +797,11 @@ export function UrlInput() {
 
     if (isMultiMode) {
       setInputValue((prev) => (prev ? `${prev}\n${url}` : url));
+      setDisplayValue('');
     } else {
       setInputValue(url);
+      const label = getCleanSocialDisplayLabel(url);
+      setDisplayValue(label || url);
     }
     if (statusMsg && !analyzing && !searching) setStatusMsg(null);
   };
@@ -791,11 +823,14 @@ export function UrlInput() {
 
   const handleDownloadAgain = async (recentItem: RecentDownloadItem) => {
     setInputValue(recentItem.url);
+    const label = getCleanSocialDisplayLabel(recentItem.url);
+    setDisplayValue(label || recentItem.url);
     await handleAnalyzeUrls([recentItem.url]);
   };
 
   const handleSelectSuggestion = (suggestion: string) => {
     setInputValue(suggestion);
+    setDisplayValue(suggestion);
     setShowSuggestions(false);
     handleExecuteSearch(suggestion);
   };
@@ -1951,7 +1986,7 @@ export function UrlInput() {
               <input
                 className="url-main-input"
                 type="text"
-                value={inputValue}
+                value={displayValue || inputValue}
                 onChange={handleInputChange}
                 onPaste={handleInputPaste}
                 onDrop={handleInputDrop}
