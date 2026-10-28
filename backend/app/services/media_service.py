@@ -673,6 +673,9 @@ def _download_image_sync(job_id: str, url: str, fmt: str) -> str:
     if parsed.hostname:
         resolve_and_check(parsed.hostname)
 
+    parsed_host = (parsed.hostname or "").lower()
+    is_fbsbx_host = parsed_host == "lookaside.fbsbx.com" or parsed_host.endswith(".fbsbx.com")
+
     fmt_lower = fmt.lower().strip()
     target_ext = "jpg"
     if "png" in fmt_lower:
@@ -691,8 +694,15 @@ def _download_image_sync(job_id: str, url: str, fmt: str) -> str:
     unique_name = f"image_{uuid.uuid4().hex[:12]}.{target_ext}"
     output_file = str(TEMP_DOWNLOAD_DIR / unique_name)
 
+    req_host = (parsed.hostname or "").lower()
+    is_fbsbx_host = req_host == "lookaside.fbsbx.com" or req_host.endswith(".fbsbx.com")
+
     headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+        "User-Agent": (
+            "facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)"
+            if is_fbsbx_host
+            else "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+        ),
         "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
     }
     with httpx.Client(follow_redirects=True, timeout=30.0, headers=headers) as client:
@@ -910,6 +920,9 @@ def _download_sync(
     if parsed.hostname:
         resolve_and_check(parsed.hostname)
 
+    parsed_host = (parsed.hostname or "").lower()
+    is_fbsbx_host = parsed_host == "lookaside.fbsbx.com" or parsed_host.endswith(".fbsbx.com")
+
     if slide_index is None:
         m = re.search(r"#slide=(\d+)", url)
         if m:
@@ -937,6 +950,7 @@ def _download_sync(
         or "preview.redd.it" in url
         or "pinimg.com" in url
         or "twimg.com" in url
+        or is_fbsbx_host
         or any(url.lower().endswith(ext) or f"{ext}?" in url.lower() for ext in (".jpg", ".jpeg", ".png", ".webp", ".gif", ".svg", ".avif", ".heic"))
     )
 
@@ -970,6 +984,7 @@ def _download_sync(
     is_direct_host = (
         "cdninstagram.com" in url
         or "fbcdn.net" in url
+        or is_fbsbx_host
         or "lovethreads.net" in url
         or "v.pinimg.com" in url
         or "v1.pinimg.com" in url

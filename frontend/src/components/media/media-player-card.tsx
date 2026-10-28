@@ -39,6 +39,9 @@ export function MediaPlayerCard({
   const isImageHostOrExt = (link: string | null | undefined): boolean => {
     if (!link || !link.startsWith('http')) return false;
     if (link.includes('reddit.com/r/') || link.includes('youtube.com/watch') || link.includes('instagram.com/p/')) return false;
+    try {
+      if (new URL(link).hostname.toLowerCase() === 'lookaside.fbsbx.com') return true;
+    } catch {}
     return (
       link.includes('ytimg.com') ||
       link.includes('pinimg.com') ||

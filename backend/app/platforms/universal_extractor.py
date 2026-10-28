@@ -43,6 +43,175 @@ def build_image_format_options(thumbnail_or_orig: str = None) -> list[FormatOpti
         ),
     ]
 
+def _build_facebook_image_format_options(
+    image_url: str,
+    width: Optional[int] = None,
+    height: Optional[int] = None,
+) -> list[FormatOption]:
+    """
+    Build truthful format options specifically for Facebook photos.
+    Uses truthful preview / conversion labels since Facebook only exposes downscaled previews to crawlers.
+    """
+    dim_str = f"{width}x{height}" if (width and height) else ""
+    jpg_q = f"({dim_str}, preview size)" if dim_str else "(preview size)"
+    conv_q = f"(converted from JPG, {dim_str})" if dim_str else "(converted from JPG)"
+
+    return [
+        FormatOption(
+            format_id="jpg_preview",
+            ext="JPG",
+            quality=jpg_q,
+            file_size_formatted="Preview size",
+            media_category="image",
+            download_url=image_url,
+            width=width,
+            height=height,
+        ),
+        FormatOption(
+            format_id="png_preview",
+            ext="PNG",
+            quality=conv_q,
+            file_size_formatted="Converted",
+            media_category="image",
+            download_url=image_url,
+            width=width,
+            height=height,
+        ),
+        FormatOption(
+            format_id="webp_preview",
+            ext="WEBP",
+            quality=conv_q,
+            file_size_formatted="Converted",
+            media_category="image",
+            download_url=image_url,
+            width=width,
+            height=height,
+        ),
+    ]
+
+
+async def _probe_facebook_image(image_url: str) -> tuple[Optional[int], Optional[int]]:
+    """
+    Probe real pixel dimensions of a Facebook lookaside image with SSRF protection,
+    a 5-second timeout, 5 MB cap, and content-type + magic-byte check.
+    If probing fails or times out, returns (None, None) gracefully without failing analyze.
+    """
+    try:
+        parsed = urlparse(image_url)
+        if not parsed.hostname:
+            return None, None
+
+        resolve_and_check(parsed.hostname)
+
+        headers = {
+            "User-Agent": "facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)",
+            "Accept": "image/*",
+        }
+
+        async with httpx.AsyncClient(follow_redirects=True, timeout=5.0, headers=headers) as client:
+            async with client.stream("GET", image_url) as resp:
+                if resp.status_code != 200:
+                    return None, None
+                ct = resp.headers.get("content-type", "").lower()
+                if not ct.startswith("image/"):
+                    return None, None
+
+                chunks = []
+                total = 0
+                max_bytes = 5 * 1024 * 1024  # 5 MB cap
+                async for chunk in resp.aiter_bytes(chunk_size=16384):
+                    chunks.append(chunk)
+                    total += len(chunk)
+                    if total >= max_bytes or total >= 65536:
+                        break
+
+                data = b"".join(chunks)
+                if len(data) < 10:
+                    return None, None
+
+                is_jpeg = data[:2] == b"\xff\xd8"
+                is_png = data[:8] == b"\x89PNG\r\n\x1a\n"
+                is_webp = data[:4] == b"RIFF" and b"WEBP" in data[:16]
+                if not (is_jpeg or is_png or is_webp):
+                    return None, None
+
+                from PIL import Image
+                import io
+                with Image.open(io.BytesIO(data)) as im:
+                    w, h = im.size
+                    if w > 0 and h > 0:
+                        return w, h
+    except Exception as e:
+        logger.debug("facebook_image_probe_failed", url=image_url, error=str(e))
+    return None, None
+
+
+async def _scrape_facebook(url: str) -> dict:
+    """
+    Scrape Facebook post with crawler User-Agent to detect photo vs video vs login-required.
+    SSRF validation is strictly applied on the hostname.
+    """
+    parsed = urlparse(url)
+    if parsed.hostname:
+        resolve_and_check(parsed.hostname)
+
+    crawler_headers = {
+        "User-Agent": "facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.9",
+    }
+
+    title = "Facebook Photo"
+    image_url = None
+    has_video = False
+
+    try:
+        async with httpx.AsyncClient(follow_redirects=True, timeout=8.0, headers=crawler_headers) as client:
+            resp = await client.get(url)
+            html = resp.text
+
+            # Check for og:video
+            og_vid = re.search(r'<meta\s+property=["\']og:video(?::secure_url)?["\']\s+content=["\']([^"\']+)["\']', html, re.I)
+            if og_vid and og_vid.group(1).strip():
+                has_video = True
+
+            # Extract og:title
+            og_title = re.search(r'<meta\s+property=["\']og:title["\']\s+content=["\']([^"\']+)["\']', html, re.I)
+            if og_title:
+                clean_title = og_title.group(1).replace("&amp;", "&").strip()
+                if clean_title and not any(kw in clean_title.lower() for kw in ("log in", "sign up", "facebook")):
+                    title = clean_title
+                elif clean_title:
+                    title = clean_title
+
+            # Extract og:image
+            og_img = re.search(r'<meta\s+property=["\']og:image(?::secure_url)?["\']\s+content=["\']([^"\']+)["\']', html, re.I)
+            if not og_img:
+                og_img = re.search(r'<meta\s+content=["\']([^"\']+)["\']\s+property=["\']og:image(?::secure_url)?["\']', html, re.I)
+
+            if og_img:
+                candidate = og_img.group(1).replace("&amp;", "&").strip()
+                parsed_img = urlparse(candidate)
+                img_host = (parsed_img.hostname or "").lower()
+                is_valid_fb_host = (
+                    img_host == "lookaside.fbsbx.com"
+                    or img_host.endswith(".fbsbx.com")
+                    or img_host.endswith(".fbcdn.net")
+                )
+                if is_valid_fb_host and not any(k in candidate for k in ("rsrc.php", "static.xx", "favicon.ico")):
+                    image_url = candidate
+
+    except Exception as e:
+        logger.warning("facebook_scrape_error", url=url, error=str(e))
+
+    return {
+        "title": title,
+        "image_url": image_url,
+        "is_video": has_video,
+        "is_image": bool(image_url and not has_video),
+    }
+
+
 def build_format_options(
     duration_sec: int = 60,
     raw_formats: list = None,
@@ -1647,6 +1816,51 @@ async def extract_media_info(url: str, platform_name: str) -> MediaInfo:
                     )
             except Exception:
                 pass
+
+        is_fb = (
+            platform_name == "facebook"
+            or "facebook.com" in url.lower()
+            or "fb.com" in url.lower()
+            or "fb.watch" in url.lower()
+        )
+        if is_fb:
+            try:
+                fb_data = await _scrape_facebook(url)
+                if fb_data.get("is_image") and fb_data.get("image_url") and not fb_data.get("is_video"):
+                    w, h = await _probe_facebook_image(fb_data["image_url"])
+                    format_opts = _build_facebook_image_format_options(fb_data["image_url"], width=w, height=h)
+                    formats = [f"{opt.ext} {opt.quality}" for opt in format_opts]
+                    return MediaInfo(
+                        url=url,
+                        platform="facebook",
+                        title=fb_data.get("title") or "Facebook Photo",
+                        thumbnail_url=fb_data["image_url"],
+                        media_type="image",
+                        formats=formats,
+                        format_options=format_opts,
+                        download_url=fb_data["image_url"],
+                        download_supported=True,
+                        embed_supported=True,
+                        muted=False,
+                        limitations=["Only the first photo is available without login"],
+                    )
+            except Exception as fb_err:
+                logger.warning("facebook_scrape_failure", url=url, error=str(fb_err))
+
+            # yt-dlp failed AND it's not clearly a photo (has og:video or no og:image e.g. deleted/private/login-required)
+            return MediaInfo(
+                url=url,
+                platform="facebook",
+                title="Facebook Media Content",
+                media_type="video",
+                formats=[],
+                format_options=[],
+                download_url=url,
+                download_supported=False,
+                embed_supported=True,
+                error="unsupported_or_login_required",
+                error_message="This Facebook post is private, deleted, or requires login to view.",
+            )
 
         clean_platform_label = platform_name.replace('_', ' ').title()
         is_probable_image = (
